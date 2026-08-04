@@ -1,25 +1,33 @@
 import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
 
-import { Fonts, ThemeColor } from '@/constants/theme';
+import { Fonts, ThemeColor, TypeScale } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
+/**
+ * Échelle typographique de la charte mobile (§04) : `screenTitle` (titre d'écran),
+ * `sectionTitle` (titre de section), `body` (corps de texte, par défaut), `label` (libellé
+ * court, ex. boutons/badges), `caption` (légende/métadonnée). `brand` est réservé au logotype
+ * "AAVIE". `link`/`linkPrimary`/`code` restent des styles utilitaires hors échelle éditoriale.
+ */
 export type ThemedTextProps = TextProps & {
-  type?: 'default' | 'title' | 'small' | 'smallBold' | 'subtitle' | 'link' | 'linkPrimary' | 'code';
+  type?: 'brand' | 'screenTitle' | 'sectionTitle' | 'body' | 'label' | 'caption' | 'link' | 'linkPrimary' | 'code';
   themeColor?: ThemeColor;
 };
 
-export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
+export function ThemedText({ style, type = 'body', themeColor, ...rest }: ThemedTextProps) {
   const theme = useTheme();
+  const resolvedColor = themeColor ?? (type === 'linkPrimary' ? 'primary' : 'text');
 
   return (
     <Text
       style={[
-        { color: theme[themeColor ?? 'text'] },
-        type === 'default' && styles.default,
-        type === 'title' && styles.title,
-        type === 'small' && styles.small,
-        type === 'smallBold' && styles.smallBold,
-        type === 'subtitle' && styles.subtitle,
+        { color: theme[resolvedColor] },
+        type === 'brand' && styles.brand,
+        type === 'screenTitle' && styles.screenTitle,
+        type === 'sectionTitle' && styles.sectionTitle,
+        type === 'body' && styles.body,
+        type === 'label' && styles.label,
+        type === 'caption' && styles.caption,
         type === 'link' && styles.link,
         type === 'linkPrimary' && styles.linkPrimary,
         type === 'code' && styles.code,
@@ -31,39 +39,20 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
 }
 
 const styles = StyleSheet.create({
-  small: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: 500,
-  },
-  smallBold: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: 700,
-  },
-  default: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: 500,
-  },
-  title: {
-    fontSize: 48,
-    fontWeight: 600,
-    lineHeight: 52,
-  },
-  subtitle: {
-    fontSize: 32,
-    lineHeight: 44,
-    fontWeight: 600,
-  },
+  brand: TypeScale.brand,
+  screenTitle: TypeScale.screenTitle,
+  sectionTitle: TypeScale.sectionTitle,
+  body: TypeScale.body,
+  label: TypeScale.label,
+  caption: TypeScale.caption,
   link: {
-    lineHeight: 30,
+    lineHeight: 20,
     fontSize: 14,
   },
   linkPrimary: {
-    lineHeight: 30,
+    lineHeight: 20,
     fontSize: 14,
-    color: '#3c87f7',
+    fontWeight: 600,
   },
   code: {
     fontFamily: Fonts.mono,
