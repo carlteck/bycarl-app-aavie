@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { IconChip } from './icon-chip';
 import { ThemedText } from './themed-text';
@@ -12,8 +11,8 @@ import { CardShadow, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type ModuleCardProps = AavieModule & {
-  /** 'feature' = carte vedette pleine largeur (icône+titre en ligne, description visible).
-   * 'compact' = carte bento réduite (empilée, sans description) pour les modules secondaires. */
+  /** 'feature' = carte vedette pleine largeur (icône primary + titre + description).
+   * 'compact' = carte bento réduite (icône turquoise + titre) pour les modules secondaires. */
   variant?: 'feature' | 'compact';
 };
 
@@ -36,22 +35,18 @@ export function ModuleCard({ title, description, icon, href, variant = 'feature'
       ]}
       accessible={!available}
       accessibilityRole={available ? undefined : 'text'}>
-      {!isCompact && (
-        // Reflet subtil en haut de la carte vedette, façon panneau vitré (cf. bandeau d'en-tête).
-        <LinearGradient
-          colors={['rgba(255,255,255,0.3)', 'rgba(255,255,255,0)']}
-          pointerEvents="none"
-          style={styles.sheen}
-        />
-      )}
-      <ThemedView style={isCompact ? styles.topCompact : styles.top}>
-        <IconChip name={icon} variant="turquoise" size={isCompact ? 30 : 34} />
-        <ThemedView style={styles.body}>
-          <ThemedText type={isCompact ? 'label' : 'sectionTitle'}>{title}</ThemedText>
-          {!isCompact && <ThemedText themeColor="textSecondary">{description}</ThemedText>}
-        </ThemedView>
-        {available && <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />}
-      </ThemedView>
+      <View style={styles.head}>
+        <IconChip name={icon} variant={isCompact ? 'turquoise' : 'primary'} size={isCompact ? 32 : 44} />
+        {available && (
+          <ThemedView type="backgroundSelected" style={[styles.chevron, isCompact && styles.chevronCompact]}>
+            <Ionicons name="chevron-forward" size={isCompact ? 13 : 15} color={theme.primary} />
+          </ThemedView>
+        )}
+      </View>
+      <View style={styles.body}>
+        <ThemedText type={isCompact ? 'label' : 'sectionTitle'}>{title}</ThemedText>
+        {!isCompact && <ThemedText themeColor="textSecondary">{description}</ThemedText>}
+      </View>
       <ThemedView type={available ? 'turquoiseTint' : 'backgroundElement'} style={styles.pill}>
         <Ionicons
           name={available ? 'checkmark-circle-outline' : 'time-outline'}
@@ -87,30 +82,30 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.four,
     borderWidth: 1,
   },
-  sheen: {
-    position: 'absolute',
-    top: 1,
-    left: 1,
-    right: 1,
-    height: 56,
-    borderTopLeftRadius: Spacing.four - 1,
-    borderTopRightRadius: Spacing.four - 1,
-  },
   cardCompact: {
     flex: 1,
     gap: Spacing.two,
     padding: Spacing.three,
     borderRadius: Spacing.three,
   },
-  top: {
+  head: {
     flexDirection: 'row',
-    gap: Spacing.three,
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  topCompact: {
-    gap: Spacing.two,
+  chevron: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chevronCompact: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
   },
   body: {
-    flex: 1,
     gap: Spacing.half,
   },
   pill: {

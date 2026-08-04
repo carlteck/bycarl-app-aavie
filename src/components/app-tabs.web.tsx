@@ -1,11 +1,5 @@
-import {
-  Tabs,
-  TabList,
-  TabTrigger,
-  TabSlot,
-  TabTriggerSlotProps,
-  TabListProps,
-} from 'expo-router/ui';
+import { router, Slot, usePathname } from 'expo-router';
+import type { ReactNode } from 'react';
 import { Pressable, View, StyleSheet, useColorScheme } from 'react-native';
 
 import { ThemedText } from './themed-text';
@@ -13,40 +7,63 @@ import { ThemedView } from './themed-view';
 
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 
+type TabDef = {
+  href: string;
+  label: string;
+  /** Un onglet reste actif tant qu'on est sur une route poussée par-dessus lui (ex: /demarche
+   * appartient visuellement à l'onglet Accueil, /profil/informations à l'onglet Profil). */
+  match: (pathname: string) => boolean;
+};
+
+const TABS: TabDef[] = [
+  { href: '/', label: 'Accueil', match: (p) => p === '/' || p.startsWith('/demarche') },
+  { href: '/ressources', label: 'Ressources', match: (p) => p.startsWith('/ressources') },
+  { href: '/annuaire', label: 'Annuaire', match: (p) => p.startsWith('/annuaire') },
+  { href: '/profil', label: 'Profil', match: (p) => p.startsWith('/profil') },
+];
+
+/**
+ * Barre d'onglets web : `<Slot/>` (pas `expo-router/ui` `<Tabs>`) pour que toute route du fichier
+ * (ex: /demarche, /profil/informations) reste navigable — `<Tabs>` n'accepte qu'une liste fermée
+ * de `TabTrigger`, donc toute route hors de cette liste était injoignable sur web (clic et
+ * `router.push` silencieusement sans effet, cf. session du 2026-08-04). La barre elle-même
+ * redevient un simple visuel qui reflète `usePathname()` et pousse via `router.push`.
+ */
 export default function AppTabs() {
+  const pathname = usePathname();
+
   return (
-    <Tabs>
-      <TabSlot style={{ height: '100%' }} />
-      <TabList asChild>
-        <CustomTabList>
-          <TabTrigger name="home" href="/" asChild>
-            <TabButton>Accueil</TabButton>
-          </TabTrigger>
-          <TabTrigger name="ressources" href="/ressources" asChild>
-            <TabButton>Ressources</TabButton>
-          </TabTrigger>
-          <TabTrigger name="annuaire" href="/annuaire" asChild>
-            <TabButton>Annuaire</TabButton>
-          </TabTrigger>
-          <TabTrigger name="profil" href="/profil" asChild>
-            <TabButton>Profil</TabButton>
-          </TabTrigger>
-        </CustomTabList>
-      </TabList>
-    </Tabs>
+    <View style={styles.root}>
+      <Slot />
+      <CustomTabList>
+        {TABS.map((tab) => (
+          <TabButton key={tab.href} focused={tab.match(pathname)} onPress={() => router.push(tab.href as never)}>
+            {tab.label}
+          </TabButton>
+        ))}
+      </CustomTabList>
+    </View>
   );
 }
 
-export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
+function TabButton({
+  children,
+  focused,
+  onPress,
+}: {
+  children: string;
+  focused: boolean;
+  onPress: () => void;
+}) {
   return (
     <Pressable
-      {...props}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: focused }}
       hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
       style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView
-        type={isFocused ? 'backgroundSelected' : 'backgroundElement'}
-        style={styles.tabButtonView}>
-        <ThemedText type="label" themeColor={isFocused ? 'primary' : 'textSecondary'}>
+      <ThemedView type={focused ? 'backgroundSelected' : 'backgroundElement'} style={styles.tabButtonView}>
+        <ThemedText type="label" themeColor={focused ? 'primary' : 'textSecondary'}>
           {children}
         </ThemedText>
       </ThemedView>
@@ -60,12 +77,12 @@ export function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps
  * inline plutôt que `expo-blur` : ce dernier est une vue native qui ne se rend pas côté serveur
  * (SSR web d'Expo Router), là où un simple `View` + CSS reste toujours sûr.
  */
-export function CustomTabList(props: TabListProps) {
+function CustomTabList({ children }: { children: ReactNode }) {
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
 
   return (
-    <View {...props} style={styles.tabListContainer}>
+    <View style={styles.tabListContainer}>
       <View
         style={[
           styles.innerContainer,
@@ -78,13 +95,16 @@ export function CustomTabList(props: TabListProps) {
           AAVIE
         </ThemedText>
 
-        {props.children}
+        {children}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   tabListContainer: {
     position: 'absolute',
     width: '100%',

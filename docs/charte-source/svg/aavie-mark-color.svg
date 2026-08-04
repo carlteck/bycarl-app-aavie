@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Symbole AAVIE en couleurs">
+  <circle cx="512" cy="512" r="326" fill="none" stroke="#00E7C7" stroke-width="82" stroke-linecap="round" stroke-dasharray="1640 408" transform="rotate(-54 512 512)"/>
+  <path fill="#E81E4E" d="M512 340C620 340 704 422 704 526c0 106-83 186-192 186-25 0-50-5-73-13l-75 29c-16 6-31-10-24-25l29-67c-32-31-50-68-50-110 0-104 84-186 193-186Z"/>
+  <path d="M431 527c21 38 49 57 82 57s61-19 82-57" fill="none" stroke="#FFFFFF" stroke-width="30" stroke-linecap="round"/>
+</svg>

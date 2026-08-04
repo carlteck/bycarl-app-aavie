@@ -25,9 +25,9 @@ export const AAVIE_SECTIONS: AavieSection[] = [
   {
     key: 'accueil',
     tabTitle: 'Accueil',
-    heading: 'Assistant administratif',
+    heading: 'Bienvenue sur AAVIE',
     intro:
-      "Un accompagnement pas à pas pour réaliser vos démarches en toute autonomie, avec des rappels pour ne rien manquer.",
+      "Votre allié pour comprendre et réaliser vos démarches administratives en toute autonomie, à votre rythme.",
     icon: 'home-outline',
     modules: [
       {

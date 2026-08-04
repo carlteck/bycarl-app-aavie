@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { StyleSheet, View, useColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -51,9 +52,20 @@ export function GradientHeader({ icon, title, intro, brand }: GradientHeaderProp
           },
         ]}>
         <View style={styles.glassTop}>
-          <View style={styles.iconChip}>
-            <Ionicons name={icon} size={20} color={Palette.white} />
-          </View>
+          {brand ? (
+            // Logotype AAVIE officiel (anneau turquoise + bulle corail souriante) : l'anneau fait
+            // déjà partie du PNG source, pas besoin de le simuler avec un fond en dégradé.
+            <Image
+              source={require('@/assets/images/aavie-logo-mark.png')}
+              style={styles.logoMarkBrand}
+              contentFit="contain"
+              accessibilityIgnoresInvertColors
+            />
+          ) : (
+            <View style={[styles.iconChip, styles.iconChipPlain]}>
+              <Ionicons name={icon} size={20} color={Palette.white} />
+            </View>
+          )}
           <ThemedText type="sectionTitle" themeColor="text" style={styles.title}>
             {title}
           </ThemedText>
@@ -115,9 +127,15 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: Palette.deepBlue,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  iconChipPlain: {
+    backgroundColor: Palette.deepBlue,
+  },
+  logoMarkBrand: {
+    width: 38,
+    height: 38,
   },
   title: {
     flex: 1,
