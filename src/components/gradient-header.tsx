@@ -13,7 +13,7 @@ type GradientHeaderProps = {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   intro?: string;
-  /** Affiche le logotype "AAVIE" au-dessus du panneau (écran Accueil uniquement). */
+  /** Affiche le logotype image (bulle corail) à la place de l'icône de section (écran Accueil uniquement). */
   brand?: boolean;
 };
 
@@ -38,11 +38,9 @@ export function GradientHeader({ icon, title, intro, brand }: GradientHeaderProp
       <View style={styles.blobBHalo} />
       <View style={styles.blobB} />
 
-      {brand && (
-        <ThemedText type="label" style={styles.brandText}>
-          AAVIE
-        </ThemedText>
-      )}
+      <ThemedText type="label" style={styles.brandText}>
+        AAVIE
+      </ThemedText>
 
       <BlurView intensity={40} tint={isDark ? 'dark' : 'light'} style={styles.glassOuter}>
         <View

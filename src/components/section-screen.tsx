@@ -55,7 +55,11 @@ export function SectionScreen({ section, showAppTitle, beforeModules }: SectionS
         <ThemedView style={styles.container}>
           {beforeModules}
 
-          <ThemedView style={styles.list}>
+          <ThemedView
+            style={[
+              styles.list,
+              { paddingLeft: Spacing.four + safeAreaInsets.left, paddingRight: Spacing.four + safeAreaInsets.right },
+            ]}>
             {featureModule && <ModuleCard {...featureModule} variant="feature" />}
             {compactPairs.map((pair) => (
               <View key={pair.map((m) => m.id).join('-')} style={styles.bentoRow}>
@@ -83,12 +87,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   container: {
+    width: '100%',
     maxWidth: MaxContentWidth,
     flexGrow: 1,
   },
   list: {
     gap: Spacing.three,
-    paddingHorizontal: Spacing.four,
     paddingTop: Spacing.four,
   },
   bentoRow: {

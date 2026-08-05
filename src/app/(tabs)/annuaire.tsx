@@ -34,8 +34,8 @@ export default function AnnuaireScreen() {
 
   const contentPlatformStyle = Platform.select({
     android: {
-      paddingLeft: safeAreaInsets.left,
-      paddingRight: safeAreaInsets.right,
+      paddingLeft: Spacing.four + safeAreaInsets.left,
+      paddingRight: Spacing.four + safeAreaInsets.right,
       paddingBottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
     },
     web: {

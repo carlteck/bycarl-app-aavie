@@ -37,11 +37,9 @@ export function GradientHeader({ icon, title, intro, brand }: GradientHeaderProp
       <View style={styles.blobA} />
       <View style={styles.blobB} />
 
-      {brand && (
-        <ThemedText type="label" style={styles.brandText}>
-          AAVIE
-        </ThemedText>
-      )}
+      <ThemedText type="label" style={styles.brandText}>
+        AAVIE
+      </ThemedText>
 
       <View
         style={[

@@ -69,13 +69,17 @@ export function ModuleCard({ title, description, icon, href, variant = 'feature'
     <Pressable
       onPress={() => router.push(href as never)}
       accessibilityRole="button"
-      accessibilityLabel={`${title}. ${description}`}>
+      accessibilityLabel={`${title}. ${description}`}
+      style={isCompact && styles.pressableCompact}>
       {({ pressed }) => content(pressed)}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  pressableCompact: {
+    flex: 1,
+  },
   card: {
     gap: Spacing.three,
     padding: Spacing.four,
