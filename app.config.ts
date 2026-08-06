@@ -10,16 +10,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   scheme: "aavie",
   userInterfaceStyle: "automatic",
   ios: {
-    bundleIdentifier: "com.bycarl.aavie",
-    buildNumber: "1",
+    bundleIdentifier: "fr.bycarl.aavie",
     infoPlist: {
+      CFBundleDevelopmentRegion: "fr",
       NSFaceIDUsageDescription:
         "AAVIE utilise Face ID pour déverrouiller l'application en toute sécurité.",
+      ITSAppUsesNonExemptEncryption: false,
     },
   },
   android: {
-    package: "com.bycarl.aavie",
-    versionCode: 1,
+    package: "fr.bycarl.aavie",
     adaptiveIcon: {
       backgroundColor: "#0E74C7",
       foregroundImage: "./assets/images/android-icon-foreground.png",
@@ -40,6 +40,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         backgroundColor: "#0E74C7",
         image: "./assets/images/splash-icon.png",
         imageWidth: 76,
+        resizeMode: "contain",
       },
     ],
     "expo-font",
