@@ -155,3 +155,6 @@ expo-env.d.ts
 # Expo build/prebuild caches (regenerated automatically)
 /.expo/prebuild
 /.expo/web
+
+# macOS
+.DS_Store
