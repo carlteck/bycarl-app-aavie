@@ -16,7 +16,7 @@ type TabDef = {
 };
 
 const TABS: TabDef[] = [
-  { href: '/', label: 'Accueil', match: (p) => p === '/' || p.startsWith('/demarche') },
+  { href: '/accueil', label: 'Accueil', match: (p) => p === '/accueil' || p.startsWith('/demarche') },
   { href: '/ressources', label: 'Ressources', match: (p) => p.startsWith('/ressources') },
   { href: '/annuaire', label: 'Annuaire', match: (p) => p.startsWith('/annuaire') },
   { href: '/profil', label: 'Profil', match: (p) => p.startsWith('/profil') },

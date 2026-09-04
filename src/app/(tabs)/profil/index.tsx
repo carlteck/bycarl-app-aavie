@@ -1,29 +1,17 @@
 import { router } from 'expo-router';
 import { StyleSheet, Switch, View } from 'react-native';
 
-import { IconChip } from '@/components/icon-chip';
 import { ListRow } from '@/components/list-row';
-import { OutlineButton } from '@/components/outline-button';
 import { SectionScreen } from '@/components/section-screen';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useAuth } from '@/context/auth-context';
 import { AAVIE_SECTIONS } from '@/constants/modules';
-import { confirmResetLocalData } from '@/lib/confirm-reset';
 import { CardShadow, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function ProfilScreen() {
-  const {
-    hasAccount,
-    displayName,
-    biometricAvailable,
-    biometricEnabled,
-    startOnboarding,
-    toggleBiometrics,
-    lock,
-    resetLocalData,
-  } = useAuth();
+  const { user, biometricAvailable, biometricEnabled, toggleBiometrics, signOut } = useAuth();
   const theme = useTheme();
 
   return (
@@ -41,66 +29,58 @@ export default function ProfilScreen() {
             />
           </ThemedView>
 
-          {hasAccount ? (
-            <>
-              <View style={styles.avatarRow}>
-                <ThemedView type="primary" style={styles.avatar}>
-                  <ThemedText type="screenTitle" style={styles.avatarInitial}>
-                    {(displayName ?? '?').charAt(0).toUpperCase()}
-                  </ThemedText>
-                </ThemedView>
-                <View style={styles.avatarText}>
-                  <ThemedText type="sectionTitle">{displayName ?? '—'}</ThemedText>
-                  <ThemedText type="label" style={{ color: theme.turquoiseTintText }}>
-                    Profil sécurisé actif
-                  </ThemedText>
-                </View>
-              </View>
-
-              <ThemedView
-                type="background"
-                style={[styles.listCard, CardShadow, { borderColor: theme.cardBorder }]}>
-                {biometricAvailable && (
-                  <>
-                    <ListRow
-                      icon="finger-print-outline"
-                      label="Déverrouillage biométrique"
-                      trailing={
-                        <Switch
-                          value={biometricEnabled}
-                          onValueChange={toggleBiometrics}
-                          accessibilityLabel="Activer le déverrouillage biométrique"
-                        />
-                      }
-                    />
-                    <View style={[styles.divider, { backgroundColor: theme.cardBorder }]} />
-                  </>
-                )}
-                <ListRow icon="lock-closed-outline" label="Verrouiller l’application" onPress={lock} />
-                <View style={[styles.divider, { backgroundColor: theme.cardBorder }]} />
-                <ListRow
-                  icon="refresh-outline"
-                  label="Réinitialiser mes données locales"
-                  danger
-                  onPress={() => confirmResetLocalData(resetLocalData)}
-                />
-              </ThemedView>
-            </>
-          ) : (
-            <ThemedView
-              type="background"
-              style={[styles.noticeCard, CardShadow, { borderColor: theme.cardBorder }]}>
-              <IconChip name="shield-checkmark-outline" variant="primary" size={40} />
-              <ThemedText type="sectionTitle">Aucun profil sécurisé</ThemedText>
-              <ThemedText themeColor="textSecondary">
-                Créez un profil protégé par un code à 4 chiffres pour sécuriser vos futures données
-                personnelles (documents, budget). Ce n’est pas obligatoire pour utiliser l’application.
+          {/* Un compte existe toujours ici : sans compte, `AuthGate` affiche l'écran d'accueil
+              et la navigation n'est jamais montée. */}
+          <View style={styles.avatarRow}>
+            <ThemedView type="primary" style={styles.avatar}>
+              <ThemedText type="screenTitle" style={styles.avatarInitial}>
+                {(user?.first_name ?? '?').charAt(0).toUpperCase()}
               </ThemedText>
-              <OutlineButton icon="person-add-outline" onPress={startOnboarding}>
-                Créer un profil sécurisé
-              </OutlineButton>
             </ThemedView>
-          )}
+            <View style={styles.avatarText}>
+              <ThemedText type="sectionTitle">
+                {user ? `${user.first_name} ${user.last_name}` : '—'}
+              </ThemedText>
+              <ThemedText type="label" style={{ color: theme.turquoiseTintText }}>
+                {user?.plan_name ?? 'Sans forfait'}
+              </ThemedText>
+            </View>
+          </View>
+
+          <ThemedView
+            type="background"
+            style={[styles.listCard, CardShadow, { borderColor: theme.cardBorder }]}>
+            {biometricAvailable && (
+              <>
+                <ListRow
+                  icon="finger-print-outline"
+                  label="Déverrouillage biométrique"
+                  trailing={
+                    <Switch
+                      value={biometricEnabled}
+                      onValueChange={toggleBiometrics}
+                      accessibilityLabel="Activer le déverrouillage biométrique"
+                    />
+                  }
+                />
+                <View style={[styles.divider, { backgroundColor: theme.cardBorder }]} />
+              </>
+            )}
+            <ListRow
+              icon="wallet-outline"
+              label="Mes crédits"
+              trailing={
+                user && user.role !== 'admin' ? (
+                  <ThemedText type="label" themeColor="primary">
+                    {user.credit_balance}
+                  </ThemedText>
+                ) : undefined
+              }
+              onPress={() => router.push('/credits')}
+            />
+            <View style={[styles.divider, { backgroundColor: theme.cardBorder }]} />
+            <ListRow icon="log-out-outline" label="Se déconnecter" danger onPress={signOut} />
+          </ThemedView>
         </ThemedView>
       }
     />
@@ -138,12 +118,5 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-  },
-  noticeCard: {
-    gap: Spacing.two,
-    padding: Spacing.four,
-    borderRadius: Spacing.three,
-    borderWidth: 1,
-    alignItems: 'flex-start',
   },
 });

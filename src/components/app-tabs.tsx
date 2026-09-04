@@ -16,7 +16,7 @@ export default function AppTabs() {
       // sélectionnés dès qu'il y en a 4+ — mauvais pour l'accessibilité (CDC : navigation
       // toujours explicite, pas uniquement iconographique).
       labelVisibilityMode="labeled">
-      <NativeTabs.Trigger name="index">
+      <NativeTabs.Trigger name="accueil">
         <NativeTabs.Trigger.Label>Accueil</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="house.fill" md="home" selectedColor={colors.primary} />
       </NativeTabs.Trigger>

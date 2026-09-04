@@ -5,6 +5,8 @@ import { StyleSheet, View } from 'react-native';
 import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
+import { Palette } from '@/constants/theme';
+
 const DURATION = 600;
 
 export function AnimatedSplashOverlay() {
@@ -32,7 +34,7 @@ export function AnimatedSplashOverlay() {
     },
   });
 
-  const image = <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />;
+  const image = <Image style={styles.image} source={require('@/assets/images/splash-icon.png')} />;
 
   return animate ? (
     <Animated.View
@@ -60,12 +62,14 @@ export function AnimatedSplashOverlay() {
 
 const styles = StyleSheet.create({
   image: {
+    // Mêmes dimensions que `expo-splash-screen` (`imageWidth: 76` dans app.config.ts) : ce
+    // recouvrement prolonge le splash natif, tout écart de taille se voit comme un saut.
     width: 76,
-    height: 71,
+    height: 76,
   },
   splashOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: '#208AEF',
+    backgroundColor: Palette.deepBlue,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
