@@ -56,6 +56,7 @@ export default function DemarcheDetailScreen() {
         initialValues[field.key] = '';
       }
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- réinitialisation au changement de démarche
     setValues(initialValues);
     setPrefilledKeys(initialPrefilled);
     // Volontairement dépendant de `procedure.id` uniquement : on ne veut réinitialiser le

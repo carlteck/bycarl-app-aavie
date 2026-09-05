@@ -1,12 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { clearStoredProfile, readStoredProfile, writeStoredProfile } from '@/lib/profile-storage';
+import { useAuth } from '@/context/auth-context';
 
 /**
  * Informations civiles utilisées pour pré-remplir les démarches administratives (module
  * Assistant, voir `constants/procedures.ts`). Distinct du profil d'authentification
- * (`auth-context.tsx`) : ces données ne nécessitent ni PIN ni compte pour être saisies, dans le
- * même esprit d'accessibilité que le reste de l'app (aucune donnée obligatoire).
+ * (`auth-context.tsx`). Chaque copie hors-ligne est cloisonnée par compte afin qu'un changement
+ * d'utilisateur sur le même téléphone n'expose jamais le profil précédent.
  */
 export type UserProfile = {
   civilite?: string;
@@ -31,13 +32,21 @@ type UserProfileContextValue = {
 const UserProfileContext = createContext<UserProfileContextValue | null>(null);
 
 export function UserProfileProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile>({});
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    if (!user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- effacement lors du changement de compte
+      setProfile({});
+      setIsLoaded(true);
+      return;
+    }
+    setIsLoaded(false);
     (async () => {
       try {
-        const stored = await readStoredProfile();
+        const stored = await readStoredProfile(user.id);
         setProfile(stored);
       } catch (error) {
         console.warn('Échec de la lecture du profil civil local.', error);
@@ -45,22 +54,24 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
         setIsLoaded(true);
       }
     })();
-  }, []);
+  }, [user]);
 
   const updateProfile = useCallback(async (patch: Partial<UserProfile>) => {
+    if (!user) return;
     setProfile((current) => {
       const next = { ...current, ...patch };
-      writeStoredProfile(next).catch((error) =>
+      writeStoredProfile(user.id, next).catch((error) =>
         console.warn('Échec de l’enregistrement du profil civil local.', error)
       );
       return next;
     });
-  }, []);
+  }, [user]);
 
   const resetProfile = useCallback(async () => {
-    await clearStoredProfile();
+    if (!user) return;
+    await clearStoredProfile(user.id);
     setProfile({});
-  }, []);
+  }, [user]);
 
   const value = useMemo(
     () => ({ profile, isLoaded, updateProfile, resetProfile }),

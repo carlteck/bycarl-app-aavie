@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 
 import type { Reminder } from '@/constants/reminders';
 import { readStoredReminders, writeStoredReminders } from '@/lib/reminders-storage';
+import { useAuth } from '@/context/auth-context';
 
 type ReminderInput = Omit<Reminder, 'id'>;
 
@@ -17,18 +18,25 @@ type RemindersContextValue = {
 const RemindersContext = createContext<RemindersContextValue | null>(null);
 
 /**
- * Échéances locales partagées par les modules Planificateur administratif et Notifications et
- * rappels (une seule source de données, deux vues — voir CLAUDE.md). Même pattern de persistance
- * que `user-profile-context.tsx` : état initial synchrone vide, chargement asynchrone non bloquant.
+ * Échéances hors-ligne partagées par le Planificateur et les Notifications. SQLite est la source
+ * locale immédiate et l'outbox conserve chaque écriture jusqu'à sa synchronisation Supabase.
  */
 export function RemindersProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    if (!user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- effacement lors du changement de compte
+      setReminders([]);
+      setIsLoaded(true);
+      return;
+    }
+    setIsLoaded(false);
     (async () => {
       try {
-        const stored = await readStoredReminders();
+        const stored = await readStoredReminders(user.id);
         setReminders(stored);
       } catch (error) {
         console.warn('Échec de la lecture des échéances locales.', error);
@@ -36,13 +44,14 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
         setIsLoaded(true);
       }
     })();
-  }, []);
+  }, [user]);
 
   const persist = useCallback((next: Reminder[]) => {
-    writeStoredReminders(next).catch((error) =>
+    if (!user) return;
+    writeStoredReminders(user.id, next).catch((error) =>
       console.warn('Échec de l’enregistrement des échéances locales.', error)
     );
-  }, []);
+  }, [user]);
 
   const addReminder = useCallback(
     (input: ReminderInput) => {

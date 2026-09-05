@@ -70,6 +70,7 @@ export default function CreditsScreen() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- chargement réseau à l'ouverture
     load();
     // Le solde a pu changer pendant que l'écran était fermé (question posée, geste commercial).
     refreshUser();
