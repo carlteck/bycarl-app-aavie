@@ -11,7 +11,7 @@ import {
   type AnnuaireEntry,
 } from '@/constants/annuaire';
 import { openDirections } from '@/lib/maps';
-import { CardShadow, Palette, Spacing } from '@/constants/theme';
+import { Palette, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export function AnnuaireEntryCard({
@@ -26,8 +26,8 @@ export function AnnuaireEntryCard({
 
   return (
     <ThemedView
-      type="background"
-      style={[styles.card, CardShadow, { borderColor: theme.cardBorder }]}
+      type="pageBackground"
+      style={[styles.card, { borderColor: theme.cardBorder }]}
     >
       <View style={styles.top}>
         <IconChip name={ANNUAIRE_CATEGORY_ICON[category]} variant="turquoise" />
@@ -103,8 +103,8 @@ const styles = StyleSheet.create({
   card: {
     gap: Spacing.three,
     padding: Spacing.four,
-    borderRadius: Spacing.three,
-    borderWidth: 1,
+    borderRadius: 24,
+    borderWidth: 0,
   },
   top: {
     flexDirection: 'row',
@@ -127,14 +127,14 @@ const styles = StyleSheet.create({
     marginTop: Spacing.one,
   },
   actionInner: {
-    minHeight: 44,
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.one,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.five,
+    borderRadius: 12,
   },
   actionPrimaryText: {
     color: Palette.white,

@@ -4,6 +4,7 @@ import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AuthProvider, useAuth } from '@/context/auth-context';
+import { SyncProvider } from '@/context/sync-context';
 import { RemindersProvider } from '@/context/reminders-context';
 import { UserProfileProvider } from '@/context/user-profile-context';
 
@@ -25,7 +26,6 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={!isAuthenticated}>
         <Stack.Screen name="index" />
-        <Stack.Screen name="a-propos" />
         <Stack.Screen name="connexion" />
         <Stack.Screen name="inscription" />
       </Stack.Protected>
@@ -39,7 +39,9 @@ function RootNavigator() {
         <Stack.Screen name="planificateur" />
         <Stack.Screen name="notifications" />
         <Stack.Screen name="credits" />
+        <Stack.Screen name="services" />
       </Stack.Protected>
+      <Stack.Screen name="a-propos" />
     </Stack>
   );
 }
@@ -49,12 +51,14 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
-        <UserProfileProvider>
-          <RemindersProvider>
-            <AnimatedSplashOverlay />
-            <RootNavigator />
-          </RemindersProvider>
-        </UserProfileProvider>
+        <SyncProvider>
+          <UserProfileProvider>
+            <RemindersProvider>
+              <AnimatedSplashOverlay />
+              <RootNavigator />
+            </RemindersProvider>
+          </UserProfileProvider>
+        </SyncProvider>
       </AuthProvider>
     </ThemeProvider>
   );

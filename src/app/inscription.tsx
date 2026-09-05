@@ -23,15 +23,6 @@ import { ApiError, NetworkError } from '@/lib/api';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-/**
- * Inscription — équivalent de `/inscription` sur le site, même endpoint `register.php`. Le rôle
- * y est écrit en dur à `'client'` côté serveur : il n'est jamais lu depuis la requête, sans quoi
- * n'importe qui pourrait se créer un compte administrateur.
- *
- * La longueur minimale du mot de passe est vérifiée par le serveur (`Auth::passwordMinLength()`,
- * réglable dans l'administration). On ne la duplique pas ici : elle divergerait au premier
- * changement de réglage.
- */
 export default function InscriptionScreen() {
   const { register } = useAuth();
   const theme = useTheme();
@@ -57,6 +48,7 @@ export default function InscriptionScreen() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmationRequired, setConfirmationRequired] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -90,9 +82,7 @@ export default function InscriptionScreen() {
     setError(null);
     setIsSubmitting(true);
     try {
-      // Le SIRET et le numéro de TVA sont validés par le serveur (`Company::fromPayload`) :
-      // dupliquer la règle de Luhn ici la ferait diverger au premier ajustement.
-      await register({
+      const result = await register({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: email.trim(),
@@ -101,6 +91,8 @@ export default function InscriptionScreen() {
         locale,
         company: accountType === 'company' ? company : undefined,
       });
+      setConfirmationRequired(result.confirmationRequired);
+      setIsSubmitting(false);
     } catch (e) {
       setError(
         e instanceof ApiError || e instanceof NetworkError
@@ -111,8 +103,29 @@ export default function InscriptionScreen() {
     }
   }
 
+  if (confirmationRequired) {
+    return (
+      <ThemedView type="pageBackground" style={styles.screen}>
+        <ScreenHeaderBar
+          title="Confirmez votre adresse e-mail"
+          onBack={() => router.replace('/connexion')}
+          backLabel="Connexion"
+        />
+        <View style={{ padding: Spacing.four, gap: Spacing.three }}>
+          <ThemedText>
+            Consultez votre messagerie et ouvrez le lien de confirmation pour
+            activer votre compte.
+          </ThemedText>
+          <PrimaryButton onPress={() => router.replace('/connexion')}>
+            Aller à la connexion
+          </PrimaryButton>
+        </View>
+      </ThemedView>
+    );
+  }
+
   return (
-    <ThemedView style={styles.screen}>
+    <ThemedView type="pageBackground" style={styles.screen}>
       <ScreenHeaderBar
         title="Créer mon compte"
         onBack={() => router.back()}
@@ -124,7 +137,7 @@ export default function InscriptionScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
-          style={[styles.flex, { backgroundColor: theme.background }]}
+          style={[styles.flex, { backgroundColor: theme.pageBackground }]}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={[
             styles.contentContainer,
@@ -135,12 +148,20 @@ export default function InscriptionScreen() {
             },
           ]}
         >
-          <View style={styles.container}>
+          <View
+            style={[
+              styles.container,
+              {
+                backgroundColor: theme.background,
+                borderColor: theme.cardBorder,
+              },
+            ]}
+          >
             <View style={styles.intro}>
               <ThemedText type="screenTitle">Créer votre compte</ThemedText>
               <ThemedText themeColor="textSecondary">
-                Votre compte fonctionne sur l’application et sur le site aavie,
-                avec les mêmes identifiants.
+                Créez votre compte pour accéder à l’application mobile, avec les
+                mêmes identifiants.
               </ThemedText>
             </View>
 
@@ -224,10 +245,10 @@ export default function InscriptionScreen() {
                 })}
               </View>
               {/* L'interface mobile n'est pas encore traduite : le choix est enregistré sur le
-                  compte et suit l'utilisateur sur le site, mais les écrans restent en français. */}
+                  compte, mais les écrans restent en français. */}
               <ThemedText type="caption" themeColor="textSecondary">
                 L’application reste en français pour l’instant ; votre choix
-                s’applique à votre compte et au site.
+                s’applique à votre compte mobile.
               </ThemedText>
             </View>
 
@@ -412,7 +433,11 @@ const styles = StyleSheet.create({
   },
   container: {
     width: '100%',
-    maxWidth: MaxContentWidth,
+    maxWidth: Math.min(MaxContentWidth, 480),
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: Spacing.three,
     gap: Spacing.three,
   },
   intro: {

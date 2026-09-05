@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Platform, ScrollView, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { Alert, Platform, ScrollView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { birthDateToISO } from '@/lib/sync-mapping';
 import { DynamicForm } from '@/components/dynamic-form';
 import { PrimaryButton } from '@/components/primary-button';
 import { ScreenHeaderBar } from '@/components/screen-header-bar';
@@ -44,23 +45,30 @@ const PROFILE_FIELDS: ProcedureField[] = [
 ];
 
 export default function ProfilInformationsScreen() {
-  const { profile, updateProfile } = useUserProfile();
+  const { profile, updateProfile, isLoaded } = useUserProfile();
   const safeAreaInsets = useSafeAreaInsets();
 
-  const initialValues = useMemo(() => {
-    const values: Record<string, string> = {};
-    for (const field of PROFILE_FIELDS) {
-      values[field.key] = profile[field.key as keyof UserProfile] ?? '';
+  const [patch, setPatch] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const values: Record<string, string> = {};
+  for (const field of PROFILE_FIELDS)
+    values[field.key] =
+      patch[field.key] ?? profile[field.key as keyof UserProfile] ?? '';
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      birthDateToISO(values.dateNaissance);
+      await updateProfile(patch);
+      router.back();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Veuillez réessayer.';
+      if (Platform.OS === 'web') window.alert(message);
+      else Alert.alert('Enregistrement impossible', message);
+    } finally {
+      setSaving(false);
     }
-    return values;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const [values, setValues] = useState(initialValues);
-
-  const handleSave = () => {
-    updateProfile(values as Partial<UserProfile>);
-    router.back();
   };
 
   const contentPlatformStyle = Platform.select({
@@ -69,7 +77,7 @@ export default function ProfilInformationsScreen() {
   });
 
   return (
-    <ThemedView style={styles.screen}>
+    <ThemedView type="pageBackground" style={styles.screen}>
       <ScreenHeaderBar title="Mes informations" onBack={() => router.back()} />
       <ScrollView
         style={styles.scrollView}
@@ -77,19 +85,24 @@ export default function ProfilInformationsScreen() {
       >
         <ThemedView style={styles.container}>
           <ThemedText themeColor="textSecondary">
-            Ces informations restent stockées uniquement sur cet appareil. Elles
-            servent à pré-remplir automatiquement vos démarches administratives.
+            Ces informations sont disponibles hors connexion et synchronisées
+            avec votre compte dès que le réseau le permet. Elles servent à
+            pré-remplir vos démarches.
           </ThemedText>
 
           <DynamicForm
             fields={PROFILE_FIELDS}
             values={values}
             onChange={(key, value) =>
-              setValues((current) => ({ ...current, [key]: value }))
+              setPatch((current) => ({ ...current, [key]: value }))
             }
           />
 
-          <PrimaryButton onPress={handleSave} icon="checkmark-outline">
+          <PrimaryButton
+            disabled={!isLoaded || saving}
+            onPress={handleSave}
+            icon="checkmark-outline"
+          >
             Enregistrer
           </PrimaryButton>
         </ThemedView>

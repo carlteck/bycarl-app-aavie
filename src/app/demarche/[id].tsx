@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Alert, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -15,6 +15,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { PROCEDURES } from '@/constants/procedures';
 import { CardShadow, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useProcedureProgress } from '@/hooks/use-procedure-progress';
 import { useTheme } from '@/hooks/use-theme';
 import { useUserProfile } from '@/context/user-profile-context';
 
@@ -46,39 +47,30 @@ export default function DemarcheDetailScreen() {
   const theme = useTheme();
   const safeAreaInsets = useSafeAreaInsets();
 
-  const [step, setStep] = useState<WizardStep>('overview');
-  const [values, setValues] = useState<Record<string, string>>({});
-  const [prefilledKeys, setPrefilledKeys] = useState<Set<string>>(new Set());
-  const [checkedDocuments, setCheckedDocuments] = useState<
-    Record<string, boolean>
-  >({});
-
-  useEffect(() => {
-    if (!procedure) return;
-    const initialValues: Record<string, string> = {};
-    const initialPrefilled = new Set<string>();
-    for (const field of procedure.fields) {
-      const fromProfile = field.prefillFromProfile
-        ? profile[field.prefillFromProfile]
-        : undefined;
-      if (fromProfile) {
-        initialValues[field.key] = fromProfile;
-        initialPrefilled.add(field.key);
-      } else {
-        initialValues[field.key] = '';
-      }
-    }
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- réinitialisation au changement de démarche
-    setValues(initialValues);
-    setPrefilledKeys(initialPrefilled);
-    // Volontairement dépendant de `procedure.id` uniquement : on ne veut réinitialiser le
-    // formulaire qu'au changement de démarche, pas à chaque frappe dans le profil ailleurs.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [procedure?.id]);
+  const { progress, isLoaded, change } = useProcedureProgress(id);
+  const step: WizardStep = progress?.step ?? 'overview';
+  const values: Record<string, string> = {};
+  const prefilledKeys = new Set<string>();
+  for (const field of procedure?.fields ?? []) {
+    const fromProfile = field.prefillFromProfile
+      ? profile[field.prefillFromProfile]
+      : undefined;
+    values[field.key] = progress?.values[field.key] ?? fromProfile ?? '';
+    if (fromProfile && progress?.values[field.key] === undefined)
+      prefilledKeys.add(field.key);
+  }
+  const checkedDocuments = progress?.checkedDocuments ?? {};
+  const setStep = (next: WizardStep) => {
+    void change((current) => ({
+      ...current,
+      step: next,
+      values: { ...values, ...current.values },
+    })).catch(() => {});
+  };
 
   if (!procedure) {
     return (
-      <ThemedView style={styles.screen}>
+      <ThemedView type="pageBackground" style={styles.screen}>
         <ScreenHeaderBar
           title="Démarche introuvable"
           onBack={() => router.back()}
@@ -113,7 +105,16 @@ export default function DemarcheDetailScreen() {
     setStep('documents');
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
+    try {
+      await change((current) => ({
+        ...current,
+        status: 'completed',
+        values: { ...values, ...current.values },
+      }));
+    } catch {
+      return;
+    }
     const message =
       'Votre dossier est prêt. Vous pouvez le présenter à l’organisme ou le compléter en ligne.';
     if (Platform.OS === 'web') {
@@ -134,7 +135,7 @@ export default function DemarcheDetailScreen() {
   });
 
   return (
-    <ThemedView style={styles.screen}>
+    <ThemedView type="pageBackground" style={styles.screen}>
       <ScreenHeaderBar title={procedure.title} onBack={handleBack} />
       <ScrollView
         style={styles.scrollView}
@@ -220,7 +221,10 @@ export default function DemarcheDetailScreen() {
                 </View>
               </ThemedView>
 
-              <PrimaryButton onPress={() => setStep('form')}>
+              <PrimaryButton
+                disabled={!isLoaded}
+                onPress={() => setStep('form')}
+              >
                 Commencer
               </PrimaryButton>
             </ThemedView>
@@ -237,7 +241,10 @@ export default function DemarcheDetailScreen() {
                 values={values}
                 prefilledKeys={prefilledKeys}
                 onChange={(key, value) =>
-                  setValues((current) => ({ ...current, [key]: value }))
+                  void change((current) => ({
+                    ...current,
+                    values: { ...values, ...current.values, [key]: value },
+                  })).catch(() => {})
                 }
               />
               <PrimaryButton onPress={handleContinueFromForm}>
@@ -255,10 +262,13 @@ export default function DemarcheDetailScreen() {
                 documents={procedure.documents}
                 checked={checkedDocuments}
                 onToggle={(docId) =>
-                  setCheckedDocuments((current) => ({
+                  void change((current) => ({
                     ...current,
-                    [docId]: !current[docId],
-                  }))
+                    checkedDocuments: {
+                      ...current.checkedDocuments,
+                      [docId]: !current.checkedDocuments[docId],
+                    },
+                  })).catch(() => {})
                 }
               />
               <PrimaryButton onPress={() => setStep('recap')}>

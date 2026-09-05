@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  expo-router@57.0.19: 5a759124fb1ce8efb5ad57b2146f6e6cdca2eee21883979d04638eebdfab16ce
+
 importers:
 
   .:
@@ -58,7 +61,7 @@ importers:
         version: 57.0.2(expo@57.0.20)
       expo-router:
         specifier: 57.0.19
-        version: 57.0.19(dea1b00d79bfa5a0c1c404d7cc2744f2)
+        version: 57.0.19(patch_hash=5a759124fb1ce8efb5ad57b2146f6e6cdca2eee21883979d04638eebdfab16ce)(dea1b00d79bfa5a0c1c404d7cc2744f2)
       expo-secure-store:
         specifier: 57.0.3
         version: 57.0.3(expo@57.0.20)
@@ -4673,7 +4676,7 @@ snapshots:
       ws: 8.21.2
       zod: 3.25.76
     optionalDependencies:
-      expo-router: 57.0.19(dea1b00d79bfa5a0c1c404d7cc2744f2)
+      expo-router: 57.0.19(patch_hash=5a759124fb1ce8efb5ad57b2146f6e6cdca2eee21883979d04638eebdfab16ce)(dea1b00d79bfa5a0c1c404d7cc2744f2)
       react-native: 0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3)
     transitivePeerDependencies:
       - '@expo/dom-webview'
@@ -4950,7 +4953,7 @@ snapshots:
       react: 19.2.3
     optionalDependencies:
       '@expo/metro-runtime': 57.0.15(@expo/log-box@57.0.4)(expo@57.0.20)(react-dom@19.2.3(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
-      expo-router: 57.0.19(dea1b00d79bfa5a0c1c404d7cc2744f2)
+      expo-router: 57.0.19(patch_hash=5a759124fb1ce8efb5ad57b2146f6e6cdca2eee21883979d04638eebdfab16ce)(dea1b00d79bfa5a0c1c404d7cc2744f2)
       react-dom: 19.2.3(react@19.2.3)
     transitivePeerDependencies:
       - supports-color
@@ -6661,7 +6664,7 @@ snapshots:
     dependencies:
       react-native: 0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3)
 
-  expo-router@57.0.19(dea1b00d79bfa5a0c1c404d7cc2744f2):
+  expo-router@57.0.19(patch_hash=5a759124fb1ce8efb5ad57b2146f6e6cdca2eee21883979d04638eebdfab16ce)(dea1b00d79bfa5a0c1c404d7cc2744f2):
     dependencies:
       '@expo/log-box': 57.0.4(@expo/dom-webview@57.0.1)(expo@57.0.20)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)
       '@expo/metro-runtime': 57.0.15(@expo/log-box@57.0.4)(expo@57.0.20)(react-dom@19.2.3(react@19.2.3))(react-native@0.86.3(@babel/core@7.29.7)(@react-native/metro-config@0.86.3(@babel/core@7.29.7))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)

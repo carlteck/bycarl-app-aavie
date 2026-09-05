@@ -5,9 +5,10 @@ import { ListRow } from '@/components/list-row';
 import { SectionScreen } from '@/components/section-screen';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useSync } from '@/context/sync-context';
 import { useAuth } from '@/context/auth-context';
 import { AAVIE_SECTIONS } from '@/constants/modules';
-import { CardShadow, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function ProfilScreen() {
@@ -19,30 +20,18 @@ export default function ProfilScreen() {
     signOut,
   } = useAuth();
   const theme = useTheme();
+  const { status, retry } = useSync();
 
   return (
     <SectionScreen
       section={AAVIE_SECTIONS[3]}
       beforeModules={
-        <ThemedView style={styles.accountSection}>
-          <ThemedView
-            type="background"
-            style={[
-              styles.listCard,
-              CardShadow,
-              { borderColor: theme.cardBorder },
-            ]}
-          >
-            <ListRow
-              icon="person-outline"
-              label="Mes informations"
-              onPress={() => router.push('/profil/informations')}
-            />
-          </ThemedView>
-
+        <View style={styles.accountSection}>
           {/* Un compte existe toujours ici : sans compte, `AuthGate` affiche l'écran d'accueil
               et la navigation n'est jamais montée. */}
-          <View style={styles.avatarRow}>
+          <View
+            style={[styles.avatarRow, { backgroundColor: theme.turquoiseTint }]}
+          >
             <ThemedView type="primary" style={styles.avatar}>
               <ThemedText type="screenTitle" style={styles.avatarInitial}>
                 {(user?.first_name ?? '?').charAt(0).toUpperCase()}
@@ -56,18 +45,39 @@ export default function ProfilScreen() {
                 type="label"
                 style={{ color: theme.turquoiseTintText }}
               >
-                {user?.plan_name ?? 'Sans forfait'}
+                Votre espace personnel
               </ThemedText>
             </View>
           </View>
 
           <ThemedView
-            type="background"
-            style={[
-              styles.listCard,
-              CardShadow,
-              { borderColor: theme.cardBorder },
-            ]}
+            type="pageBackground"
+            style={[styles.listCard, { borderColor: theme.cardBorder }]}
+          >
+            <ListRow
+              icon="cloud-outline"
+              label={
+                status === 'synced'
+                  ? 'Données synchronisées'
+                  : status === 'syncing'
+                    ? 'Synchronisation en cours…'
+                    : 'Synchronisation en attente'
+              }
+              onPress={retry}
+            />
+            <ListRow
+              icon="person-outline"
+              label="Mes informations personnelles"
+              onPress={() => router.push('/profil/informations')}
+            />
+          </ThemedView>
+
+          <ThemedText type="sectionTitle" accessibilityRole="header">
+            Au quotidien
+          </ThemedText>
+          <ThemedView
+            type="pageBackground"
+            style={[styles.listCard, { borderColor: theme.cardBorder }]}
           >
             {biometricAvailable && (
               <>
@@ -93,14 +103,23 @@ export default function ProfilScreen() {
             <ListRow
               icon="wallet-outline"
               label="Mes crédits"
-              trailing={
-                user && user.role !== 'admin' ? (
-                  <ThemedText type="label" themeColor="primary">
-                    {user.credit_balance}
-                  </ThemedText>
-                ) : undefined
-              }
               onPress={() => router.push('/credits')}
+            />
+            <View
+              style={[styles.divider, { backgroundColor: theme.cardBorder }]}
+            />
+            <ListRow
+              icon="notifications-outline"
+              label="Notifications et rappels"
+              onPress={() => router.push('/notifications')}
+            />
+            <View
+              style={[styles.divider, { backgroundColor: theme.cardBorder }]}
+            />
+            <ListRow
+              icon="information-circle-outline"
+              label="À propos d’AAVIE"
+              onPress={() => router.push('/a-propos')}
             />
             <View
               style={[styles.divider, { backgroundColor: theme.cardBorder }]}
@@ -112,7 +131,7 @@ export default function ProfilScreen() {
               onPress={signOut}
             />
           </ThemedView>
-        </ThemedView>
+        </View>
       }
     />
   );
@@ -120,11 +139,11 @@ export default function ProfilScreen() {
 
 const styles = StyleSheet.create({
   accountSection: {
-    gap: Spacing.three,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.four,
+    gap: Spacing.four,
   },
   avatarRow: {
+    padding: 24,
+    borderRadius: 26,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
@@ -140,11 +159,12 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   avatarText: {
+    flex: 1,
     gap: Spacing.half,
   },
   listCard: {
-    borderRadius: Spacing.three,
-    borderWidth: 1,
+    borderRadius: 22,
+    borderWidth: 0,
     paddingHorizontal: Spacing.three,
   },
   divider: {

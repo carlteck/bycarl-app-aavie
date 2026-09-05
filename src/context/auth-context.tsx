@@ -9,29 +9,15 @@ import {
   type ReactNode,
 } from 'react';
 
-import { ApiError, apiFetch } from '@/lib/api';
+import type { User } from '@supabase/supabase-js';
+import { AppState, Platform } from 'react-native';
+import { ApiError } from '@/lib/api';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import {
-  clearSessionToken,
   isBiometricEnabled,
   setBiometricEnabled as persistBiometricEnabled,
-  writeSessionToken,
 } from '@/lib/session-storage';
 
-/**
- * Compte AAVIE, adossé à la même API PHP que le site : l'application n'a plus de compte local.
- * Un compte créé ici fonctionne sur le site et inversement, et le solde de crédits est le même
- * des deux côtés.
- *
- * Ce contexte ne décide pas quel écran afficher : `Stack.Protected` s'en charge dans
- * [src/app/_layout.tsx](../app/_layout.tsx) selon `isAuthenticated`. Ici on ne garde que la
- * session et le profil.
- *
- * `isAuthenticated` démarre à `false` de façon synchrone, jamais dans un état d'attente : un
- * statut qui ne se résoudrait que dans un `useEffect` ne se résoudrait jamais au rendu serveur
- * web (les effects n'y sont pas exécutés) et exporterait des pages vides. La zone publique est
- * le repli sûr, et c'est le bon contenu statique.
- */
-/** Le CDC vise autant les TPE et indépendants que les particuliers. */
 export type AccountType = 'individual' | 'company';
 
 /** Dossier d'entreprise, saisi à l'inscription d'un compte `company`. */
@@ -81,13 +67,61 @@ type AuthContextValue = {
   biometricEnabled: boolean;
   biometricAvailable: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  register: (input: RegisterInput) => Promise<void>;
-  /** Relit le profil : le solde de crédits change à chaque action facturée. */
+  register: (
+    input: RegisterInput,
+  ) => Promise<{ confirmationRequired: boolean }>;
+  /** Relit les informations du compte Supabase. */
   refreshUser: () => Promise<void>;
   toggleBiometrics: (enabled: boolean) => Promise<void>;
   confirmBiometrics: () => Promise<boolean>;
   signOut: () => Promise<void>;
 };
+
+function toAppUser(user: User): AavieUser {
+  const profile = user.user_metadata;
+  return {
+    id: user.id,
+    email: user.email ?? '',
+    first_name:
+      typeof profile.first_name === 'string' ? profile.first_name : '',
+    last_name: typeof profile.last_name === 'string' ? profile.last_name : '',
+    role: user.app_metadata.role === 'admin' ? 'admin' : 'client',
+    account_type: profile.account_type === 'company' ? 'company' : 'individual',
+    locale: typeof profile.locale === 'string' ? profile.locale : 'fr',
+    plan_id: null,
+    plan_name: null,
+    credit_balance: 0,
+    monthly_credits: 0,
+    rollover_months: 0,
+  };
+}
+
+function authError(error: { code?: string; message: string; status?: number }) {
+  const messages: Record<string, string> = {
+    invalid_credentials: 'Adresse e-mail ou mot de passe incorrect.',
+    email_not_confirmed:
+      'Confirmez votre adresse e-mail avec le lien reçu avant de vous connecter.',
+    user_already_exists: 'Un compte existe déjà avec cette adresse e-mail.',
+    weak_password: 'Choisissez un mot de passe plus robuste.',
+    over_request_rate_limit:
+      'Trop de tentatives. Réessayez dans quelques instants.',
+    over_email_send_rate_limit:
+      'Veuillez patienter avant de demander un nouvel e-mail.',
+  };
+  return new ApiError(
+    messages[error.code ?? ''] ??
+      'Connexion au service impossible. Réessayez dans un instant.',
+    error.status ?? 400,
+  );
+}
+
+function requireSupabase() {
+  if (!isSupabaseConfigured)
+    throw new ApiError(
+      'La connexion n’est pas encore configurée dans cette application.',
+      503,
+    );
+}
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -97,23 +131,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [biometricEnabled, setBiometricEnabledState] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
 
-  const loadSession = useCallback(async () => {
-    try {
-      const data = await apiFetch<{ user: AavieUser | null }>('/me.php');
-      setUser(data.user);
-    } catch {
-      // Serveur injoignable ou session expirée : on reste sur la zone publique plutôt que
-      // d'afficher une application vide. L'utilisateur pourra se reconnecter.
-      setUser(null);
-    } finally {
-      setSessionChecked(true);
-    }
-  }, []);
-
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- restauration asynchrone de session
-    loadSession();
-  }, [loadSession]);
+    if (!isSupabaseConfigured) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- configuration absente, aucune session à restaurer
+      setSessionChecked(true);
+      return;
+    }
+    let active = true;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
+      setUser(session?.user ? toAppUser(session.user) : null);
+      setSessionChecked(true);
+    });
+    const refresh = (state: string) => {
+      if (state === 'active') supabase.auth.startAutoRefresh();
+      else supabase.auth.stopAutoRefresh();
+    };
+    const appState =
+      Platform.OS !== 'web'
+        ? AppState.addEventListener('change', refresh)
+        : null;
+    if (Platform.OS !== 'web') refresh(AppState.currentState);
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+      appState?.remove();
+      if (Platform.OS !== 'web') supabase.auth.stopAutoRefresh();
+    };
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -131,75 +178,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
-  /**
-   * L'API retourne aujourd'hui une session par cookie ; elle retournera un jeton porteur quand
-   * il sera ajouté côté serveur. On stocke celui-ci dès qu'il est présent : le code d'appel n'a
-   * rien à changer le jour de la bascule.
-   */
-  const persistToken = useCallback(async (payload: { token?: string }) => {
-    if (payload.token) await writeSessionToken(payload.token);
+  const signIn = useCallback(async (email: string, password: string) => {
+    requireSupabase();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) throw authError(error);
+    setUser(toAppUser(data.user));
   }, []);
 
-  const signIn = useCallback(
-    async (email: string, password: string) => {
-      const data = await apiFetch<{ user: AavieUser; token?: string }>(
-        '/login.php',
-        {
-          method: 'POST',
-          body: JSON.stringify({ email, password }),
+  const register = useCallback(async (input: RegisterInput) => {
+    requireSupabase();
+    const { data, error } = await supabase.auth.signUp({
+      email: input.email,
+      password: input.password,
+      options: {
+        data: {
+          first_name: input.firstName,
+          last_name: input.lastName,
+          account_type: input.accountType,
+          locale: input.locale,
+          ...(input.accountType === 'company'
+            ? { company: input.company }
+            : {}),
         },
-      );
-      await persistToken(data);
-      // `login.php` ne renvoie pas le solde ni le forfait : on relit le profil complet.
-      await loadSession();
-    },
-    [loadSession, persistToken],
-  );
-
-  const register = useCallback(
-    async (input: RegisterInput) => {
-      const data = await apiFetch<{ user: AavieUser; token?: string }>(
-        '/register.php',
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            first_name: input.firstName,
-            last_name: input.lastName,
-            email: input.email,
-            password: input.password,
-            account_type: input.accountType,
-            locale: input.locale,
-            ...(input.accountType === 'company' && input.company
-              ? {
-                  legal_name: input.company.legalName,
-                  legal_form: input.company.legalForm,
-                  siret: input.company.siret,
-                  vat_number: input.company.vatNumber,
-                  address_line1: input.company.addressLine1,
-                  address_line2: input.company.addressLine2,
-                  postal_code: input.company.postalCode,
-                  city: input.company.city,
-                  contact_role: input.company.contactRole,
-                }
-              : {}),
-          }),
-        },
-      );
-      await persistToken(data);
-      await loadSession();
-    },
-    [loadSession, persistToken],
-  );
+      },
+    });
+    if (error) throw authError(error);
+    if (data.session && data.user) setUser(toAppUser(data.user));
+    return { confirmationRequired: !data.session };
+  }, []);
 
   const refreshUser = useCallback(async () => {
-    try {
-      const data = await apiFetch<{ user: AavieUser | null }>('/me.php');
-      setUser(data.user);
-    } catch (error) {
-      // Un rafraîchissement raté ne doit pas déconnecter : le solde affiché sera périmé, mais
-      // la limite réelle est appliquée par le serveur à chaque requête.
-      if (error instanceof ApiError && error.status === 401) setUser(null);
-    }
+    if (!isSupabaseConfigured) return;
+    const { data, error } = await supabase.auth.getUser();
+    if (!error && data.user) setUser(toAppUser(data.user));
   }, []);
 
   const toggleBiometrics = useCallback(async (enabled: boolean) => {
@@ -216,11 +230,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    // Le jeton local part d'abord : même si le serveur est injoignable, la déconnexion doit
-    // aboutir côté appareil, sinon l'utilisateur reste connecté malgré son action.
-    await clearSessionToken();
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
+    if (error) throw authError(error);
     setUser(null);
-    await apiFetch('/logout.php', { method: 'POST' }).catch(() => {});
   }, []);
 
   const value = useMemo(

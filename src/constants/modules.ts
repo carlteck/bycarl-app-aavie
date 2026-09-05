@@ -1,152 +1,122 @@
 import type { Ionicons } from '@expo/vector-icons';
-
-type IconName = keyof typeof Ionicons.glyphMap;
-
-/** Regroupement des 8 modules du cahier des charges AAVIE en 4 sections de navigation. */
 export type AavieModule = {
   id: string;
   title: string;
   description: string;
-  icon: IconName;
-  /** Route vers laquelle la carte navigue quand le module est implémenté (sinon "Bientôt disponible"). */
+  icon: keyof typeof Ionicons.glyphMap;
   href?: string;
+  comingSoon?: boolean;
 };
-
 export type AavieSection = {
   key: string;
   tabTitle: string;
   heading: string;
   intro: string;
-  icon: IconName;
+  icon: keyof typeof Ionicons.glyphMap;
   modules: AavieModule[];
 };
-
-export const AAVIE_SECTIONS: AavieSection[] = [
+export const SERVICE_GROUPS: { title: string; modules: AavieModule[] }[] = [
   {
-    key: 'accueil',
-    tabTitle: 'Accueil',
-    heading: 'Bienvenue sur AAVIE',
-    intro:
-      'Votre allié pour comprendre et réaliser vos démarches administratives en toute autonomie, à votre rythme.',
-    icon: 'home-outline',
+    title: 'Se faire aider',
     modules: [
       {
         id: 'assistant',
+        comingSoon: true,
         title: 'Assistant administratif',
-        description:
-          'Accompagnement personnalisé pour réaliser une démarche étape par étape, avec pré-remplissage automatique.',
+        description: 'Bientôt sur mobile : préparer une démarche, pas à pas.',
         icon: 'chatbubbles-outline',
         href: '/demarche',
       },
       {
-        id: 'planificateur',
-        title: 'Planificateur administratif',
-        description:
-          'Calendrier des rendez-vous et échéances, avec rappels automatiques.',
-        icon: 'calendar-outline',
-        href: '/planificateur',
-      },
-      {
-        id: 'rappels',
-        title: 'Notifications et rappels',
-        description:
-          'Alertes pour les échéances importantes : déclarations, renouvellements.',
-        icon: 'notifications-outline',
-        href: '/notifications',
-      },
-    ],
-  },
-  {
-    key: 'ressources',
-    tabTitle: 'Ressources',
-    heading: 'Centre de ressources',
-    intro:
-      'Guides, tutoriels et veille pour comprendre les démarches administratives et rédiger sereinement vos documents.',
-    icon: 'book-outline',
-    modules: [
-      {
-        id: 'centre-ressources',
-        title: 'Centre de ressources',
-        description:
-          'Guides pédagogiques, vidéos explicatives et fiches simplifiées.',
-        icon: 'book-outline',
-      },
-      {
-        id: 'veille',
-        title: 'Veille technique et informationnelle',
-        description:
-          'Suivi des évolutions législatives locales, ultramarines et nationales.',
-        icon: 'newspaper-outline',
-      },
-      {
         id: 'redaction',
         title: 'Aide rédactionnelle',
-        description:
-          'Modèles de lettres et documents, avec assistance à la rédaction.',
+        description: 'Préparer vos courriers administratifs.',
         icon: 'create-outline',
       },
     ],
   },
   {
-    key: 'annuaire',
-    tabTitle: 'Annuaire',
-    heading: 'Annuaire administratif',
-    intro:
-      'Retrouvez rapidement les coordonnées des services administratifs près de chez vous.',
-    icon: 'business-outline',
+    title: 'M’organiser',
     modules: [
       {
-        id: 'annuaire-local',
-        title: 'Services locaux',
-        description:
-          'Préfecture, mairie, CAF, CPAM et autres organismes de proximité.',
-        icon: 'location-outline',
-      },
-      {
-        id: 'annuaire-national',
-        title: 'Services nationaux',
-        description:
-          'Impôts, Pôle emploi, Sécurité sociale et administrations centrales.',
-        icon: 'flag-outline',
-      },
-      {
-        id: 'annuaire-contact',
-        title: 'Contact direct',
-        description:
-          'Coordonnées et accès rapide pour joindre chaque organisme.',
-        icon: 'call-outline',
-      },
-    ],
-  },
-  {
-    key: 'profil',
-    tabTitle: 'Profil',
-    heading: 'Mon espace',
-    intro:
-      "Vos documents, votre budget et les réglages d'accessibilité, personnalisables selon vos besoins.",
-    icon: 'person-circle-outline',
-    modules: [
-      {
-        id: 'sauvegarde',
-        title: 'Outil de sauvegarde',
-        description:
-          'Espace sécurisé pour numériser et organiser vos documents administratifs.',
-        icon: 'folder-outline',
+        id: 'planificateur',
+        title: 'Planificateur',
+        description: 'Retrouver vos rendez-vous et échéances.',
+        icon: 'calendar-outline',
+        href: '/planificateur',
       },
       {
         id: 'budget',
         title: 'Gestion de budget',
-        description:
-          'Suivi des revenus et dépenses, aide à la préparation des déclarations fiscales.',
-        icon: 'bar-chart-outline',
+        description: 'Suivre vos revenus et vos dépenses.',
+        icon: 'wallet-outline',
       },
       {
-        id: 'accessibilite',
-        title: 'Accessibilité',
-        description:
-          'Contraste, taille de texte, lecteur d’écran et navigation adaptée.',
-        icon: 'accessibility-outline',
+        id: 'coffre-fort',
+        title: 'Coffre-fort',
+        description: 'Classer vos documents administratifs.',
+        icon: 'shield-checkmark-outline',
       },
     ],
+  },
+  {
+    title: 'M’informer',
+    modules: [
+      {
+        id: 'veille',
+        title: 'Veille réglementaire',
+        description: 'Comprendre les évolutions qui vous concernent.',
+        icon: 'newspaper-outline',
+      },
+      {
+        id: 'centre-ressources',
+        title: 'Centre de ressources',
+        description: 'Consulter des guides pratiques et des tutoriels.',
+        icon: 'book-outline',
+      },
+      {
+        id: 'annuaire',
+        title: 'Annuaire administratif',
+        description: 'Trouver les coordonnées du bon organisme.',
+        icon: 'business-outline',
+        href: '/annuaire',
+      },
+    ],
+  },
+];
+export const AAVIE_SECTIONS: AavieSection[] = [
+  {
+    key: 'accueil',
+    tabTitle: 'Accueil',
+    heading: 'Mon espace',
+    intro: 'Vos services et vos priorités au même endroit.',
+    icon: 'home-outline',
+    modules: SERVICE_GROUPS.flatMap((group) => group.modules),
+  },
+  {
+    key: 'ressources',
+    tabTitle: 'Ressources',
+    heading: 'Centre de ressources',
+    intro: 'Des repères pour comprendre vos démarches administratives.',
+    icon: 'book-outline',
+    modules: SERVICE_GROUPS[2].modules.filter(
+      (module) => module.id !== 'annuaire',
+    ),
+  },
+  {
+    key: 'annuaire',
+    tabTitle: 'Annuaire',
+    heading: 'Annuaire administratif',
+    intro: 'Les bons contacts pour vos démarches.',
+    icon: 'business-outline',
+    modules: [],
+  },
+  {
+    key: 'profil',
+    tabTitle: 'Compte',
+    heading: 'Mon compte',
+    intro: 'Vos informations personnelles et vos réglages.',
+    icon: 'person-circle-outline',
+    modules: [],
   },
 ];

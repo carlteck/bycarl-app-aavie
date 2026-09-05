@@ -10,7 +10,7 @@ import { ScreenHeaderBar } from '@/components/screen-header-bar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useReminders } from '@/context/reminders-context';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { daysUntil } from '@/lib/reminder-date';
 
@@ -44,7 +44,7 @@ export default function NotificationsScreen() {
   });
 
   return (
-    <ThemedView style={styles.screen}>
+    <ThemedView type="background" style={styles.screen}>
       <ScreenHeaderBar
         title="Notifications et rappels"
         onBack={() => router.back()}
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   },
   content: {
     width: '100%',
-    maxWidth: MaxContentWidth,
+    maxWidth: 560,
     gap: Spacing.four,
   },
   section: {

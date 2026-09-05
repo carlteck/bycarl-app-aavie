@@ -30,11 +30,14 @@ export function ListRow({
 
   const content = (
     <View style={styles.row}>
-      <IconChip name={icon} variant={danger ? 'coral' : 'primary'} size={30} />
+      <IconChip
+        name={icon}
+        variant={danger ? 'coral' : 'turquoise'}
+        size={30}
+      />
       <ThemedText
         type="label"
         style={[styles.label, danger ? { color: theme.accent } : undefined]}
-        numberOfLines={1}
       >
         {label}
       </ThemedText>
@@ -68,8 +71,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
-    paddingVertical: Spacing.two,
-    minHeight: 44,
+    paddingVertical: Spacing.three,
+    minHeight: 56,
   },
   label: {
     flex: 1,

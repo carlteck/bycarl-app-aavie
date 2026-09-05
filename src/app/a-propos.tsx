@@ -57,7 +57,7 @@ export default function AProposScreen() {
   const theme = useTheme();
 
   return (
-    <ThemedView style={styles.screen}>
+    <ThemedView type="pageBackground" style={styles.screen}>
       <ScreenHeaderBar
         title="À propos d’AAVIE"
         onBack={() => router.back()}
@@ -65,7 +65,7 @@ export default function AProposScreen() {
       />
 
       <ScrollView
-        style={[styles.scrollView, { backgroundColor: theme.background }]}
+        style={[styles.scrollView, { backgroundColor: theme.pageBackground }]}
         contentContainerStyle={[
           styles.contentContainer,
           {

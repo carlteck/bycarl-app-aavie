@@ -11,7 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AnnuaireEntryCard } from '@/components/annuaire-entry-card';
-import { GradientHeader } from '@/components/gradient-header';
+import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import {
@@ -19,7 +19,7 @@ import {
   ANNUAIRE_ENTRIES,
   type AnnuaireCategory,
 } from '@/constants/annuaire';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type CategoryFilter = AnnuaireCategory | 'Tous';
@@ -57,11 +57,11 @@ export default function AnnuaireScreen() {
   });
 
   return (
-    <ThemedView style={styles.screen}>
-      <GradientHeader
+    <ThemedView type="background" style={styles.screen}>
+      <PageHeader
         icon="business-outline"
-        title="Annuaire administratif"
-        intro="Retrouvez rapidement les coordonnées des services administratifs près de chez vous."
+        title="Les bons contacts."
+        intro="Trouvez le bon interlocuteur pour avancer."
       />
       <FlatList
         style={[styles.list, { backgroundColor: theme.background }]}
@@ -78,7 +78,7 @@ export default function AnnuaireScreen() {
         )}
         ItemSeparatorComponent={() => <ThemedView style={styles.separator} />}
         ListHeaderComponent={
-          <ThemedView style={styles.header}>
+          <ThemedView type="background" style={styles.header}>
             <View
               style={[
                 styles.searchBar,
@@ -93,7 +93,7 @@ export default function AnnuaireScreen() {
               <TextInput
                 value={query}
                 onChangeText={setQuery}
-                placeholder="Rechercher un organisme (ex : CAF, impôts, préfecture)"
+                placeholder="CAF, mairie, préfecture…"
                 placeholderTextColor={theme.textSecondary}
                 autoCapitalize="none"
                 accessibilityLabel="Rechercher un organisme"
@@ -101,6 +101,13 @@ export default function AnnuaireScreen() {
               />
             </View>
 
+            <ThemedText
+              type="caption"
+              themeColor="textSecondary"
+              accessibilityLiveRegion="polite"
+            >
+              {results.length} organisme{results.length > 1 ? 's' : ''}
+            </ThemedText>
             <View style={styles.chipRow}>
               {(['Tous', ...ANNUAIRE_CATEGORIES] as CategoryFilter[]).map(
                 (item) => {
@@ -114,7 +121,7 @@ export default function AnnuaireScreen() {
                       hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
                     >
                       <ThemedView
-                        type={selected ? 'turquoise' : 'background'}
+                        type={selected ? 'turquoiseTint' : 'background'}
                         style={[
                           styles.filterChip,
                           {
@@ -167,7 +174,7 @@ const styles = StyleSheet.create({
   },
   header: {
     width: '100%',
-    maxWidth: MaxContentWidth,
+    maxWidth: 560,
     alignSelf: 'center',
     gap: Spacing.three,
     paddingTop: Spacing.four,
@@ -182,7 +189,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
     paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.three,
+    borderRadius: 18,
   },
   searchInput: {
     flex: 1,
@@ -196,13 +203,15 @@ const styles = StyleSheet.create({
   },
   filterChip: {
     paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.one,
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingVertical: Spacing.two,
     borderRadius: Spacing.five,
     borderWidth: 1,
   },
   cardWrapper: {
     width: '100%',
-    maxWidth: MaxContentWidth,
+    maxWidth: 560,
     alignSelf: 'center',
   },
   separator: {

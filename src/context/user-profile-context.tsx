@@ -1,26 +1,7 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react';
+import { createContext, useCallback, useContext, type ReactNode } from 'react';
+import { useLocalData } from '@/hooks/use-local-data';
+import { syncStore } from '@/lib/sync-store';
 
-import {
-  clearStoredProfile,
-  readStoredProfile,
-  writeStoredProfile,
-} from '@/lib/profile-storage';
-import { useAuth } from '@/context/auth-context';
-
-/**
- * Informations civiles utilisées pour pré-remplir les démarches administratives (module
- * Assistant, voir `constants/procedures.ts`). Distinct du profil d'authentification
- * (`auth-context.tsx`). Chaque copie hors-ligne est cloisonnée par compte afin qu'un changement
- * d'utilisateur sur le même téléphone n'expose jamais le profil précédent.
- */
 export type UserProfile = {
   civilite?: string;
   prenom?: string;
@@ -33,79 +14,43 @@ export type UserProfile = {
   telephone?: string;
   email?: string;
 };
-
-type UserProfileContextValue = {
+type Value = {
   profile: UserProfile;
   isLoaded: boolean;
   updateProfile: (patch: Partial<UserProfile>) => Promise<void>;
   resetProfile: () => Promise<void>;
 };
-
-const UserProfileContext = createContext<UserProfileContextValue | null>(null);
-
+const Context = createContext<Value | null>(null);
 export function UserProfileProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
-  const [profile, setProfile] = useState<UserProfile>({});
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    if (!user) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- effacement lors du changement de compte
-      setProfile({});
-      setIsLoaded(true);
-      return;
-    }
-    setIsLoaded(false);
-    (async () => {
-      try {
-        const stored = await readStoredProfile(user.id);
-        setProfile(stored);
-      } catch (error) {
-        console.warn('Échec de la lecture du profil civil local.', error);
-      } finally {
-        setIsLoaded(true);
-      }
-    })();
-  }, [user]);
-
+  const { userId, rows, isLoaded } = useLocalData('profile');
   const updateProfile = useCallback(
     async (patch: Partial<UserProfile>) => {
-      if (!user) return;
-      setProfile((current) => {
-        const next = { ...current, ...patch };
-        writeStoredProfile(user.id, next).catch((error) =>
-          console.warn(
-            'Échec de l’enregistrement du profil civil local.',
-            error,
-          ),
-        );
-        return next;
-      });
+      if (userId)
+        await syncStore.change(userId, 'profile', userId, (current) => ({
+          ...current,
+          ...patch,
+        }));
     },
-    [user],
+    [userId],
   );
-
   const resetProfile = useCallback(async () => {
-    if (!user) return;
-    await clearStoredProfile(user.id);
-    setProfile({});
-  }, [user]);
-
-  const value = useMemo(
-    () => ({ profile, isLoaded, updateProfile, resetProfile }),
-    [profile, isLoaded, updateProfile, resetProfile],
-  );
-
+    if (userId) await syncStore.change(userId, 'profile', userId, () => null);
+  }, [userId]);
   return (
-    <UserProfileContext.Provider value={value}>
+    <Context.Provider
+      value={{
+        profile: (rows[0]?.payload ?? {}) as UserProfile,
+        isLoaded,
+        updateProfile,
+        resetProfile,
+      }}
+    >
       {children}
-    </UserProfileContext.Provider>
+    </Context.Provider>
   );
 }
-
 export function useUserProfile() {
-  const context = useContext(UserProfileContext);
-  if (!context)
-    throw new Error('useUserProfile must be used within a UserProfileProvider');
-  return context;
+  const value = useContext(Context);
+  if (!value) throw new Error('UserProfileProvider absent');
+  return value;
 }

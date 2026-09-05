@@ -26,10 +26,6 @@ export const isSupabaseConfigured = Boolean(
   supabaseUrl && supabasePublishableKey,
 );
 
-/**
- * Supabase porte uniquement les données mobiles synchronisées. Les comptes, crédits, forfaits
- * et paiements continuent de passer par l'API AAVIE/ByCarl.
- */
 export const supabase = createClient(
   supabaseUrl ?? 'https://not-configured.invalid',
   supabasePublishableKey ?? 'not-configured',

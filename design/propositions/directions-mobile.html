@@ -1,0 +1,704 @@
+<style>
+  #aavie-directions {
+    --aa-paper: light-dark(#fbfcfa, #101b23);
+    --aa-ink: light-dark(#172c3a, #edf5f8);
+    --aa-muted: light-dark(#687982, #a7b9c2);
+    --aa-surface: light-dark(#fff, #192a35);
+    --aa-line: light-dark(#e2eae9, #304550);
+    --aa-mint: light-dark(#e1faf5, #133e38);
+    --aa-green: light-dark(#036b5c, #7ae5ce);
+    font-family:
+      Inter,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      sans-serif;
+    color: var(--aa-ink);
+    max-width: 600px;
+    margin: auto;
+  }
+  #aavie-directions * {
+    box-sizing: border-box;
+  }
+  #aavie-directions button {
+    font: inherit;
+    cursor: pointer;
+  }
+  #aavie-directions button:focus-visible {
+    outline: 3px solid #00b89f;
+    outline-offset: 3px;
+  }
+  #aavie-directions .aa-choices {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  #aavie-directions .aa-choice {
+    flex: 1;
+    min-width: 115px;
+    padding: 12px 10px;
+    border: 1px solid var(--aa-line);
+    background: var(--aa-surface);
+    color: var(--aa-ink);
+    border-radius: 12px;
+    font-size: 13px;
+    text-align: left;
+  }
+  #aavie-directions .aa-choice small {
+    display: block;
+    color: var(--aa-muted);
+    font-size: 11px;
+    margin-top: 4px;
+  }
+  #aavie-directions .aa-choice[aria-pressed='true'] {
+    background: #0e74c7;
+    color: white;
+    border-color: #0e74c7;
+  }
+  #aavie-directions .aa-choice[aria-pressed='true'] small {
+    color: #dfedfa;
+  }
+  #aavie-directions .aa-phone {
+    width: 100%;
+    max-width: 390px;
+    min-height: 770px;
+    margin: auto;
+    border: 1px solid var(--aa-line);
+    border-radius: 34px;
+    overflow: hidden;
+    background: var(--aa-paper);
+    box-shadow: 0 18px 50px #102c3a12;
+    position: relative;
+  }
+  #aavie-directions .aa-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 26px 0;
+    height: 46px;
+    font-size: 12px;
+    font-weight: 650;
+  }
+  #aavie-directions .aa-status span:last-child {
+    display: flex;
+    gap: 5px;
+  }
+  #aavie-directions .aa-status svg {
+    width: 14px;
+    height: 14px;
+  }
+  #aavie-directions .aa-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 19px;
+    letter-spacing: -0.6px;
+    font-weight: 750;
+  }
+  #aavie-directions .aa-mark {
+    background: #e81e4e;
+    color: white;
+    border-radius: 10px 10px 10px 2px;
+    width: 28px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+  }
+  #aavie-directions .aa-mark svg {
+    width: 19px;
+    height: 19px;
+  }
+  #aavie-directions .aa-bar {
+    padding: 22px 25px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  #aavie-directions .aa-link {
+    background: none;
+    border: none;
+    color: #0e74c7;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 10px 0;
+  }
+  #aavie-directions .aa-body {
+    padding: 0 25px;
+  }
+  #aavie-directions .aa-eyebrow {
+    font-size: 10px;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    font-weight: 650;
+    color: var(--aa-green);
+  }
+  #aavie-directions h1 {
+    font-size: 41px;
+    letter-spacing: -1.9px;
+    line-height: 1.06;
+    font-weight: 650;
+    margin: 15px 0;
+  }
+  #aavie-directions p {
+    font-size: 14px;
+    color: var(--aa-muted);
+    line-height: 1.6;
+    margin: 0;
+  }
+  #aavie-directions .aa-primary {
+    width: 100%;
+    min-height: 51px;
+    border: 0;
+    border-radius: 15px;
+    background: #0e74c7;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  #aavie-directions .aa-primary svg {
+    width: 19px;
+    height: 19px;
+  }
+  #aavie-directions .aa-footer {
+    padding: 18px 25px 22px;
+  }
+  #aavie-directions .aa-footer .aa-link {
+    display: block;
+    margin: 8px auto 0;
+    color: var(--aa-muted);
+    text-align: center;
+  }
+  #aavie-directions .aa-footer .aa-link b {
+    color: #0e74c7;
+  }
+  #aavie-directions .aa-home-indicator {
+    height: 4px;
+    width: 110px;
+    border-radius: 10px;
+    background: var(--aa-ink);
+    margin: 8px auto 12px;
+    opacity: 0.8;
+  }
+  #aavie-directions .aa-hidden {
+    display: none !important;
+  }
+  #aavie-directions .aa-caption {
+    font-size: 12px;
+    color: var(--aa-muted);
+    margin: 15px auto 0;
+    text-align: center;
+    max-width: 420px;
+    line-height: 1.6;
+  }
+  #aavie-directions .aa-view-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin: 0 0 14px;
+  }
+  #aavie-directions .aa-view-tabs button {
+    border: 0;
+    background: none;
+    color: var(--aa-muted);
+    padding: 8px 12px;
+    font-size: 12px;
+    border-radius: 9px;
+  }
+  #aavie-directions .aa-view-tabs button[aria-pressed='true'] {
+    background: var(--aa-mint);
+    color: var(--aa-green);
+  }
+  #aavie-directions .aa-art {
+    height: 244px;
+    position: relative;
+    margin: 6px -25px 0;
+    overflow: hidden;
+  }
+  #aavie-directions .aa-orbit {
+    position: absolute;
+    width: 221px;
+    height: 221px;
+    left: calc(50% - 111px);
+    top: 12px;
+    border-radius: 50%;
+    background: var(--aa-mint);
+  }
+  #aavie-directions .aa-orbit:before {
+    content: '';
+    position: absolute;
+    inset: 19px;
+    border: 1px solid #00b89f40;
+    border-radius: 50%;
+  }
+  #aavie-directions .aa-float {
+    position: absolute;
+    background: var(--aa-surface);
+    border: 1px solid var(--aa-line);
+    border-radius: 16px;
+    box-shadow: 0 12px 24px #1235460c;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+  }
+  #aavie-directions .aa-float b {
+    font-size: 12px;
+    display: block;
+    font-weight: 600;
+  }
+  #aavie-directions .aa-float small {
+    font-size: 10px;
+    color: var(--aa-muted);
+    display: block;
+    margin-top: 4px;
+  }
+  #aavie-directions .aa-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: var(--aa-mint);
+    color: var(--aa-green);
+    flex-shrink: 0;
+  }
+  #aavie-directions .aa-icon svg {
+    width: 19px;
+    height: 19px;
+  }
+  #aavie-directions .aa-float.one {
+    top: 40px;
+    left: 35px;
+    transform: rotate(-7deg);
+  }
+  #aavie-directions .aa-float.two {
+    top: 117px;
+    right: 30px;
+    transform: rotate(6deg);
+  }
+  #aavie-directions .aa-float.three {
+    bottom: 3px;
+    left: 73px;
+    border: 0;
+    background: #0e74c7;
+    color: #fff;
+    border-radius: 22px;
+    padding: 11px 17px;
+    font-size: 11px;
+    gap: 8px;
+  }
+  #aavie-directions .aa-float.three svg {
+    width: 15px;
+    height: 15px;
+  }
+  #aavie-directions .aa-value-line {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 20px 0 6px;
+    font-size: 11px;
+    color: var(--aa-green);
+  }
+  #aavie-directions .aa-value-line svg {
+    width: 16px;
+    height: 16px;
+  }
+  #aavie-directions .aa-b-intro {
+    padding: 35px 25px 25px;
+    background: #0e74c7;
+    color: white;
+    margin-top: 20px;
+    border-radius: 0 0 32px 32px;
+  }
+  #aavie-directions .aa-b-intro .aa-eyebrow {
+    color: #99f6e7;
+  }
+  #aavie-directions .aa-b-intro h1 {
+    font-size: 43px;
+    margin-top: 14px;
+  }
+  #aavie-directions .aa-b-intro p {
+    color: #d6e9f7;
+  }
+  #aavie-directions .aa-week {
+    display: flex;
+    gap: 6px;
+    margin: 25px 0 2px;
+    justify-content: space-between;
+  }
+  #aavie-directions .aa-day {
+    width: 40px;
+    text-align: center;
+    padding: 10px 0;
+    border-radius: 20px;
+    font-size: 10px;
+    color: #d6e9f7;
+  }
+  #aavie-directions .aa-day b {
+    display: block;
+    font-size: 17px;
+    margin-top: 7px;
+    color: white;
+  }
+  #aavie-directions .aa-day.active {
+    background: #00e7c7;
+    color: #036b5c;
+  }
+  #aavie-directions .aa-day.active b {
+    color: #173b36;
+  }
+  #aavie-directions .aa-timeline {
+    padding: 28px 25px 14px;
+  }
+  #aavie-directions .aa-timeline .aa-event {
+    border-left: 1px solid var(--aa-line);
+    padding: 0 0 23px 22px;
+    margin-left: 6px;
+    position: relative;
+  }
+  #aavie-directions .aa-event:before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 8px;
+    background: #00b89f;
+    position: absolute;
+    top: 5px;
+    left: -4px;
+  }
+  #aavie-directions .aa-event:last-child {
+    padding-bottom: 0;
+    border: 0;
+  }
+  #aavie-directions .aa-event b {
+    font-size: 14px;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 5px;
+  }
+  #aavie-directions .aa-event p {
+    font-size: 12px;
+  }
+  #aavie-directions .aa-c-title {
+    padding-top: 36px;
+  }
+  #aavie-directions .aa-c-title h1 {
+    font-size: 38px;
+  }
+  #aavie-directions .aa-chat {
+    margin: 27px 0 22px;
+    padding: 21px 18px;
+    background: var(--aa-mint);
+    border-radius: 3px 23px 23px 23px;
+  }
+  #aavie-directions .aa-chat .aa-eyebrow {
+    font-size: 9px;
+    margin-bottom: 11px;
+  }
+  #aavie-directions .aa-chat p {
+    font-size: 17px;
+    line-height: 1.5;
+    color: var(--aa-ink);
+    font-weight: 500;
+  }
+  #aavie-directions .aa-prompts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin: 17px 0 23px;
+  }
+  #aavie-directions .aa-prompt {
+    border: 1px solid var(--aa-line);
+    border-radius: 24px;
+    padding: 12px 15px;
+    min-height: 44px;
+    background: var(--aa-surface);
+    color: var(--aa-ink);
+    font-size: 12px;
+  }
+  #aavie-directions .aa-prompt[aria-pressed='true'] {
+    border-color: #0e74c7;
+    background: #0e74c7;
+    color: #fff;
+  }
+  #aavie-directions .aa-suggestion {
+    border-top: 1px solid var(--aa-line);
+    padding: 18px 0;
+    display: flex;
+    gap: 13px;
+    align-items: center;
+  }
+  #aavie-directions .aa-suggestion b {
+    font-size: 13px;
+    display: block;
+    margin-bottom: 4px;
+  }
+  #aavie-directions .aa-suggestion p {
+    font-size: 11px;
+  }
+  @media (max-width: 380px) {
+    #aavie-directions h1 {
+      font-size: 36px;
+    }
+    #aavie-directions .aa-phone {
+      border-radius: 24px;
+    }
+    #aavie-directions .aa-float.one {
+      left: 18px;
+    }
+    #aavie-directions .aa-float.two {
+      right: 15px;
+    }
+  }
+</style>
+<div id="aavie-directions" data-direction="a">
+  <div class="aa-choices" aria-label="Directions graphiques">
+    <button class="aa-choice" data-direction="a" aria-pressed="true">
+      A · L’essentiel<small>Visuel & accueillant</small>
+    </button>
+    <button class="aa-choice" data-direction="b" aria-pressed="false">
+      B · Mon quotidien<small>Agenda & priorités</small>
+    </button>
+    <button class="aa-choice" data-direction="c" aria-pressed="false">
+      C · À vos côtés<small>Accompagnement direct</small>
+    </button>
+  </div>
+  <div class="aa-phone" aria-label="Proposition d’interface mobile AAVIE">
+    <div class="aa-status">
+      <span>9:41</span
+      ><span
+        ><i data-lucide="signal" aria-hidden="true"></i
+        ><i data-lucide="wifi" aria-hidden="true"></i
+        ><i data-lucide="battery-full" aria-hidden="true"></i
+      ></span>
+    </div>
+    <div class="aa-bar">
+      <div class="aa-brand">
+        <span class="aa-mark"
+          ><i data-lucide="smile" aria-hidden="true"></i></span
+        >aavie
+      </div>
+      <button class="aa-link" data-action="about">À propos</button
+      ><span class="aa-avatar aa-hidden">O</span>
+    </div>
+    <div class="aa-welcome">
+      <section class="aa-version" data-version="a">
+        <div class="aa-body">
+          <div
+            class="aa-art"
+            role="img"
+            aria-label="Illustration de documents classés et de rendez-vous organisés"
+          >
+            <div class="aa-orbit"></div>
+            <div class="aa-float one">
+              <span class="aa-icon"
+                ><i data-lucide="folder-check" aria-hidden="true"></i
+              ></span>
+              <div>
+                <b>Chaque chose à sa place.</b
+                ><small>Vos démarches, plus claires.</small>
+              </div>
+            </div>
+            <div class="aa-float two">
+              <span class="aa-icon"
+                ><i data-lucide="calendar-check-2" aria-hidden="true"></i
+              ></span>
+              <div>
+                <b>L’esprit plus léger.</b
+                ><small>Vos dates importantes, réunies.</small>
+              </div>
+            </div>
+            <div class="aa-float three">
+              <i data-lucide="check" aria-hidden="true"></i>À votre rythme
+            </div>
+          </div>
+          <div class="aa-eyebrow" style="margin-top: 24px">
+            Votre quotidien, simplifié
+          </div>
+          <h1>Moins de papiers.<br />Plus de sérénité.</h1>
+          <p>
+            Un espace pour vos démarches,<br />et du temps pour ce qui compte.
+          </p>
+          <div class="aa-value-line">
+            <i data-lucide="map-pin" aria-hidden="true"></i>Pensé pour vous, en
+            Guyane.
+          </div>
+        </div>
+      </section>
+      <section class="aa-version aa-hidden" data-version="b">
+        <div class="aa-b-intro">
+          <div class="aa-eyebrow">Une chose après l’autre</div>
+          <h1>Vos démarches.<br />Votre rythme.</h1>
+          <p>Gardez une longueur d’avance<br />sur vos dates importantes.</p>
+          <div class="aa-week" aria-hidden="true">
+            <div class="aa-day">L<b>7</b></div>
+            <div class="aa-day">M<b>8</b></div>
+            <div class="aa-day active">M<b>9</b></div>
+            <div class="aa-day">J<b>10</b></div>
+            <div class="aa-day">V<b>11</b></div>
+            <div class="aa-day">S<b>12</b></div>
+          </div>
+        </div>
+        <div class="aa-timeline">
+          <div class="aa-event">
+            <b>Rassemblez vos échéances</b>
+            <p>Une vue claire sur ce qui vous attend.</p>
+          </div>
+          <div class="aa-event">
+            <b>Trouvez le bon interlocuteur</b>
+            <p>Les coordonnées utiles, à portée de main.</p>
+          </div>
+          <div class="aa-event">
+            <b>Avancez sereinement</b>
+            <p>Votre espace vous suit au quotidien.</p>
+          </div>
+        </div>
+      </section>
+      <section class="aa-version aa-hidden" data-version="c">
+        <div class="aa-body aa-c-title">
+          <div class="aa-eyebrow">Ensemble, c’est plus simple</div>
+          <h1>Par où<br />commence-t-on ?</h1>
+          <p>
+            Un besoin, une prochaine étape.<br />Retrouvez votre chemin avec
+            AAVIE.
+          </p>
+          <div class="aa-chat">
+            <div class="aa-eyebrow">Votre espace AAVIE</div>
+            <p>Qu’est-ce qui vous<br />amène aujourd’hui ?</p>
+          </div>
+          <div class="aa-prompts">
+            <button class="aa-prompt" data-topic="dates" aria-pressed="false">
+              Retenir une échéance</button
+            ><button
+              class="aa-prompt"
+              data-topic="contact"
+              aria-pressed="false"
+            >
+              Trouver un organisme</button
+            ><button class="aa-prompt" data-topic="aide" aria-pressed="false">
+              Préparer une démarche
+            </button>
+          </div>
+          <div class="aa-suggestion">
+            <span class="aa-icon"
+              ><i data-lucide="calendar-days" aria-hidden="true"></i
+            ></span>
+            <div>
+              <b class="aa-suggestion-title">Un quotidien mieux organisé</b>
+              <p class="aa-suggestion-copy">
+                Commencez par vos dates importantes.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <div class="aa-footer">
+        <button class="aa-primary" data-action="start">
+          Créer mon compte<i
+            data-lucide="arrow-right"
+            aria-hidden="true"
+          ></i></button
+        ><button class="aa-link" data-action="login">
+          Déjà un compte ? <b>Se connecter</b>
+        </button>
+      </div>
+    </div>
+    <div class="aa-home-indicator"></div>
+  </div>
+  <div class="aa-caption" role="status">
+    A · Une entrée visuelle, une promesse courte et une seule action principale.
+  </div>
+</div>
+<script>
+  (function () {
+    const root = document.getElementById('aavie-directions');
+    const state = { direction: 'a' };
+    const descriptions = {
+      a: 'A · Accueil public : une entrée visuelle, une promesse courte et une seule action principale.',
+      b: 'B · Accueil public : une présentation centrée sur l’organisation du quotidien.',
+      c: 'C · Accueil public : découverte des besoins couverts, avant de créer un compte.',
+    };
+    function render() {
+      root.dataset.direction = state.direction;
+      root
+        .querySelectorAll('.aa-choice')
+        .forEach((el) =>
+          el.setAttribute(
+            'aria-pressed',
+            String(el.dataset.direction === state.direction),
+          ),
+        );
+      root
+        .querySelectorAll('[data-version]')
+        .forEach((el) =>
+          el.classList.toggle(
+            'aa-hidden',
+            el.dataset.version !== state.direction,
+          ),
+        );
+      root.querySelector('.aa-caption').textContent =
+        descriptions[state.direction];
+    }
+    root.querySelectorAll('.aa-choice').forEach((el) =>
+      el.addEventListener('click', () => {
+        state.direction = el.dataset.direction;
+        render();
+      }),
+    );
+    root.querySelectorAll('[data-topic]').forEach((el) =>
+      el.addEventListener('click', () => {
+        root
+          .querySelectorAll('[data-topic]')
+          .forEach((p) => p.setAttribute('aria-pressed', String(p === el)));
+        const choices = {
+          dates: [
+            'Vos échéances, réunies',
+            'Un planificateur accessible avec votre compte.',
+          ],
+          contact: [
+            'Le bon contact, près de vous',
+            'Un annuaire accessible après connexion.',
+          ],
+          aide: [
+            'Des démarches plus claires',
+            'Accompagnement : fonctionnalité à venir.',
+          ],
+        };
+        const copy = choices[el.dataset.topic];
+        root.querySelector('.aa-suggestion-title').textContent = copy[0];
+        root.querySelector('.aa-suggestion-copy').textContent = copy[1];
+      }),
+    );
+    root.querySelectorAll('[data-action]').forEach((el) =>
+      el.addEventListener('click', () => {
+        const messages = {
+          start:
+            'Parcours : formulaire d’inscription → confirmation de l’adresse → accès à l’espace utilisateur.',
+          login:
+            'Parcours : formulaire de connexion → accès aux services de l’espace utilisateur.',
+          about:
+            'AAVIE · Présentation publique du service pour les usagers guyanais.',
+        };
+        root.querySelector('.aa-caption').textContent =
+          messages[el.dataset.action] || descriptions[state.direction];
+      }),
+    );
+    render();
+    if (globalThis.Tweak) {
+      const tweak = new Tweak({ container: root, onChange: render });
+      tweak.addSelect(state, 'direction', {
+        label: 'Direction de l’accueil public',
+        options: [
+          { label: 'A · L’essentiel', value: 'a' },
+          { label: 'B · Mon quotidien', value: 'b' },
+          { label: 'C · À vos côtés', value: 'c' },
+        ],
+      });
+    }
+  })();
+</script>

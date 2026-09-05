@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Platform, ScrollView, StyleSheet, View } from 'react-native';
@@ -10,7 +11,7 @@ import { ScreenHeaderBar } from '@/components/screen-header-bar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useReminders } from '@/context/reminders-context';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type FormState = 'hidden' | 'new' | string;
@@ -38,9 +39,9 @@ export default function PlanificateurScreen() {
   });
 
   return (
-    <ThemedView style={styles.screen}>
+    <ThemedView type="background" style={styles.screen}>
       <ScreenHeaderBar
-        title="Planificateur administratif"
+        title="Planificateur"
         onBack={() => router.back()}
         backLabel="Accueil"
       />
@@ -59,6 +60,35 @@ export default function PlanificateurScreen() {
         ]}
       >
         <View style={styles.content}>
+          {formState === 'hidden' && (
+            <View
+              style={[
+                styles.overview,
+                { backgroundColor: theme.turquoiseTint },
+              ]}
+            >
+              <View style={styles.overviewHeading}>
+                <ThemedText
+                  type="caption"
+                  themeColor="turquoiseTintText"
+                  style={{ letterSpacing: 1.2 }}
+                >
+                  CHAQUE DATE COMPTE
+                </ThemedText>
+                <Ionicons
+                  name="calendar-outline"
+                  size={24}
+                  color={theme.turquoiseTintText}
+                />
+              </View>
+              <ThemedText style={styles.overviewTitle}>
+                L’esprit libre, les dates en tête.
+              </ThemedText>
+              <ThemedText themeColor="textSecondary">
+                Retrouvez vos rendez-vous et les démarches à ne pas oublier.
+              </ThemedText>
+            </View>
+          )}
           {formState === 'new' || editing ? (
             <ReminderForm
               initialValue={editing}
@@ -86,7 +116,7 @@ export default function PlanificateurScreen() {
           <View style={styles.list}>
             {sorted.length === 0 ? (
               <ThemedText themeColor="textSecondary" style={styles.emptyState}>
-                Aucune échéance enregistrée pour l’instant.
+                Votre agenda commence ici. Ajoutez une première date à retenir.
               </ThemedText>
             ) : (
               sorted.map((reminder) => (
@@ -105,6 +135,19 @@ export default function PlanificateurScreen() {
 }
 
 const styles = StyleSheet.create({
+  overview: { padding: 24, borderRadius: 26, gap: 14 },
+  overviewHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  overviewTitle: {
+    fontSize: 28,
+    lineHeight: 34,
+    letterSpacing: -0.8,
+    fontWeight: '600',
+  },
   screen: {
     flex: 1,
   },
@@ -118,11 +161,11 @@ const styles = StyleSheet.create({
   },
   content: {
     width: '100%',
-    maxWidth: MaxContentWidth,
+    maxWidth: 560,
     gap: Spacing.four,
   },
   list: {
-    gap: Spacing.three,
+    gap: 0,
   },
   emptyState: {
     textAlign: 'center',

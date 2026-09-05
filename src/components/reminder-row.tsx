@@ -1,95 +1,82 @@
+import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-
-import { IconChip } from './icon-chip';
 import { ThemedText } from './themed-text';
-import { ThemedView } from './themed-view';
-
-import { PROCEDURE_CATEGORY_ICON } from '@/constants/procedures';
 import type { Reminder } from '@/constants/reminders';
-import { CardShadow, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { daysUntil, formatISODateLong } from '@/lib/reminder-date';
 
 type ReminderRowProps = {
   reminder: Reminder;
   onPress: () => void;
-  /** Élément affiché à droite (ex. `<Switch />`) ; par défaut un chevron. */
   trailing?: ReactNode;
 };
-
 function relativeLabel(days: number): string {
   if (days < 0) return `En retard de ${Math.abs(days)} j`;
   if (days === 0) return 'Aujourd’hui';
   if (days === 1) return 'Demain';
   return `Dans ${days} j`;
 }
-
 export function ReminderRow({ reminder, onPress, trailing }: ReminderRowProps) {
   const theme = useTheme();
   const days = daysUntil(reminder.dateISO);
-  const overdue = days < 0;
-
+  const [day, month, year] = formatISODateLong(reminder.dateISO).split(' ');
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${reminder.title}, échéance le ${formatISODateLong(reminder.dateISO)}`}
+      accessibilityLabel={`${reminder.title}, échéance le ${formatISODateLong(reminder.dateISO)}, ${relativeLabel(days)}`}
+      style={({ pressed }) => [
+        styles.row,
+        { borderColor: theme.cardBorder, opacity: pressed ? 0.6 : 1 },
+      ]}
     >
-      {({ pressed }) => (
-        <ThemedView
-          type="background"
-          style={[
-            styles.card,
-            CardShadow,
-            { borderColor: theme.cardBorder, opacity: pressed ? 0.85 : 1 },
-          ]}
+      <View style={[styles.date, { backgroundColor: theme.turquoiseTint }]}>
+        <ThemedText style={styles.day} themeColor="turquoiseTintText">
+          {day}
+        </ThemedText>
+        <ThemedText type="caption" themeColor="turquoiseTintText">
+          {month}
+        </ThemedText>
+      </View>
+      <View style={styles.body}>
+        <ThemedText type="label">{reminder.title}</ThemedText>
+        <ThemedText type="caption" themeColor="textSecondary">
+          {reminder.category} · {year}
+        </ThemedText>
+        <ThemedText
+          type="caption"
+          themeColor={days < 0 ? 'accent' : 'turquoiseTintText'}
         >
-          <IconChip
-            name={PROCEDURE_CATEGORY_ICON[reminder.category]}
-            variant="primary"
-          />
-          <View style={styles.body}>
-            <ThemedText type="label" numberOfLines={1}>
-              {reminder.title}
-            </ThemedText>
-            <View style={styles.metaRow}>
-              <ThemedText themeColor="textSecondary" type="caption">
-                {formatISODateLong(reminder.dateISO)}
-              </ThemedText>
-              <ThemedText
-                type="caption"
-                style={{
-                  color: overdue ? theme.accent : theme.turquoiseTintText,
-                }}
-              >
-                {relativeLabel(days)}
-              </ThemedText>
-            </View>
-          </View>
-          {trailing}
-        </ThemedView>
+          {relativeLabel(days)}
+        </ThemedText>
+      </View>
+      {trailing ?? (
+        <Ionicons
+          name="chevron-forward"
+          size={17}
+          color={theme.textSecondary}
+        />
       )}
     </Pressable>
   );
 }
-
 const styles = StyleSheet.create({
-  card: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three,
-    padding: Spacing.three,
-    borderRadius: Spacing.three,
-    borderWidth: 1,
+    gap: 14,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    minHeight: 88,
   },
-  body: {
-    flex: 1,
-    gap: Spacing.half,
+  date: {
+    minWidth: 54,
+    paddingHorizontal: 8,
+    paddingVertical: 12,
+    borderRadius: 16,
+    alignItems: 'center',
   },
-  metaRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.two,
-  },
+  day: { fontSize: 24, lineHeight: 28, fontWeight: '600', letterSpacing: -0.5 },
+  body: { flex: 1, gap: 5 },
 });

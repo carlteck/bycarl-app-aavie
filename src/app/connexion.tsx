@@ -20,10 +20,6 @@ import { ApiError, NetworkError } from '@/lib/api';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-/**
- * Connexion — équivalent de `/connexion` sur le site, même API et mêmes identifiants : un
- * compte créé sur le site fonctionne ici, et inversement.
- */
 export default function ConnexionScreen() {
   const { signIn } = useAuth();
   const theme = useTheme();
@@ -58,7 +54,7 @@ export default function ConnexionScreen() {
   }
 
   return (
-    <ThemedView style={styles.screen}>
+    <ThemedView type="pageBackground" style={styles.screen}>
       <ScreenHeaderBar
         title="Connexion"
         onBack={() => router.back()}
@@ -70,7 +66,7 @@ export default function ConnexionScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
-          style={[styles.flex, { backgroundColor: theme.background }]}
+          style={[styles.flex, { backgroundColor: theme.pageBackground }]}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={[
             styles.contentContainer,
@@ -81,7 +77,15 @@ export default function ConnexionScreen() {
             },
           ]}
         >
-          <View style={styles.container}>
+          <View
+            style={[
+              styles.container,
+              {
+                backgroundColor: theme.background,
+                borderColor: theme.cardBorder,
+              },
+            ]}
+          >
             <View style={styles.intro}>
               <ThemedText type="screenTitle">
                 Connexion à votre espace
@@ -164,7 +168,11 @@ const styles = StyleSheet.create({
   },
   container: {
     width: '100%',
-    maxWidth: MaxContentWidth,
+    maxWidth: Math.min(MaxContentWidth, 480),
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: Spacing.three,
     gap: Spacing.three,
   },
   intro: {

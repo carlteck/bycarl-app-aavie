@@ -8,6 +8,7 @@ import { useTheme } from '@/hooks/use-theme';
 
 type PrimaryButtonProps = {
   onPress: () => void;
+  disabled?: boolean;
   children: string;
   icon?: keyof typeof Ionicons.glyphMap;
 };
@@ -17,12 +18,15 @@ export function PrimaryButton({
   onPress,
   children,
   icon = 'arrow-forward',
+  disabled = false,
 }: PrimaryButtonProps) {
   const theme = useTheme();
 
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
+      accessibilityState={{ disabled }}
       accessibilityRole="button"
       accessibilityLabel={children}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -31,6 +35,7 @@ export function PrimaryButton({
         <View
           style={[
             styles.button,
+            { opacity: disabled ? 0.5 : 1 },
             { backgroundColor: pressed ? theme.primaryPressed : theme.primary },
           ]}
         >
@@ -46,15 +51,18 @@ export function PrimaryButton({
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 44,
+    minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.two,
-    borderRadius: Spacing.five,
+    borderRadius: 10,
     paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.two,
   },
   label: {
+    flexShrink: 1,
+    textAlign: 'center',
     color: '#FFFFFF',
   },
 });

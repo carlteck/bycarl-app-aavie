@@ -29,6 +29,7 @@ export function TextField({ label, secure, style, ...rest }: TextFieldProps) {
       <ThemedText type="label">{label}</ThemedText>
       <View style={styles.inputRow}>
         <TextInput
+          accessibilityLabel={label}
           placeholderTextColor={theme.textSecondary}
           secureTextEntry={secure && !revealed}
           style={[
@@ -78,7 +79,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     borderWidth: 1,
-    borderRadius: Spacing.three,
+    borderRadius: 10,
   },
   inputWithAction: {
     paddingRight: Spacing.six,

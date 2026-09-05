@@ -1,33 +1,26 @@
-import * as SecureStore from 'expo-secure-store';
-
 import type { Reminder } from '@/constants/reminders';
-import { readReminders, writeReminders } from '@/lib/offline-database.native';
-
-const LEGACY_REMINDERS_KEY = 'aavie_reminders';
-let writeQueue = Promise.resolve();
+import { syncStore } from './sync-store';
 
 export async function readStoredReminders(userId: string): Promise<Reminder[]> {
-  const reminders = await readReminders(userId);
-  if (reminders.length > 0) return reminders;
-
-  const legacy = await SecureStore.getItemAsync(LEGACY_REMINDERS_KEY);
-  if (!legacy) return [];
-  try {
-    const migrated = JSON.parse(legacy) as Reminder[];
-    await writeReminders(userId, migrated);
-    await SecureStore.deleteItemAsync(LEGACY_REMINDERS_KEY);
-    return migrated;
-  } catch {
-    return [];
-  }
+  return (await syncStore.read(userId, 'reminder')).map(
+    (row) => row.payload as Reminder,
+  );
 }
-
-export function writeStoredReminders(
+export async function writeStoredReminders(
   userId: string,
   reminders: Reminder[],
 ): Promise<void> {
-  writeQueue = writeQueue
-    .catch(() => {})
-    .then(() => writeReminders(userId, reminders));
-  return writeQueue;
+  const existing = await readStoredReminders(userId);
+  for (const reminder of reminders) {
+    if (
+      JSON.stringify(existing.find((row) => row.id === reminder.id)) !==
+      JSON.stringify(reminder)
+    ) {
+      await syncStore.change(userId, 'reminder', reminder.id, () => reminder);
+    }
+  }
+  for (const reminder of existing) {
+    if (!reminders.some((row) => row.id === reminder.id))
+      await syncStore.change(userId, 'reminder', reminder.id, () => null);
+  }
 }

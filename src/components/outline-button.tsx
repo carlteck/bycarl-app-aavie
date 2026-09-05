@@ -46,7 +46,11 @@ export function OutlineButton({
             {icon && (
               <Ionicons name={icon} size={15} color={Palette.deepBlue} />
             )}
-            <ThemedText type="label" themeColor="primary" numberOfLines={1}>
+            <ThemedText
+              type="label"
+              themeColor="primary"
+              style={{ flexShrink: 1 }}
+            >
               {children}
             </ThemedText>
           </View>
@@ -58,10 +62,10 @@ export function OutlineButton({
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 44,
+    minHeight: 48,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.five,
+    borderRadius: 10,
     borderWidth: 1.5,
     borderColor: Palette.deepBlue,
     alignItems: 'center',

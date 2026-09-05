@@ -10,7 +10,7 @@ export default function AppTabs() {
   return (
     <NativeTabs
       backgroundColor={colors.background}
-      indicatorColor={colors.backgroundElement}
+      indicatorColor={colors.turquoiseTint}
       labelStyle={{ selected: { color: colors.primary } }}
       // Sur Android, le mode par défaut ('auto') masque le libellé des onglets non
       // sélectionnés dès qu'il y en a 4+ — mauvais pour l'accessibilité (CDC : navigation
@@ -20,7 +20,7 @@ export default function AppTabs() {
       <NativeTabs.Trigger name="accueil">
         <NativeTabs.Trigger.Label>Accueil</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          sf="house.fill"
+          sf="house"
           md="home"
           selectedColor={colors.primary}
         />
@@ -29,7 +29,7 @@ export default function AppTabs() {
       <NativeTabs.Trigger name="ressources">
         <NativeTabs.Trigger.Label>Ressources</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          sf="books.vertical.fill"
+          sf="books.vertical"
           md="menu_book"
           selectedColor={colors.primary}
         />
@@ -38,16 +38,16 @@ export default function AppTabs() {
       <NativeTabs.Trigger name="annuaire">
         <NativeTabs.Trigger.Label>Annuaire</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          sf="building.2.fill"
+          sf="building.2"
           md="business"
           selectedColor={colors.primary}
         />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="profil">
-        <NativeTabs.Trigger.Label>Profil</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Compte</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          sf="person.crop.circle.fill"
+          sf="person.crop.circle"
           md="account_circle"
           selectedColor={colors.primary}
         />

@@ -1,9 +1,11 @@
 import { router, Slot, usePathname } from 'expo-router';
 import type { ReactNode } from 'react';
-import { Pressable, View, StyleSheet, useColorScheme } from 'react-native';
+import { Pressable, View, StyleSheet } from 'react-native';
 
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
+
+import { useTheme } from '@/hooks/use-theme';
 
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 
@@ -31,7 +33,7 @@ const TABS: TabDef[] = [
     label: 'Annuaire',
     match: (p) => p.startsWith('/annuaire'),
   },
-  { href: '/profil', label: 'Profil', match: (p) => p.startsWith('/profil') },
+  { href: '/profil', label: 'Compte', match: (p) => p.startsWith('/profil') },
 ];
 
 /**
@@ -80,7 +82,7 @@ function TabButton({
       style={({ pressed }) => pressed && styles.pressed}
     >
       <ThemedView
-        type={focused ? 'backgroundSelected' : 'backgroundElement'}
+        type={focused ? 'turquoiseTint' : 'background'}
         style={styles.tabButtonView}
       >
         <ThemedText
@@ -94,15 +96,8 @@ function TabButton({
   );
 }
 
-/**
- * Barre flottante en verre (blur CSS) plutôt qu'un aplat opaque — cohérent avec le bandeau
- * d'en-tête dégradé de chaque écran (voir gradient-header.web.tsx). `backdropFilter` en style
- * inline plutôt que `expo-blur` : ce dernier est une vue native qui ne se rend pas côté serveur
- * (SSR web d'Expo Router), là où un simple `View` + CSS reste toujours sûr.
- */
 function CustomTabList({ children }: { children: ReactNode }) {
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
+  const theme = useTheme();
 
   return (
     <View style={styles.tabListContainer}>
@@ -110,17 +105,11 @@ function CustomTabList({ children }: { children: ReactNode }) {
         style={[
           styles.innerContainer,
           {
-            backgroundColor: isDark
-              ? 'rgba(21,24,28,0.7)'
-              : 'rgba(255,255,255,0.7)',
-            backdropFilter: 'blur(20px)',
+            backgroundColor: theme.background,
+            borderTopColor: theme.cardBorder,
           },
         ]}
       >
-        <ThemedText type="label" themeColor="primary" style={styles.brandText}>
-          AAVIE
-        </ThemedText>
-
         {children}
       </View>
     </View>
@@ -132,26 +121,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tabListContainer: {
-    position: 'absolute',
+    bottom: 0,
     width: '100%',
-    padding: Spacing.three,
     justifyContent: 'center',
     alignItems: 'center',
     flexDirection: 'row',
   },
   innerContainer: {
-    borderRadius: Spacing.five,
+    borderTopWidth: 1,
     flexGrow: 1,
     maxWidth: MaxContentWidth,
     overflow: 'hidden',
     paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.five,
+    paddingHorizontal: Spacing.two,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
-  },
-  brandText: {
-    marginRight: 'auto',
+    justifyContent: 'space-around',
   },
   pressed: {
     opacity: 0.7,
@@ -159,7 +144,7 @@ const styles = StyleSheet.create({
   tabButtonView: {
     minHeight: 44,
     paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.three,
+    paddingHorizontal: Spacing.two,
     borderRadius: Spacing.three,
     alignItems: 'center',
     justifyContent: 'center',

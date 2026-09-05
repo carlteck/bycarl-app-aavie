@@ -41,8 +41,9 @@ export const Colors = {
   light: {
     text: Palette.anthracite,
     background: Palette.white,
-    backgroundElement: '#EEF4F8',
-    backgroundSelected: '#DCE9F5',
+    pageBackground: '#F9FAFB',
+    backgroundElement: '#F3F4F6',
+    backgroundSelected: '#E1FAF5',
     textSecondary: Palette.midGrey,
     primary: Palette.deepBlue,
     primaryPressed: Palette.deepBluePressed,
@@ -55,11 +56,12 @@ export const Colors = {
     turquoiseTint: '#E1FAF5',
     turquoiseTintText: '#036B5C',
     coralTint: '#FDEAEF',
-    cardBorder: 'rgba(34,34,34,0.08)',
+    cardBorder: '#E5E7EB',
   },
   dark: {
     text: '#FFFFFF',
-    background: '#000000',
+    background: '#15181C',
+    pageBackground: '#0C0F12',
     backgroundElement: '#1C2126',
     backgroundSelected: '#22303D',
     textSecondary: '#A9AFB8',
@@ -143,8 +145,8 @@ export const Fonts = Platform.select({
  */
 export const TypeScale = {
   brand: { fontSize: 30, fontWeight: 700, lineHeight: 36 },
-  screenTitle: { fontSize: 24, fontWeight: 700, lineHeight: 30 },
-  sectionTitle: { fontSize: 18, fontWeight: 700, lineHeight: 24 },
+  screenTitle: { fontSize: 24, fontWeight: 600, lineHeight: 30 },
+  sectionTitle: { fontSize: 18, fontWeight: 600, lineHeight: 24 },
   body: { fontSize: 16, fontWeight: 400, lineHeight: 24 },
   label: { fontSize: 14, fontWeight: 600, lineHeight: 20 },
   caption: { fontSize: 12, fontWeight: 400, lineHeight: 16 },

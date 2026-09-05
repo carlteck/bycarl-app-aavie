@@ -33,6 +33,8 @@ export function ScreenHeaderBar({
         styles.bar,
         {
           paddingTop: insets.top + Spacing.two,
+          paddingLeft: insets.left + Spacing.four,
+          paddingRight: insets.right + Spacing.four,
           borderBottomColor: theme.cardBorder,
         },
       ]}
@@ -50,7 +52,11 @@ export function ScreenHeaderBar({
         </ThemedText>
       </Pressable>
       <View style={styles.titleRow}>
-        <ThemedText type="sectionTitle" numberOfLines={1}>
+        <ThemedText
+          type="screenTitle"
+          style={{ fontSize: 30, lineHeight: 36, letterSpacing: -0.8 }}
+          accessibilityRole="header"
+        >
           {title}
         </ThemedText>
       </View>
@@ -60,15 +66,14 @@ export function ScreenHeaderBar({
 
 const styles = StyleSheet.create({
   bar: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: Spacing.three,
-    paddingBottom: Spacing.two,
+    paddingBottom: Spacing.three,
     gap: Spacing.one,
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 44,
+    minHeight: 48,
     alignSelf: 'flex-start',
   },
   titleRow: {
