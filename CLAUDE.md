@@ -242,9 +242,10 @@ ouvre la voie ; ceux d'avant ne peuvent être mis à jour que par un nouveau bin
 
 ### Ce que la soumission automatique exige, et qui ne s'automatise pas
 
-- **Google Play refuse son API tant qu'un premier AAB n'a pas été déposé à la main** dans la Play
-  Console. Tant que ce dépôt manuel n'a pas eu lieu, `submit_android` échouera quelle que soit la
-  configuration. Ce n'est pas un défaut du workflow.
+- ✅ **Premiers dépôts manuels faits sur les deux stores le 5 septembre 2026.** Google Play refuse
+  son API tant qu'un premier AAB n'a pas été déposé à la main dans la Play Console : ce verrou est
+  levé, il n'y a pas à y revenir. Le mentionner ici parce qu'un `submit_android` en échec ferait
+  sinon suspecter ce point en premier, à tort.
 - **Une clé de compte de service Google** doit être enregistrée côté EAS (`eas credentials -p android`).
   Elle ne doit jamais entrer dans le dépôt — même règle que les secrets Supabase.
 - **Une clé d'API App Store Connect** doit exister côté EAS. En interactif, EAS la crée au premier
