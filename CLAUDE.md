@@ -248,8 +248,21 @@ ouvre la voie ; ceux d'avant ne peuvent être mis à jour que par un nouveau bin
   sinon suspecter ce point en premier, à tort.
 - **Une clé de compte de service Google** doit être enregistrée côté EAS (`eas credentials -p android`).
   Elle ne doit jamais entrer dans le dépôt — même règle que les secrets Supabase.
-- **Une clé d'API App Store Connect** doit exister côté EAS. En interactif, EAS la crée au premier
-  `eas submit`; dans un workflow, elle doit déjà être là.
+- ⚠️ **Une clé d'API App Store Connect doit exister côté EAS — c'est ce qui a fait échouer le
+  premier envoi iOS**, le 5 septembre 2026. Le build réussissait, l'`.ipa` se téléchargeait,
+  l'identifiant de lot était bien lu, et l'étape `prepare_asc_api_key` s'arrêtait sur
+  « eas-cli failed to resolve submission config ». Un workflow ne peut pas créer cette clé : il
+  faut la déclarer une fois, en interactif, depuis un poste connecté au compte Apple :
+
+  ```bash
+  eas submit --platform ios --latest    # crée la clé si absente, ET envoie le dernier build
+  # ou, sans rien envoyer :
+  eas credentials -p ios                # → App Store Connect API Key → Set up
+  ```
+
+  Les deux jobs d'envoi portent `EXPO_DEBUG: '1'` : sans lui, le message d'échec ne dit ni quelle
+  clé manque ni pourquoi, et EAS invite lui-même à l'activer.
+
 - `ascAppId` vaut **`6808865116`** (identifiant Apple de la fiche, relevé dans App Store Connect).
   L'UGS `AAVIE-IOS-001` et l'identifiant de lot `com.aavie.app` n'ont pas leur place ici.
 
