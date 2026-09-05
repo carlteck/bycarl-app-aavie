@@ -1,17 +1,71 @@
-name: Builds de production
+# Publication de production, déclenchée par un push sur `main`.
+#
+# Deux chemins, choisis d'après le message de commit :
+#
+# - message SANS `[OTA]`  → builds iOS et Android, puis envoi aux stores ;
+# - message AVEC `[OTA]`  → mise à jour par-dessus l'air (EAS Update), sans build.
+#
+# Pourquoi ce choix appartient au message de commit et non à une branche : la question n'est pas
+# « quel code », c'est « ce changement touche-t-il le natif ». Seule la personne qui écrit le
+# commit le sait, et elle le sait au moment de l'écrire.
+#
+# ⚠️ Un `[OTA]` ne peut porter que du JavaScript et des ressources. Ajouter une dépendance
+# native, changer un plugin de configuration ou monter de SDK change l'empreinte
+# (`runtimeVersion: fingerprint`) : la mise à jour est bien publiée, mais aucun binaire existant
+# ne la reçoit — elle attend silencieusement le prochain build. C'est volontairement un silence
+# et non un plantage : la politique `fingerprint` refuse de livrer du JavaScript à un binaire
+# qui n'en contient pas le code natif.
+
+name: Publication de production
 
 on:
   push:
     branches: ['main']
 
 jobs:
+  # ─────────── Chemin 1 : build complet + envoi aux stores ───────────
+
   build_android:
+    name: Build Android
+    if: ${{ !contains(github.commit_message, '[OTA]') }}
     type: build
     params:
       platform: android
       profile: production
+
   build_ios:
+    name: Build iOS
+    if: ${{ !contains(github.commit_message, '[OTA]') }}
     type: build
     params:
       platform: ios
       profile: production
+
+  submit_android:
+    name: Envoi vers Google Play (piste interne)
+    needs: [build_android]
+    type: submit
+    params:
+      build_id: ${{ needs.build_android.outputs.build_id }}
+      profile: production
+
+  submit_ios:
+    name: Envoi vers App Store Connect (TestFlight)
+    needs: [build_ios]
+    type: submit
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      profile: production
+
+  # ─────────── Chemin 2 : mise à jour par-dessus l'air ───────────
+
+  publish_update:
+    name: Mise à jour OTA
+    if: ${{ contains(github.commit_message, '[OTA]') }}
+    type: update
+    params:
+      platform: all
+      # Le canal, et non la branche : c'est lui que portent les builds de production
+      # (`channel: production` dans eas.json). Viser une branche livrerait la mise à jour
+      # à des binaires qui n'écoutent pas ce canal.
+      channel: production

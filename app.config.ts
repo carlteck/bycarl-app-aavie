@@ -9,6 +9,19 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   icon: './assets/images/icon.png',
   scheme: 'aavie',
   userInterfaceStyle: 'automatic',
+  // Mises à jour par-dessus l'air (EAS Update). L'URL est celle du projet EAS ; le canal est
+  // porté par le profil de build (`eas.json`), pas ici, pour qu'un même code puisse alimenter
+  // plusieurs canaux.
+  updates: {
+    url: 'https://u.expo.dev/9762887e-a5cd-4403-b0dd-35c149a87225',
+  },
+  // `fingerprint` plutôt que `appVersion` : EAS calcule une empreinte des dépendances natives
+  // et de la configuration. Une mise à jour OTA n'atteint donc QUE les binaires réellement
+  // compatibles. Avec `appVersion`, un commit touchant du natif serait diffusé à des binaires
+  // qui n'en contiennent pas le code — l'application planterait au démarrage chez l'usager.
+  runtimeVersion: {
+    policy: 'fingerprint',
+  },
   ios: {
     bundleIdentifier: 'com.aavie.app',
     infoPlist: {
