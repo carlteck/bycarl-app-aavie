@@ -9,6 +9,12 @@
 # « quel code », c'est « ce changement touche-t-il le natif ». Seule la personne qui écrit le
 # commit le sait, et elle le sait au moment de l'écrire.
 #
+# ⚠️ Le marqueur doit OUVRIR le message (`startsWith`), pas y apparaître (`contains`).
+# `github.commit_message` contient le message entier, corps compris : avec `contains`, un commit
+# qui se contente de MENTIONNER `[OTA]` — pour l'expliquer, ou pour dire qu'il n'en est pas un —
+# bascule en mise à jour et saute les builds. C'est exactement ce qui est arrivé au commit qui a
+# introduit ce fichier.
+#
 # ⚠️ Un `[OTA]` ne peut porter que du JavaScript et des ressources. Ajouter une dépendance
 # native, changer un plugin de configuration ou monter de SDK change l'empreinte
 # (`runtimeVersion: fingerprint`) : la mise à jour est bien publiée, mais aucun binaire existant
@@ -27,7 +33,7 @@ jobs:
 
   build_android:
     name: Build Android
-    if: ${{ !contains(github.commit_message, '[OTA]') }}
+    if: ${{ !startsWith(github.commit_message, '[OTA]') }}
     type: build
     params:
       platform: android
@@ -35,7 +41,7 @@ jobs:
 
   build_ios:
     name: Build iOS
-    if: ${{ !contains(github.commit_message, '[OTA]') }}
+    if: ${{ !startsWith(github.commit_message, '[OTA]') }}
     type: build
     params:
       platform: ios
@@ -61,7 +67,7 @@ jobs:
 
   publish_update:
     name: Mise à jour OTA
-    if: ${{ contains(github.commit_message, '[OTA]') }}
+    if: ${{ startsWith(github.commit_message, '[OTA]') }}
     type: update
     params:
       platform: all

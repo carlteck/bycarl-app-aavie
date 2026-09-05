@@ -162,3 +162,18 @@ expo-env.d.ts
 
 # Local Expo dev client device registry (machine-specific)
 /.expo/devices.json
+
+# Identifiants de signature et de dépôt sur les stores. Ils n'ont rien à faire dans un dépôt :
+# EAS les conserve pour nous (`eas credentials`), mais leur téléchargement laisse souvent un
+# fichier dans le projet — et un dépôt public ou partagé suffit alors à livrer la capacité de
+# publier sous l'identité d'AAVIE. Même règle que les secrets Supabase.
+*.p8
+*.p12
+*.mobileprovision
+*.keystore
+*.jks
+google-services.json
+GoogleService-Info.plist
+# Clé de compte de service Google Play, quel que soit le nom qu'on lui donne au téléchargement.
+*service-account*.json
+play-store-*.json

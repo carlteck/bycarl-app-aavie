@@ -217,8 +217,13 @@ l'autre chemin selon le **message de commit** :
 
 Le déclencheur est le message de commit et non une branche, parce que la question n'est pas
 « quel code » mais « ce changement touche-t-il le natif » — seule la personne qui écrit le commit
-le sait, et elle le sait au moment de l'écrire. La syntaxe repose sur `github.commit_message` et
-`contains()`, tous deux fournis par EAS Workflows.
+le sait, et elle le sait au moment de l'écrire.
+
+⚠️ **Le marqueur doit OUVRIR le message**, pas y apparaître : la condition est `startsWith`, pas
+`contains`. `github.commit_message` contient le message entier, corps compris — avec `contains`,
+un commit qui se contente de _mentionner_ `[OTA]`, ne serait-ce que pour l'expliquer, saute les
+builds et publie une mise à jour. C'est arrivé au commit qui a introduit ce workflow : son corps
+décrivait les deux chemins, le mot a suffi.
 
 ⚠️ **`runtimeVersion` est en politique `fingerprint`**, pas `appVersion`. EAS calcule une empreinte
 des dépendances natives et de la configuration : une mise à jour OTA n'atteint que les binaires
