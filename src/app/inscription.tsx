@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconChip } from '@/components/icon-chip';
@@ -10,7 +10,8 @@ import { ScreenHeaderBar } from '@/components/screen-header-bar';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { useAuth } from '@/context/auth-context';
+import { useAuth, type AccountType } from '@/context/auth-context';
+import { DEFAULT_LOCALE, LOCALES } from '@/constants/locales';
 import { ApiError, NetworkError } from '@/lib/api';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -29,6 +30,22 @@ export default function InscriptionScreen() {
   const theme = useTheme();
   const safeAreaInsets = useSafeAreaInsets();
 
+  const [accountType, setAccountType] = useState<AccountType>('individual');
+  const [locale, setLocale] = useState(DEFAULT_LOCALE.code);
+  const [company, setCompany] = useState({
+    legalName: '',
+    legalForm: '',
+    siret: '',
+    vatNumber: '',
+    addressLine1: '',
+    addressLine2: '',
+    postalCode: '',
+    city: '',
+    contactRole: '',
+  });
+  const setCompanyField = (field: keyof typeof company) => (value: string) =>
+    setCompany((current) => ({ ...current, [field]: value }));
+
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -43,14 +60,27 @@ export default function InscriptionScreen() {
       return;
     }
 
+    if (accountType === 'company') {
+      const requis = [company.legalName, company.legalForm, company.siret, company.addressLine1, company.postalCode, company.city];
+      if (requis.some((value) => value.trim() === '')) {
+        setError('Les informations de l’entreprise sont incomplètes.');
+        return;
+      }
+    }
+
     setError(null);
     setIsSubmitting(true);
     try {
+      // Le SIRET et le numéro de TVA sont validés par le serveur (`Company::fromPayload`) :
+      // dupliquer la règle de Luhn ici la ferait diverger au premier ajustement.
       await register({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: email.trim(),
         password,
+        accountType,
+        locale,
+        company: accountType === 'company' ? company : undefined,
       });
     } catch (e) {
       setError(
@@ -89,8 +119,143 @@ export default function InscriptionScreen() {
               </ThemedText>
             </View>
 
+            <View style={styles.section}>
+              <ThemedText type="label">Vous vous inscrivez en tant que</ThemedText>
+              <View style={styles.choiceRow}>
+                {(
+                  [
+                    { value: 'individual', label: 'Particulier', hint: 'Démarches personnelles' },
+                    { value: 'company', label: 'Entreprise', hint: 'TPE, indépendant' },
+                  ] as const
+                ).map((option) => {
+                  const selected = accountType === option.value;
+                  return (
+                    <Pressable
+                      key={option.value}
+                      onPress={() => setAccountType(option.value)}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected }}
+                      style={[
+                        styles.choice,
+                        {
+                          borderColor: selected ? theme.primary : theme.cardBorder,
+                          backgroundColor: selected ? theme.turquoiseTint : theme.background,
+                        },
+                      ]}>
+                      <ThemedText type="label">{option.label}</ThemedText>
+                      <ThemedText type="caption" themeColor="textSecondary">
+                        {option.hint}
+                      </ThemedText>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+
+            <View style={styles.section}>
+              <ThemedText type="label">Langue de votre espace</ThemedText>
+              <View style={styles.localeRow}>
+                {LOCALES.map((entry) => {
+                  const selected = locale === entry.code;
+                  return (
+                    <Pressable
+                      key={entry.code}
+                      onPress={() => setLocale(entry.code)}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected }}
+                      accessibilityLabel={entry.label}
+                      style={[
+                        styles.localeChip,
+                        {
+                          borderColor: selected ? theme.primary : theme.cardBorder,
+                          backgroundColor: selected ? theme.turquoiseTint : theme.background,
+                        },
+                      ]}>
+                      <ThemedText type="caption">
+                        {entry.flag} {entry.label}
+                      </ThemedText>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              {/* L'interface mobile n'est pas encore traduite : le choix est enregistré sur le
+                  compte et suit l'utilisateur sur le site, mais les écrans restent en français. */}
+              <ThemedText type="caption" themeColor="textSecondary">
+                L’application reste en français pour l’instant ; votre choix s’applique à votre
+                compte et au site.
+              </ThemedText>
+            </View>
+
+            {accountType === 'company' && (
+              <View style={[styles.companyBlock, { borderColor: theme.cardBorder }]}>
+                <ThemedText type="sectionTitle">Votre entreprise</ThemedText>
+
+                <TextField
+                  label="Raison sociale"
+                  value={company.legalName}
+                  onChangeText={setCompanyField('legalName')}
+                  placeholder="Nom de l’entreprise"
+                  autoCapitalize="words"
+                />
+                <TextField
+                  label="Forme juridique"
+                  value={company.legalForm}
+                  onChangeText={setCompanyField('legalForm')}
+                  placeholder="SARL, SAS, auto-entrepreneur…"
+                />
+                <TextField
+                  label="SIRET"
+                  value={company.siret}
+                  onChangeText={setCompanyField('siret')}
+                  placeholder="14 chiffres"
+                  keyboardType="number-pad"
+                />
+                <TextField
+                  label="N° de TVA (facultatif)"
+                  value={company.vatNumber}
+                  onChangeText={setCompanyField('vatNumber')}
+                  placeholder="FR12345678901"
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                />
+                <TextField
+                  label="Adresse du siège"
+                  value={company.addressLine1}
+                  onChangeText={setCompanyField('addressLine1')}
+                  placeholder="Numéro et rue"
+                />
+                <TextField
+                  label="Complément d’adresse (facultatif)"
+                  value={company.addressLine2}
+                  onChangeText={setCompanyField('addressLine2')}
+                  placeholder="Bâtiment, résidence…"
+                />
+                <TextField
+                  label="Code postal"
+                  value={company.postalCode}
+                  onChangeText={setCompanyField('postalCode')}
+                  placeholder="97300"
+                  keyboardType="number-pad"
+                />
+                <TextField
+                  label="Ville"
+                  value={company.city}
+                  onChangeText={setCompanyField('city')}
+                  placeholder="Cayenne"
+                  autoCapitalize="words"
+                />
+                <TextField
+                  label="Votre fonction (facultatif)"
+                  value={company.contactRole}
+                  onChangeText={setCompanyField('contactRole')}
+                  placeholder="Gérant, présidente…"
+                  autoCapitalize="sentences"
+                />
+              </View>
+            )}
+
             <TextField
-              label="Prénom"
+              label={accountType === 'company' ? 'Prénom du contact' : 'Prénom'}
               value={firstName}
               onChangeText={setFirstName}
               placeholder="Votre prénom"
@@ -101,7 +266,7 @@ export default function InscriptionScreen() {
             />
 
             <TextField
-              label="Nom"
+              label={accountType === 'company' ? 'Nom du contact' : 'Nom'}
               value={lastName}
               onChangeText={setLastName}
               placeholder="Votre nom"
@@ -196,6 +361,39 @@ const styles = StyleSheet.create({
   intro: {
     gap: Spacing.one,
     marginBottom: Spacing.two,
+  },
+  section: {
+    gap: Spacing.two,
+  },
+  choiceRow: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+  },
+  choice: {
+    flex: 1,
+    gap: Spacing.half,
+    minHeight: 44,
+    padding: Spacing.three,
+    borderWidth: 1,
+    borderRadius: Spacing.four,
+  },
+  localeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
+  localeChip: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.three,
+    borderWidth: 1,
+    borderRadius: Spacing.five,
+  },
+  companyBlock: {
+    gap: Spacing.three,
+    padding: Spacing.three,
+    borderWidth: 1,
+    borderRadius: Spacing.four,
   },
   notice: {
     flexDirection: 'row',

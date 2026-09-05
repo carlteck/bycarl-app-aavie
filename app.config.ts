@@ -10,7 +10,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   scheme: "aavie",
   userInterfaceStyle: "automatic",
   ios: {
-    bundleIdentifier: "fr.aavie.app",
+    bundleIdentifier: "com.aavie.app",
     infoPlist: {
       CFBundleDevelopmentRegion: "fr",
       NSFaceIDUsageDescription:
@@ -19,7 +19,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   android: {
-    package: "fr.aavie.app",
+    package: "com.aavie.app",
     adaptiveIcon: {
       backgroundColor: "#0E74C7",
       foregroundImage: "./assets/images/android-icon-foreground.png",
@@ -48,6 +48,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-status-bar",
     "expo-web-browser",
     "expo-secure-store",
+    "expo-sqlite",
   ],
   experiments: {
     typedRoutes: true,

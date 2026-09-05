@@ -23,12 +23,30 @@ import {
  * web (les effects n'y sont pas exécutés) et exporterait des pages vides. La zone publique est
  * le repli sûr, et c'est le bon contenu statique.
  */
+/** Le CDC vise autant les TPE et indépendants que les particuliers. */
+export type AccountType = 'individual' | 'company';
+
+/** Dossier d'entreprise, saisi à l'inscription d'un compte `company`. */
+export interface CompanyInput {
+  legalName: string;
+  legalForm: string;
+  siret: string;
+  vatNumber?: string;
+  addressLine1: string;
+  addressLine2?: string;
+  postalCode: string;
+  city: string;
+  contactRole?: string;
+}
+
 export interface AavieUser {
   id: string;
   first_name: string;
   last_name: string;
   email: string;
   role: 'client' | 'admin';
+  account_type: AccountType;
+  locale: string;
   plan_id: string | null;
   plan_name: string | null;
   credit_balance: number;
@@ -41,6 +59,10 @@ export interface RegisterInput {
   lastName: string;
   email: string;
   password: string;
+  accountType: AccountType;
+  locale: string;
+  /** Fourni uniquement pour un compte entreprise ; ignoré côté serveur sinon. */
+  company?: CompanyInput;
 }
 
 type AuthContextValue = {
@@ -81,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- restauration asynchrone de session
     loadSession();
   }, [loadSession]);
 
@@ -131,6 +154,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           last_name: input.lastName,
           email: input.email,
           password: input.password,
+          account_type: input.accountType,
+          locale: input.locale,
+          ...(input.accountType === 'company' && input.company
+            ? {
+                legal_name: input.company.legalName,
+                legal_form: input.company.legalForm,
+                siret: input.company.siret,
+                vat_number: input.company.vatNumber,
+                address_line1: input.company.addressLine1,
+                address_line2: input.company.addressLine2,
+                postal_code: input.company.postalCode,
+                city: input.company.city,
+                contact_role: input.company.contactRole,
+              }
+            : {}),
         }),
       });
       await persistToken(data);

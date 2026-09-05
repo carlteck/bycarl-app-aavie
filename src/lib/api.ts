@@ -16,9 +16,15 @@ import { readSessionToken } from './session-storage';
  * Le jour où l'API retourne un jeton à la connexion, rien ne change ici : `login()` le stocke et
  * l'en-tête part tout seul.
  */
-const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL ??
-  'https://quizzical-nightingale.167-114-114-69.plesk.page/api';
+/**
+ * Domaine de production. `EXPO_PUBLIC_API_URL` le remplace en développement, par exemple
+ * `EXPO_PUBLIC_API_URL=https://aavie-api.test pnpm start` contre le site Herd local.
+ *
+ * ⚠️ Cette valeur est figée dans le binaire au moment du build : la changer impose un nouveau
+ * build, pas une simple mise à jour du bundle. D'où le domaine définitif et jamais une URL
+ * technique d'hébergeur, qui n'a pas vocation à survivre à un déménagement.
+ */
+const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? 'https://aavieapp.com/api';
 
 export class ApiError extends Error {
   status: number;

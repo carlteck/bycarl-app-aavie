@@ -5,6 +5,23 @@
 Application mobile/web (Expo) de simplification des démarches administratives.
 Cahier des charges complet rédigé par Amanda GOMME (01/07/2024) — résumé ci-dessous pour guider le développement.
 
+**Domaine officiel** : [aavieapp.com](https://aavieapp.com/). Utiliser ce domaine pour les liens
+publics, les URL de retour d'authentification et les mentions produit.
+
+**Nom de l'application** : AAVIE (`name` dans [app.config.ts](app.config.ts)).
+
+**Identifiants natifs** : `com.aavie.app` (`ios.bundleIdentifier` et `android.package`), décidé le
+2026-09-04. Ils remplacent `fr.aavie.app`, dont les deux fiches de test ont été supprimées chez
+Apple et Google. Un identifiant n'a pas besoin de correspondre à un domaine détenu : il doit
+seulement être unique dans chaque store.
+
+⚠️ **Ce choix est définitif.** Google Play réserve un nom de paquet **à vie** dès le premier envoi
+d'un binaire : `fr.aavie.app` est désormais brûlé et ne pourra jamais être réutilisé, et
+`com.aavie.app` le sera à son tour au premier dépôt. Ne jamais le modifier ensuite — cela
+créerait une seconde application, sans les installations ni les avis de la première. Après tout
+changement d'identifiant, régénérer les projets natifs (`expo prebuild --clean`) et prévoir de
+nouveaux identifiants de signature côté EAS.
+
 ## Contexte et mission
 
 - Public prioritaire : Guyane française et DROM-COM, confrontés à l'illectronisme, l'illettrisme et à l'isolement géographique face à une administration de plus en plus dématérialisée.
@@ -79,7 +96,58 @@ Ajouté en session pour donner du relief/repérage visuel à l'interface (au-del
 
 ## Décisions d'architecture actées
 
-- **Persistance : API PHP partagée avec le site** (dépôt `site_aavie`) pour le compte, le profil et les crédits. Restent locaux, faute d'endpoints dédiés à ce jour : le profil civil de préremplissage ([profile-storage.ts](src/lib/profile-storage.ts)) et les rappels ([reminders-storage.ts](src/lib/reminders-storage.ts)) — à rebrancher sur `profile.php` et `deadlines.php`.
+### Supabase mobile et conservation hors ligne
+
+Supabase détient uniquement les données personnelles qui bénéficient d'une synchronisation entre
+appareils. MySQL reste l'unique propriétaire des comptes, forfaits, crédits, facturation, audit,
+RGPD, conversations IA, catalogue de démarches et contenus éditoriaux. L'API ByCarl maintient le
+miroir serveur nécessaire hors mobile ; ce miroir ne doit jamais devenir une seconde source
+modifiable du grand livre de crédits.
+
+Le schéma Supabase versionné vit dans `supabase/migrations/`. La migration initiale
+`202609040001_initial_mobile_data.sql` crée :
+
+| Table | Clé | Contenu |
+|---|---|---|
+| `mobile_profiles` | `user_id UUID` | civilité, prénoms, nom de naissance, naissance, adresse, téléphone et e-mail de préremplissage |
+| `mobile_reminders` | `id UUID`, `user_id UUID` | titre, date, catégorie, activation des notifications, anticipation et suppression logique |
+| `mobile_procedure_progress` | `id UUID`, unicité `(user_id, procedure_id)` | étape courante, statut, valeurs du formulaire, documents cochés et suppression logique |
+
+Toutes les tables ont la RLS activée avec refus par défaut. Les politiques `select`, `insert`,
+`update` et `delete` sont séparées et imposent `auth.uid() = user_id`. Le rôle `anon` n'a aucun
+droit sur ces tables. `user_id` n'a volontairement pas encore de FK vers `auth.users` : il doit
+pouvoir correspondre soit à un compte Supabase Auth, soit au `sub` d'un JWT reconnu par Supabase
+et émis par ByCarl. Ne figer cette FK qu'après décision définitive sur l'identité.
+
+Le client mobile utilise `EXPO_PUBLIC_SUPABASE_URL` et
+`EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. La clé publishable est conçue pour être exposée dans le
+bundle ; aucune clé `service_role`, `sb_secret_...` ou secret de signature JWT ne doit entrer dans
+le dépôt, `.env.local`, EAS ou `app.config.ts`.
+
+Les tests pgTAP vivent dans `supabase/tests/database/initial_mobile_data.test.sql` et couvrent,
+pour chacune des trois tables, une lecture autorisée et une insertion refusée pour un autre
+utilisateur.
+
+La migration `202609040002_restrict_rls_helper.sql` retire à `PUBLIC`, `anon` et `authenticated`
+le droit d'exécuter la fonction administrative `public.rls_auto_enable()`. Cette fonction est
+`SECURITY DEFINER` et ne doit jamais être appelable via `/rest/v1/rpc`; conserver cette révocation
+si la fonction est recréée ou modifiée depuis le tableau de bord Supabase.
+
+La table technique `sync_internal._sync_outbox` n'est pas une donnée applicative et n'est pas
+exposée par la Data API. La migration `202609040003_explicitly_deny_sync_outbox.sql` lui ajoute
+néanmoins quatre politiques explicites refusant `select`, `insert`, `update` et `delete` à `anon`
+et `authenticated`. Le backend privilégié conserve son accès par contournement RLS ; ne jamais
+ouvrir cette table au client mobile.
+
+Côté appareil natif, `expo-sqlite` porte la copie immédiate et persistante. La table locale
+`sync_outbox` garde une opération idempotente par donnée tant qu'elle n'a pas été acceptée par
+Supabase. `expo-secure-store` est réservé aux jetons et à la migration des anciennes données, pas
+au stockage métier. Les copies locales sont cloisonnées par identifiant utilisateur.
+
+- **Persistance hybride** : l'API PHP partagée avec le site reste propriétaire du compte, des
+  forfaits et des crédits. Supabase porte le profil civil, les rappels et l'avancement personnel
+  des démarches ; SQLite en conserve la copie hors ligne et l'outbox sur l'appareil. Le catalogue
+  des démarches et les contenus éditoriaux restent servis par l'API PHP.
 - **Authentification : compte serveur partagé avec le site.** Plus aucun compte local, plus de code PIN : l'application parle à la même API PHP que le site (dépôt `site_aavie`), avec les mêmes endpoints `login.php`, `register.php`, `me.php`, `logout.php`. Un compte créé dans l'application fonctionne sur le site et inversement, et le solde de crédits est le même des deux côtés. `register.php` écrit le rôle en dur à `'client'` côté serveur : il n'est jamais lu depuis la requête.
 - **Couche réseau** : [src/lib/api.ts](src/lib/api.ts), pendant mobile du `src/lib/api.ts` du site. Base d'URL dans `EXPO_PUBLIC_API_URL`. Deux mécanismes cohabitent volontairement : `Authorization: Bearer <jeton>` dès qu'un jeton est stocké, `credentials: 'include'` sinon. **Le jeton porteur est la cible** — le cookie `aavie_session` a `lifetime => 0` et sa survie au redémarrage de l'app n'est garantie par aucun contrat iOS/Android ; en attendant que l'API l'émette, la session par cookie fonctionne sur natif. Le jour de la bascule, rien ne change côté app. `NetworkError` est distinct d'`ApiError` : un réseau mobile qui tombe n'est pas un refus du serveur.
 - **Le jeton vit dans le Keychain / Keystore** ([src/lib/session-storage.ts](src/lib/session-storage.ts)), jamais dans un stockage en clair sur natif. Repli `localStorage` sur web, moins sûr, comme partout ailleurs.
@@ -108,8 +176,8 @@ Ajouté en session pour donner du relief/repérage visuel à l'interface (au-del
   - **Zone publique routée** : `/` (accueil), `/a-propos`, `/connexion`, `/inscription`. Tout le reste est derrière `Stack.Protected`.
   - **Crédits** ([src/app/credits.tsx](src/app/credits.tsx)) : solde, grille tarifaire et historique lus dans `credits.php`, accessibles depuis l'onglet Profil qui affiche le solde en pastille. Écran en lecture seule, aucun achat (voir la note Apple/Google plus haut).
   - **Annuaire administratif** ([src/app/(tabs)/annuaire.tsx](src/app/(tabs)/annuaire.tsx)) : module abouti — recherche, filtres par catégorie, appel téléphonique, site web, itinéraire. ⚠️ Données encore **en dur** dans [src/constants/annuaire.ts](src/constants/annuaire.ts) alors que `contacts.php` existe côté API : à rebrancher.
-  - **Planificateur et Notifications** ([planificateur.tsx](src/app/planificateur.tsx), [notifications.tsx](src/app/notifications.tsx)) : écrans réels, mais rappels stockés **localement** ([reminders-storage.ts](src/lib/reminders-storage.ts)) alors que `deadlines.php` existe. ⚠️ Et **aucune notification n'est réellement planifiée** : `expo-notifications` n'est pas installé, l'écran ne fait que lister. Fonctionnalité en trompe-l'œil, à traiter comme telle.
+  - **Planificateur et Notifications** ([planificateur.tsx](src/app/planificateur.tsx), [notifications.tsx](src/app/notifications.tsx)) : écrans réels ; rappels persistés dans SQLite avec une outbox prête pour Supabase. ⚠️ La vidange distante attend encore le contrat d'identité/JWT et **aucune notification n'est réellement planifiée** : `expo-notifications` n'est pas installé, l'écran ne fait que lister.
   - **Assistant démarches** ([src/app/demarche/](src/app/demarche/)) : assistant pas-à-pas avec préremplissage, mais **sans IA** — 351 lignes de démarches en dur dans [src/constants/procedures.ts](src/constants/procedures.ts). Le vrai assistant IA (`ai/chat.php`, facturé en crédits) n'est pas branché.
-  - **Profil civil** ([user-profile-context.tsx](src/context/user-profile-context.tsx)) : encore local alors que `profile.php` existe. À rebrancher.
+  - **Profil civil** ([user-profile-context.tsx](src/context/user-profile-context.tsx)) : persisté dans SQLite avec une outbox prête pour `mobile_profiles` dans Supabase ; la vidange distante attend le contrat d'identité/JWT.
   - Pas encore implémenté : assistant IA, aide rédactionnelle, veille réglementaire, centre de ressources, gestion de budget, coffre-fort, multilingue.
   - Composants de démo du starter Expo (hint-row, collapsible, web-badge, external-link, l'export `AnimatedIcon` inutilisé) supprimés — plus aucune trace de l'app Expo par défaut dans `src/`.
