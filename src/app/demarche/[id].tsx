@@ -20,7 +20,12 @@ import { useUserProfile } from '@/context/user-profile-context';
 
 type WizardStep = 'overview' | 'form' | 'documents' | 'recap';
 const STEP_LABELS = ['Vos informations', 'Documents', 'Récapitulatif'];
-const STEP_INDEX: Record<WizardStep, number> = { overview: -1, form: 0, documents: 1, recap: 2 };
+const STEP_INDEX: Record<WizardStep, number> = {
+  overview: -1,
+  form: 0,
+  documents: 1,
+  recap: 2,
+};
 
 function showMissingFieldsAlert(labels: string[]) {
   const message = `Merci de compléter : ${labels.join(', ')}.`;
@@ -33,7 +38,10 @@ function showMissingFieldsAlert(labels: string[]) {
 
 export default function DemarcheDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const procedure = useMemo(() => PROCEDURES.find((item) => item.id === id), [id]);
+  const procedure = useMemo(
+    () => PROCEDURES.find((item) => item.id === id),
+    [id],
+  );
   const { profile } = useUserProfile();
   const theme = useTheme();
   const safeAreaInsets = useSafeAreaInsets();
@@ -41,14 +49,18 @@ export default function DemarcheDetailScreen() {
   const [step, setStep] = useState<WizardStep>('overview');
   const [values, setValues] = useState<Record<string, string>>({});
   const [prefilledKeys, setPrefilledKeys] = useState<Set<string>>(new Set());
-  const [checkedDocuments, setCheckedDocuments] = useState<Record<string, boolean>>({});
+  const [checkedDocuments, setCheckedDocuments] = useState<
+    Record<string, boolean>
+  >({});
 
   useEffect(() => {
     if (!procedure) return;
     const initialValues: Record<string, string> = {};
     const initialPrefilled = new Set<string>();
     for (const field of procedure.fields) {
-      const fromProfile = field.prefillFromProfile ? profile[field.prefillFromProfile] : undefined;
+      const fromProfile = field.prefillFromProfile
+        ? profile[field.prefillFromProfile]
+        : undefined;
       if (fromProfile) {
         initialValues[field.key] = fromProfile;
         initialPrefilled.add(field.key);
@@ -67,8 +79,13 @@ export default function DemarcheDetailScreen() {
   if (!procedure) {
     return (
       <ThemedView style={styles.screen}>
-        <ScreenHeaderBar title="Démarche introuvable" onBack={() => router.back()} />
-        <ThemedText style={styles.notFound}>Cette démarche n’existe pas ou plus.</ThemedText>
+        <ScreenHeaderBar
+          title="Démarche introuvable"
+          onBack={() => router.back()}
+        />
+        <ThemedText style={styles.notFound}>
+          Cette démarche n’existe pas ou plus.
+        </ThemedText>
       </ThemedView>
     );
   }
@@ -86,7 +103,9 @@ export default function DemarcheDetailScreen() {
   };
 
   const handleContinueFromForm = () => {
-    const missing = procedure.fields.filter((field) => field.required && !(values[field.key] ?? '').trim());
+    const missing = procedure.fields.filter(
+      (field) => field.required && !(values[field.key] ?? '').trim(),
+    );
     if (missing.length > 0) {
       showMissingFieldsAlert(missing.map((field) => field.label));
       return;
@@ -95,7 +114,8 @@ export default function DemarcheDetailScreen() {
   };
 
   const handleFinish = () => {
-    const message = 'Votre dossier est prêt. Vous pouvez le présenter à l’organisme ou le compléter en ligne.';
+    const message =
+      'Votre dossier est prêt. Vous pouvez le présenter à l’organisme ou le compléter en ligne.';
     if (Platform.OS === 'web') {
       window.alert(message);
     } else {
@@ -118,7 +138,8 @@ export default function DemarcheDetailScreen() {
       <ScreenHeaderBar title={procedure.title} onBack={handleBack} />
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}>
+        contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}
+      >
         <ThemedView style={styles.container}>
           {step !== 'overview' && (
             <ThemedView style={styles.stepperWrap}>
@@ -128,20 +149,37 @@ export default function DemarcheDetailScreen() {
 
           {step === 'overview' && (
             <ThemedView style={styles.section}>
-              <ThemedView type="background" style={[styles.overviewCard, CardShadow, { borderColor: theme.cardBorder }]}>
+              <ThemedView
+                type="background"
+                style={[
+                  styles.overviewCard,
+                  CardShadow,
+                  { borderColor: theme.cardBorder },
+                ]}
+              >
                 <IconChip name={procedure.icon} variant="turquoise" size={44} />
                 <ThemedText type="screenTitle">{procedure.title}</ThemedText>
-                <ThemedText themeColor="textSecondary">{procedure.summary}</ThemedText>
+                <ThemedText themeColor="textSecondary">
+                  {procedure.summary}
+                </ThemedText>
                 <View style={styles.metaRow}>
                   <View style={styles.metaItem}>
-                    <Ionicons name="time-outline" size={14} color={theme.textSecondary} />
+                    <Ionicons
+                      name="time-outline"
+                      size={14}
+                      color={theme.textSecondary}
+                    />
                     <ThemedText type="label" themeColor="textSecondary">
                       {procedure.durationEstimate}
                     </ThemedText>
                   </View>
                   {procedure.cerfaNumber && (
                     <View style={styles.metaItem}>
-                      <Ionicons name="document-text-outline" size={14} color={theme.textSecondary} />
+                      <Ionicons
+                        name="document-text-outline"
+                        size={14}
+                        color={theme.textSecondary}
+                      />
                       <ThemedText type="label" themeColor="textSecondary">
                         {procedure.cerfaNumber}
                       </ThemedText>
@@ -149,12 +187,16 @@ export default function DemarcheDetailScreen() {
                   )}
                   <View style={styles.metaItem}>
                     <Ionicons
-                      name={procedure.online ? 'wifi-outline' : 'business-outline'}
+                      name={
+                        procedure.online ? 'wifi-outline' : 'business-outline'
+                      }
                       size={14}
                       color={theme.textSecondary}
                     />
                     <ThemedText type="label" themeColor="textSecondary">
-                      {procedure.online ? 'Réalisable en ligne' : 'À faire sur place'}
+                      {procedure.online
+                        ? 'Réalisable en ligne'
+                        : 'À faire sur place'}
                     </ThemedText>
                   </View>
                 </View>
@@ -165,30 +207,42 @@ export default function DemarcheDetailScreen() {
                 <View style={styles.docPreviewList}>
                   {procedure.documents.map((document) => (
                     <View key={document.id} style={styles.docPreviewRow}>
-                      <Ionicons name="ellipse" size={5} color={theme.textSecondary} />
-                      <ThemedText themeColor="textSecondary">{document.label}</ThemedText>
+                      <Ionicons
+                        name="ellipse"
+                        size={5}
+                        color={theme.textSecondary}
+                      />
+                      <ThemedText themeColor="textSecondary">
+                        {document.label}
+                      </ThemedText>
                     </View>
                   ))}
                 </View>
               </ThemedView>
 
-              <PrimaryButton onPress={() => setStep('form')}>Commencer</PrimaryButton>
+              <PrimaryButton onPress={() => setStep('form')}>
+                Commencer
+              </PrimaryButton>
             </ThemedView>
           )}
 
           {step === 'form' && (
             <ThemedView style={styles.section}>
               <ThemedText themeColor="textSecondary">
-                Vérifiez et complétez vos informations. Les champs suivis d’une étoile sont
-                obligatoires.
+                Vérifiez et complétez vos informations. Les champs suivis d’une
+                étoile sont obligatoires.
               </ThemedText>
               <DynamicForm
                 fields={procedure.fields}
                 values={values}
                 prefilledKeys={prefilledKeys}
-                onChange={(key, value) => setValues((current) => ({ ...current, [key]: value }))}
+                onChange={(key, value) =>
+                  setValues((current) => ({ ...current, [key]: value }))
+                }
               />
-              <PrimaryButton onPress={handleContinueFromForm}>Continuer</PrimaryButton>
+              <PrimaryButton onPress={handleContinueFromForm}>
+                Continuer
+              </PrimaryButton>
             </ThemedView>
           )}
 
@@ -200,34 +254,64 @@ export default function DemarcheDetailScreen() {
               <DocumentChecklist
                 documents={procedure.documents}
                 checked={checkedDocuments}
-                onToggle={(docId) => setCheckedDocuments((current) => ({ ...current, [docId]: !current[docId] }))}
+                onToggle={(docId) =>
+                  setCheckedDocuments((current) => ({
+                    ...current,
+                    [docId]: !current[docId],
+                  }))
+                }
               />
-              <PrimaryButton onPress={() => setStep('recap')}>Voir le récapitulatif</PrimaryButton>
+              <PrimaryButton onPress={() => setStep('recap')}>
+                Voir le récapitulatif
+              </PrimaryButton>
             </ThemedView>
           )}
 
           {step === 'recap' && (
             <ThemedView style={styles.section}>
-              <ThemedView type="background" style={[styles.recapCard, CardShadow, { borderColor: theme.cardBorder }]}>
+              <ThemedView
+                type="background"
+                style={[
+                  styles.recapCard,
+                  CardShadow,
+                  { borderColor: theme.cardBorder },
+                ]}
+              >
                 <View style={styles.recapHeader}>
                   <ThemedText type="sectionTitle">{procedure.title}</ThemedText>
                   {procedure.cerfaNumber && (
                     <ThemedView type="turquoiseTint" style={styles.recapBadge}>
-                      <ThemedText type="caption" style={{ color: theme.turquoiseTintText }}>
+                      <ThemedText
+                        type="caption"
+                        style={{ color: theme.turquoiseTintText }}
+                      >
                         {procedure.cerfaNumber}
                       </ThemedText>
                     </ThemedView>
                   )}
                 </View>
-                <View style={[styles.divider, { backgroundColor: theme.cardBorder }]} />
+                <View
+                  style={[
+                    styles.divider,
+                    { backgroundColor: theme.cardBorder },
+                  ]}
+                />
                 {procedure.fields
-                  .filter((field) => (values[field.key] ?? '').trim().length > 0)
+                  .filter(
+                    (field) => (values[field.key] ?? '').trim().length > 0,
+                  )
                   .map((field) => (
                     <View key={field.key} style={styles.recapRow}>
-                      <ThemedText type="label" themeColor="textSecondary" style={styles.recapLabel}>
+                      <ThemedText
+                        type="label"
+                        themeColor="textSecondary"
+                        style={styles.recapLabel}
+                      >
                         {field.label}
                       </ThemedText>
-                      <ThemedText style={styles.recapValue}>{values[field.key]}</ThemedText>
+                      <ThemedText style={styles.recapValue}>
+                        {values[field.key]}
+                      </ThemedText>
                     </View>
                   ))}
               </ThemedView>
@@ -237,11 +321,23 @@ export default function DemarcheDetailScreen() {
                 {procedure.documents.map((document) => (
                   <View key={document.id} style={styles.recapDocRow}>
                     <Ionicons
-                      name={checkedDocuments[document.id] ? 'checkmark-circle' : 'ellipse-outline'}
+                      name={
+                        checkedDocuments[document.id]
+                          ? 'checkmark-circle'
+                          : 'ellipse-outline'
+                      }
                       size={16}
-                      color={checkedDocuments[document.id] ? theme.primary : theme.textSecondary}
+                      color={
+                        checkedDocuments[document.id]
+                          ? theme.primary
+                          : theme.textSecondary
+                      }
                     />
-                    <ThemedText themeColor={checkedDocuments[document.id] ? 'text' : 'textSecondary'}>
+                    <ThemedText
+                      themeColor={
+                        checkedDocuments[document.id] ? 'text' : 'textSecondary'
+                      }
+                    >
                       {document.label}
                     </ThemedText>
                   </View>
@@ -249,15 +345,21 @@ export default function DemarcheDetailScreen() {
               </ThemedView>
 
               <ThemedText type="caption" themeColor="textSecondary">
-                Aperçu de démonstration : la génération automatique du formulaire CERFA pré-rempli
-                arrive dans une prochaine version.
+                Aperçu de démonstration : la génération automatique du
+                formulaire CERFA pré-rempli arrive dans une prochaine version.
               </ThemedText>
 
               <View style={styles.recapActions}>
-                <OutlineButton icon="create-outline" onPress={() => setStep('form')}>
+                <OutlineButton
+                  icon="create-outline"
+                  onPress={() => setStep('form')}
+                >
                   Modifier mes informations
                 </OutlineButton>
-                <PrimaryButton onPress={handleFinish} icon="checkmark-circle-outline">
+                <PrimaryButton
+                  onPress={handleFinish}
+                  icon="checkmark-circle-outline"
+                >
                   Terminer
                 </PrimaryButton>
               </View>

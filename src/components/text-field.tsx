@@ -1,6 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View,
+  type TextInputProps,
+} from 'react-native';
 
 import { ThemedText } from './themed-text';
 
@@ -27,7 +33,11 @@ export function TextField({ label, secure, style, ...rest }: TextFieldProps) {
           secureTextEntry={secure && !revealed}
           style={[
             styles.input,
-            { color: theme.text, borderColor: theme.cardBorder, backgroundColor: theme.background },
+            {
+              color: theme.text,
+              borderColor: theme.cardBorder,
+              backgroundColor: theme.background,
+            },
             secure ? styles.inputWithAction : null,
             style,
           ]}
@@ -37,9 +47,12 @@ export function TextField({ label, secure, style, ...rest }: TextFieldProps) {
           <Pressable
             onPress={() => setRevealed((value) => !value)}
             accessibilityRole="button"
-            accessibilityLabel={revealed ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+            accessibilityLabel={
+              revealed ? 'Masquer le mot de passe' : 'Afficher le mot de passe'
+            }
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            style={styles.action}>
+            style={styles.action}
+          >
             <Ionicons
               name={revealed ? 'eye-off-outline' : 'eye-outline'}
               size={20}

@@ -21,7 +21,12 @@ type GradientHeaderProps = {
  * historique dans animated-icon.tsx) — sûr pour le SSR, et `backdropFilter` est nativement supporté
  * par react-native-web.
  */
-export function GradientHeader({ icon, title, intro, brand }: GradientHeaderProps) {
+export function GradientHeader({
+  icon,
+  title,
+  intro,
+  brand,
+}: GradientHeaderProps) {
   const insets = useSafeAreaInsets();
   const isDark = useColorScheme() === 'dark';
 
@@ -33,7 +38,8 @@ export function GradientHeader({ icon, title, intro, brand }: GradientHeaderProp
           paddingTop: insets.top + Spacing.three,
           experimental_backgroundImage: `linear-gradient(135deg, ${Palette.deepBlue}, ${Palette.deepBluePressed})`,
         },
-      ]}>
+      ]}
+    >
       <View style={styles.blobA} />
       <View style={styles.blobB} />
 
@@ -45,10 +51,13 @@ export function GradientHeader({ icon, title, intro, brand }: GradientHeaderProp
         style={[
           styles.glassOuter,
           {
-            backgroundColor: isDark ? 'rgba(21,24,28,0.78)' : 'rgba(255,255,255,0.82)',
+            backgroundColor: isDark
+              ? 'rgba(21,24,28,0.78)'
+              : 'rgba(255,255,255,0.82)',
             backdropFilter: 'blur(20px)',
           },
-        ]}>
+        ]}
+      >
         <View style={styles.glassTop}>
           {brand ? (
             // Logotype AAVIE officiel (anneau turquoise + bulle corail souriante) : l'anneau fait
@@ -64,7 +73,11 @@ export function GradientHeader({ icon, title, intro, brand }: GradientHeaderProp
               <Ionicons name={icon} size={20} color={Palette.white} />
             </View>
           )}
-          <ThemedText type="sectionTitle" themeColor="text" style={styles.title}>
+          <ThemedText
+            type="sectionTitle"
+            themeColor="text"
+            style={styles.title}
+          >
             {title}
           </ThemedText>
         </View>

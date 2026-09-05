@@ -1,5 +1,13 @@
 import * as LocalAuthentication from 'expo-local-authentication';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import { ApiError, apiFetch } from '@/lib/api';
 import {
@@ -134,47 +142,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback(
     async (email: string, password: string) => {
-      const data = await apiFetch<{ user: AavieUser; token?: string }>('/login.php', {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-      });
+      const data = await apiFetch<{ user: AavieUser; token?: string }>(
+        '/login.php',
+        {
+          method: 'POST',
+          body: JSON.stringify({ email, password }),
+        },
+      );
       await persistToken(data);
       // `login.php` ne renvoie pas le solde ni le forfait : on relit le profil complet.
       await loadSession();
     },
-    [loadSession, persistToken]
+    [loadSession, persistToken],
   );
 
   const register = useCallback(
     async (input: RegisterInput) => {
-      const data = await apiFetch<{ user: AavieUser; token?: string }>('/register.php', {
-        method: 'POST',
-        body: JSON.stringify({
-          first_name: input.firstName,
-          last_name: input.lastName,
-          email: input.email,
-          password: input.password,
-          account_type: input.accountType,
-          locale: input.locale,
-          ...(input.accountType === 'company' && input.company
-            ? {
-                legal_name: input.company.legalName,
-                legal_form: input.company.legalForm,
-                siret: input.company.siret,
-                vat_number: input.company.vatNumber,
-                address_line1: input.company.addressLine1,
-                address_line2: input.company.addressLine2,
-                postal_code: input.company.postalCode,
-                city: input.company.city,
-                contact_role: input.company.contactRole,
-              }
-            : {}),
-        }),
-      });
+      const data = await apiFetch<{ user: AavieUser; token?: string }>(
+        '/register.php',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            first_name: input.firstName,
+            last_name: input.lastName,
+            email: input.email,
+            password: input.password,
+            account_type: input.accountType,
+            locale: input.locale,
+            ...(input.accountType === 'company' && input.company
+              ? {
+                  legal_name: input.company.legalName,
+                  legal_form: input.company.legalForm,
+                  siret: input.company.siret,
+                  vat_number: input.company.vatNumber,
+                  address_line1: input.company.addressLine1,
+                  address_line2: input.company.addressLine2,
+                  postal_code: input.company.postalCode,
+                  city: input.company.city,
+                  contact_role: input.company.contactRole,
+                }
+              : {}),
+          }),
+        },
+      );
       await persistToken(data);
       await loadSession();
     },
-    [loadSession, persistToken]
+    [loadSession, persistToken],
   );
 
   const refreshUser = useCallback(async () => {
@@ -234,7 +248,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toggleBiometrics,
       confirmBiometrics,
       signOut,
-    ]
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

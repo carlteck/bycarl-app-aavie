@@ -58,7 +58,11 @@ export default function AProposScreen() {
 
   return (
     <ThemedView style={styles.screen}>
-      <ScreenHeaderBar title="À propos d’AAVIE" onBack={() => router.back()} backLabel="Accueil" />
+      <ScreenHeaderBar
+        title="À propos d’AAVIE"
+        onBack={() => router.back()}
+        backLabel="Accueil"
+      />
 
       <ScrollView
         style={[styles.scrollView, { backgroundColor: theme.background }]}
@@ -69,7 +73,8 @@ export default function AProposScreen() {
             paddingRight: Spacing.four + safeAreaInsets.right,
             paddingBottom: safeAreaInsets.bottom + Spacing.four,
           },
-        ]}>
+        ]}
+      >
         <View style={styles.container}>
           <ThemedText type="screenTitle">
             Assistant Administratif Virtuel Intelligent et Éducatif
@@ -80,9 +85,13 @@ export default function AProposScreen() {
               key={section.title}
               style={[
                 styles.card,
-                { borderColor: theme.cardBorder, backgroundColor: theme.background },
+                {
+                  borderColor: theme.cardBorder,
+                  backgroundColor: theme.background,
+                },
                 CardShadow,
-              ]}>
+              ]}
+            >
               <View style={styles.cardTop}>
                 <IconChip name={section.icon} />
                 <ThemedText type="sectionTitle" style={styles.cardTitle}>

@@ -1,6 +1,13 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { IconChip } from '@/components/icon-chip';
@@ -55,13 +62,25 @@ export default function InscriptionScreen() {
 
   async function handleSubmit() {
     if (isSubmitting) return;
-    if (firstName.trim() === '' || lastName.trim() === '' || email.trim() === '' || password === '') {
+    if (
+      firstName.trim() === '' ||
+      lastName.trim() === '' ||
+      email.trim() === '' ||
+      password === ''
+    ) {
       setError('Tous les champs sont requis.');
       return;
     }
 
     if (accountType === 'company') {
-      const requis = [company.legalName, company.legalForm, company.siret, company.addressLine1, company.postalCode, company.city];
+      const requis = [
+        company.legalName,
+        company.legalForm,
+        company.siret,
+        company.addressLine1,
+        company.postalCode,
+        company.city,
+      ];
       if (requis.some((value) => value.trim() === '')) {
         setError('Les informations de l’entreprise sont incomplètes.');
         return;
@@ -86,7 +105,7 @@ export default function InscriptionScreen() {
       setError(
         e instanceof ApiError || e instanceof NetworkError
           ? e.message
-          : 'Création impossible. Réessayez dans un instant.'
+          : 'Création impossible. Réessayez dans un instant.',
       );
       setIsSubmitting(false);
     }
@@ -94,11 +113,16 @@ export default function InscriptionScreen() {
 
   return (
     <ThemedView style={styles.screen}>
-      <ScreenHeaderBar title="Créer mon compte" onBack={() => router.back()} backLabel="Accueil" />
+      <ScreenHeaderBar
+        title="Créer mon compte"
+        onBack={() => router.back()}
+        backLabel="Accueil"
+      />
 
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         <ScrollView
           style={[styles.flex, { backgroundColor: theme.background }]}
           keyboardShouldPersistTaps="handled"
@@ -109,23 +133,34 @@ export default function InscriptionScreen() {
               paddingRight: Spacing.four + safeAreaInsets.right,
               paddingBottom: safeAreaInsets.bottom + Spacing.four,
             },
-          ]}>
+          ]}
+        >
           <View style={styles.container}>
             <View style={styles.intro}>
               <ThemedText type="screenTitle">Créer votre compte</ThemedText>
               <ThemedText themeColor="textSecondary">
-                Votre compte fonctionne sur l’application et sur le site aavie, avec les mêmes
-                identifiants.
+                Votre compte fonctionne sur l’application et sur le site aavie,
+                avec les mêmes identifiants.
               </ThemedText>
             </View>
 
             <View style={styles.section}>
-              <ThemedText type="label">Vous vous inscrivez en tant que</ThemedText>
+              <ThemedText type="label">
+                Vous vous inscrivez en tant que
+              </ThemedText>
               <View style={styles.choiceRow}>
                 {(
                   [
-                    { value: 'individual', label: 'Particulier', hint: 'Démarches personnelles' },
-                    { value: 'company', label: 'Entreprise', hint: 'TPE, indépendant' },
+                    {
+                      value: 'individual',
+                      label: 'Particulier',
+                      hint: 'Démarches personnelles',
+                    },
+                    {
+                      value: 'company',
+                      label: 'Entreprise',
+                      hint: 'TPE, indépendant',
+                    },
                   ] as const
                 ).map((option) => {
                   const selected = accountType === option.value;
@@ -138,10 +173,15 @@ export default function InscriptionScreen() {
                       style={[
                         styles.choice,
                         {
-                          borderColor: selected ? theme.primary : theme.cardBorder,
-                          backgroundColor: selected ? theme.turquoiseTint : theme.background,
+                          borderColor: selected
+                            ? theme.primary
+                            : theme.cardBorder,
+                          backgroundColor: selected
+                            ? theme.turquoiseTint
+                            : theme.background,
                         },
-                      ]}>
+                      ]}
+                    >
                       <ThemedText type="label">{option.label}</ThemedText>
                       <ThemedText type="caption" themeColor="textSecondary">
                         {option.hint}
@@ -167,10 +207,15 @@ export default function InscriptionScreen() {
                       style={[
                         styles.localeChip,
                         {
-                          borderColor: selected ? theme.primary : theme.cardBorder,
-                          backgroundColor: selected ? theme.turquoiseTint : theme.background,
+                          borderColor: selected
+                            ? theme.primary
+                            : theme.cardBorder,
+                          backgroundColor: selected
+                            ? theme.turquoiseTint
+                            : theme.background,
                         },
-                      ]}>
+                      ]}
+                    >
                       <ThemedText type="caption">
                         {entry.flag} {entry.label}
                       </ThemedText>
@@ -181,13 +226,15 @@ export default function InscriptionScreen() {
               {/* L'interface mobile n'est pas encore traduite : le choix est enregistré sur le
                   compte et suit l'utilisateur sur le site, mais les écrans restent en français. */}
               <ThemedText type="caption" themeColor="textSecondary">
-                L’application reste en français pour l’instant ; votre choix s’applique à votre
-                compte et au site.
+                L’application reste en français pour l’instant ; votre choix
+                s’applique à votre compte et au site.
               </ThemedText>
             </View>
 
             {accountType === 'company' && (
-              <View style={[styles.companyBlock, { borderColor: theme.cardBorder }]}>
+              <View
+                style={[styles.companyBlock, { borderColor: theme.cardBorder }]}
+              >
                 <ThemedText type="sectionTitle">Votre entreprise</ThemedText>
 
                 <TextField
@@ -312,24 +359,34 @@ export default function InscriptionScreen() {
               {isSubmitting ? 'Création…' : 'Créer mon compte'}
             </PrimaryButton>
 
-            <View style={[styles.notice, { backgroundColor: theme.turquoiseTint }]}>
+            <View
+              style={[styles.notice, { backgroundColor: theme.turquoiseTint }]}
+            >
               <IconChip name="gift-outline" variant="primary" />
               <View style={styles.noticeText}>
                 <ThemedText type="label" themeColor="turquoiseTintText">
                   Des crédits offerts chaque mois
                 </ThemedText>
                 <ThemedText type="caption" themeColor="turquoiseTintText">
-                  Vos crédits servent à l’assistant et à l’aide rédactionnelle. L’annuaire, les
-                  ressources, la veille, le planificateur et le budget restent gratuits.
+                  Vos crédits servent à l’assistant et à l’aide rédactionnelle.
+                  L’annuaire, les ressources, la veille, le planificateur et le
+                  budget restent gratuits.
                 </ThemedText>
               </View>
             </View>
 
             <View style={styles.alternative}>
-              <ThemedText type="caption" themeColor="textSecondary" style={styles.centerText}>
+              <ThemedText
+                type="caption"
+                themeColor="textSecondary"
+                style={styles.centerText}
+              >
                 Vous avez déjà un compte ?
               </ThemedText>
-              <OutlineButton onPress={() => router.replace('/connexion')} icon="log-in-outline">
+              <OutlineButton
+                onPress={() => router.replace('/connexion')}
+                icon="log-in-outline"
+              >
                 Se connecter
               </OutlineButton>
             </View>

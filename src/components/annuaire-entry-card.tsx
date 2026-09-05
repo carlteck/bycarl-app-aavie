@@ -6,22 +6,38 @@ import { OutlineButton } from './outline-button';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
-import { ANNUAIRE_CATEGORY_ICON, type AnnuaireEntry } from '@/constants/annuaire';
+import {
+  ANNUAIRE_CATEGORY_ICON,
+  type AnnuaireEntry,
+} from '@/constants/annuaire';
 import { openDirections } from '@/lib/maps';
 import { CardShadow, Palette, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-export function AnnuaireEntryCard({ name, category, description, phone, website, address }: AnnuaireEntry) {
+export function AnnuaireEntryCard({
+  name,
+  category,
+  description,
+  phone,
+  website,
+  address,
+}: AnnuaireEntry) {
   const theme = useTheme();
 
   return (
-    <ThemedView type="background" style={[styles.card, CardShadow, { borderColor: theme.cardBorder }]}>
+    <ThemedView
+      type="background"
+      style={[styles.card, CardShadow, { borderColor: theme.cardBorder }]}
+    >
       <View style={styles.top}>
         <IconChip name={ANNUAIRE_CATEGORY_ICON[category]} variant="turquoise" />
         <View style={styles.body}>
           <ThemedText type="sectionTitle">{name}</ThemedText>
           <ThemedView type="turquoiseTint" style={styles.tag}>
-            <ThemedText type="caption" style={{ color: theme.turquoiseTintText }}>
+            <ThemedText
+              type="caption"
+              style={{ color: theme.turquoiseTintText }}
+            >
               {category}
             </ThemedText>
           </ThemedView>
@@ -41,11 +57,19 @@ export function AnnuaireEntryCard({ name, category, description, phone, website,
             onPress={() => Linking.openURL(`tel:${phone}`)}
             accessibilityRole="button"
             accessibilityLabel={`Appeler ${name}`}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
             {({ pressed }) => (
-              <ThemedView type={pressed ? 'primaryPressed' : 'primary'} style={styles.actionInner}>
+              <ThemedView
+                type={pressed ? 'primaryPressed' : 'primary'}
+                style={styles.actionInner}
+              >
                 <Ionicons name="call-outline" size={15} color={Palette.white} />
-                <ThemedText type="label" style={styles.actionPrimaryText} numberOfLines={1}>
+                <ThemedText
+                  type="label"
+                  style={styles.actionPrimaryText}
+                  numberOfLines={1}
+                >
                   Appeler
                 </ThemedText>
               </ThemedView>
@@ -56,7 +80,8 @@ export function AnnuaireEntryCard({ name, category, description, phone, website,
           <OutlineButton
             icon="globe-outline"
             onPress={() => Linking.openURL(website)}
-            accessibilityLabel={`Ouvrir le site web de ${name}`}>
+            accessibilityLabel={`Ouvrir le site web de ${name}`}
+          >
             Site web
           </OutlineButton>
         )}
@@ -64,7 +89,8 @@ export function AnnuaireEntryCard({ name, category, description, phone, website,
           <OutlineButton
             icon="navigate-outline"
             onPress={() => openDirections(address)}
-            accessibilityLabel={`Itinéraire vers ${name}`}>
+            accessibilityLabel={`Itinéraire vers ${name}`}
+          >
             Itinéraire
           </OutlineButton>
         )}

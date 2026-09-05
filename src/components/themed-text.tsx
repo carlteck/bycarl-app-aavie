@@ -10,13 +10,28 @@ import { useTheme } from '@/hooks/use-theme';
  * "AAVIE". `link`/`linkPrimary`/`code` restent des styles utilitaires hors échelle éditoriale.
  */
 export type ThemedTextProps = TextProps & {
-  type?: 'brand' | 'screenTitle' | 'sectionTitle' | 'body' | 'label' | 'caption' | 'link' | 'linkPrimary' | 'code';
+  type?:
+    | 'brand'
+    | 'screenTitle'
+    | 'sectionTitle'
+    | 'body'
+    | 'label'
+    | 'caption'
+    | 'link'
+    | 'linkPrimary'
+    | 'code';
   themeColor?: ThemeColor;
 };
 
-export function ThemedText({ style, type = 'body', themeColor, ...rest }: ThemedTextProps) {
+export function ThemedText({
+  style,
+  type = 'body',
+  themeColor,
+  ...rest
+}: ThemedTextProps) {
   const theme = useTheme();
-  const resolvedColor = themeColor ?? (type === 'linkPrimary' ? 'primary' : 'text');
+  const resolvedColor =
+    themeColor ?? (type === 'linkPrimary' ? 'primary' : 'text');
 
   return (
     <Text

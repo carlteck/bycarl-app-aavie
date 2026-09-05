@@ -15,10 +15,15 @@ export default function AppTabs() {
       // Sur Android, le mode par défaut ('auto') masque le libellé des onglets non
       // sélectionnés dès qu'il y en a 4+ — mauvais pour l'accessibilité (CDC : navigation
       // toujours explicite, pas uniquement iconographique).
-      labelVisibilityMode="labeled">
+      labelVisibilityMode="labeled"
+    >
       <NativeTabs.Trigger name="accueil">
         <NativeTabs.Trigger.Label>Accueil</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="house.fill" md="home" selectedColor={colors.primary} />
+        <NativeTabs.Trigger.Icon
+          sf="house.fill"
+          md="home"
+          selectedColor={colors.primary}
+        />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="ressources">

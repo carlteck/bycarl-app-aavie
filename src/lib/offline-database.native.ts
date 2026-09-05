@@ -48,7 +48,7 @@ async function enqueue(
   entityType: 'profile' | 'reminder',
   entityId: string,
   operation: Operation,
-  payload?: unknown
+  payload?: unknown,
 ) {
   const db = await database();
   await db.runAsync(
@@ -66,7 +66,7 @@ async function enqueue(
     entityId,
     operation,
     payload === undefined ? null : JSON.stringify(payload),
-    new Date().toISOString()
+    new Date().toISOString(),
   );
 }
 
@@ -74,7 +74,7 @@ export async function readProfile(userId: string): Promise<StoredUserProfile> {
   const db = await database();
   const row = await db.getFirstAsync<{ payload: string }>(
     'SELECT payload FROM local_profiles WHERE user_id = ?',
-    userId
+    userId,
   );
   if (!row) return {};
   try {
@@ -93,9 +93,12 @@ export async function writeProfile(userId: string, profile: StoredUserProfile) {
        ON CONFLICT(user_id) DO UPDATE SET payload = excluded.payload, updated_at = excluded.updated_at`,
       userId,
       JSON.stringify(profile),
-      updatedAt
+      updatedAt,
     );
-    await enqueue(userId, 'profile', userId, 'upsert', { ...profile, updated_at: updatedAt });
+    await enqueue(userId, 'profile', userId, 'upsert', {
+      ...profile,
+      updated_at: updatedAt,
+    });
   });
 }
 
@@ -111,7 +114,7 @@ export async function readReminders(userId: string): Promise<Reminder[]> {
   const db = await database();
   const rows = await db.getAllAsync<{ payload: string }>(
     'SELECT payload FROM local_reminders WHERE user_id = ? ORDER BY updated_at, id',
-    userId
+    userId,
   );
   return rows.flatMap((row) => {
     try {
@@ -126,7 +129,7 @@ export async function writeReminders(userId: string, reminders: Reminder[]) {
   const db = await database();
   const existing = await db.getAllAsync<{ id: string }>(
     'SELECT id FROM local_reminders WHERE user_id = ?',
-    userId
+    userId,
   );
   const nextIds = new Set(reminders.map((reminder) => reminder.id));
   const updatedAt = new Date().toISOString();
@@ -139,7 +142,7 @@ export async function writeReminders(userId: string, reminders: Reminder[]) {
         userId,
         reminder.id,
         JSON.stringify(reminder),
-        updatedAt
+        updatedAt,
       );
       await enqueue(userId, 'reminder', reminder.id, 'upsert', {
         ...reminder,
@@ -149,7 +152,11 @@ export async function writeReminders(userId: string, reminders: Reminder[]) {
 
     for (const row of existing) {
       if (nextIds.has(row.id)) continue;
-      await db.runAsync('DELETE FROM local_reminders WHERE user_id = ? AND id = ?', userId, row.id);
+      await db.runAsync(
+        'DELETE FROM local_reminders WHERE user_id = ? AND id = ?',
+        userId,
+        row.id,
+      );
       await enqueue(userId, 'reminder', row.id, 'delete');
     }
   });

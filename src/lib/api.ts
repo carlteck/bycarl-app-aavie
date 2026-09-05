@@ -38,11 +38,16 @@ export class ApiError extends Error {
 /** Le réseau mobile tombe : un échec de transport doit être distinguable d'un refus serveur. */
 export class NetworkError extends Error {
   constructor() {
-    super('Connexion impossible. Vérifiez votre connexion internet et réessayez.');
+    super(
+      'Connexion impossible. Vérifiez votre connexion internet et réessayez.',
+    );
   }
 }
 
-export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+export async function apiFetch<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
   const token = await readSessionToken();
 
   let response: Response;
@@ -68,7 +73,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   if (!response.ok) {
     throw new ApiError(
       (data as { error?: string } | null)?.error ?? 'Une erreur est survenue.',
-      response.status
+      response.status,
     );
   }
 

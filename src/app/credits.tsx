@@ -12,14 +12,20 @@ import { apiFetch } from '@/lib/api';
 import { CardShadow, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-type CreditReason = 'grant' | 'spend' | 'refund' | 'gift' | 'purchase' | 'expiry';
+type CreditReason =
+  'grant' | 'spend' | 'refund' | 'gift' | 'purchase' | 'expiry';
 
 interface CreditsResponse {
   balance: number | null;
   monthly_credits: number;
   rollover_months: number;
   plan_name: string | null;
-  tariff: { action_key: string; label: string; description: string; cost: number }[];
+  tariff: {
+    action_key: string;
+    label: string;
+    description: string;
+    cost: number;
+  }[];
   history: {
     id: string;
     delta: number;
@@ -63,7 +69,9 @@ export default function CreditsScreen() {
       setData(await apiFetch<CreditsResponse>('/credits.php'));
       setError(null);
     } catch {
-      setError('Impossible de récupérer votre solde. Réessayez dans un instant.');
+      setError(
+        'Impossible de récupérer votre solde. Réessayez dans un instant.',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -78,7 +86,11 @@ export default function CreditsScreen() {
 
   return (
     <ThemedView style={styles.screen}>
-      <ScreenHeaderBar title="Mes crédits" onBack={() => router.back()} backLabel="Profil" />
+      <ScreenHeaderBar
+        title="Mes crédits"
+        onBack={() => router.back()}
+        backLabel="Profil"
+      />
 
       <ScrollView
         style={[styles.scrollView, { backgroundColor: theme.background }]}
@@ -89,9 +101,12 @@ export default function CreditsScreen() {
             paddingRight: Spacing.four + safeAreaInsets.right,
             paddingBottom: safeAreaInsets.bottom + Spacing.four,
           },
-        ]}>
+        ]}
+      >
         <View style={styles.container}>
-          {isLoading && <ThemedText themeColor="textSecondary">Chargement…</ThemedText>}
+          {isLoading && (
+            <ThemedText themeColor="textSecondary">Chargement…</ThemedText>
+          )}
 
           {error && (
             <ThemedText type="label" themeColor="accent">
@@ -100,18 +115,29 @@ export default function CreditsScreen() {
           )}
 
           {data && data.balance === null && (
-            <View style={[styles.card, { borderColor: theme.cardBorder }, CardShadow]}>
+            <View
+              style={[
+                styles.card,
+                { borderColor: theme.cardBorder },
+                CardShadow,
+              ]}
+            >
               <ThemedText type="sectionTitle">Compte administrateur</ThemedText>
               <ThemedText themeColor="textSecondary">
-                Votre compte n’est pas décompté : les actions restent tracées, mais aucun crédit
-                n’est consommé.
+                Votre compte n’est pas décompté : les actions restent tracées,
+                mais aucun crédit n’est consommé.
               </ThemedText>
             </View>
           )}
 
           {data && data.balance !== null && (
             <>
-              <View style={[styles.balanceCard, { backgroundColor: theme.turquoiseTint }]}>
+              <View
+                style={[
+                  styles.balanceCard,
+                  { backgroundColor: theme.turquoiseTint },
+                ]}
+              >
                 <ThemedText type="label" themeColor="turquoiseTintText">
                   Solde disponible
                 </ThemedText>
@@ -120,7 +146,9 @@ export default function CreditsScreen() {
                 </ThemedText>
                 <ThemedText type="caption" themeColor="turquoiseTintText">
                   {data.monthly_credits} crédits vous sont attribués chaque mois
-                  {data.plan_name ? ` avec le forfait ${data.plan_name}` : ''}.{' '}
+                  {data.plan_name
+                    ? ` avec le forfait ${data.plan_name}`
+                    : ''}.{' '}
                   {data.rollover_months > 0
                     ? `Les crédits non utilisés se reportent jusqu’à ${data.rollover_months} mois.`
                     : 'Les crédits non utilisés expirent à la fin du mois.'}
@@ -128,15 +156,21 @@ export default function CreditsScreen() {
               </View>
 
               <View style={styles.section}>
-                <ThemedText type="sectionTitle">Ce que coûte chaque action</ThemedText>
+                <ThemedText type="sectionTitle">
+                  Ce que coûte chaque action
+                </ThemedText>
                 {data.tariff.map((action) => (
                   <View
                     key={action.action_key}
                     style={[
                       styles.row,
-                      { borderColor: theme.cardBorder, backgroundColor: theme.background },
+                      {
+                        borderColor: theme.cardBorder,
+                        backgroundColor: theme.background,
+                      },
                       CardShadow,
-                    ]}>
+                    ]}
+                  >
                     <IconChip name="flash-outline" />
                     <View style={styles.rowText}>
                       <ThemedText type="label">{action.label}</ThemedText>
@@ -150,30 +184,43 @@ export default function CreditsScreen() {
                   </View>
                 ))}
                 <ThemedText type="caption" themeColor="textSecondary">
-                  L’annuaire, les ressources, la veille, le planificateur, le budget et le
-                  coffre-fort restent gratuits.
+                  L’annuaire, les ressources, la veille, le planificateur, le
+                  budget et le coffre-fort restent gratuits.
                 </ThemedText>
               </View>
 
               {data.history.length > 0 && (
                 <View style={styles.section}>
-                  <ThemedText type="sectionTitle">Derniers mouvements</ThemedText>
+                  <ThemedText type="sectionTitle">
+                    Derniers mouvements
+                  </ThemedText>
                   {data.history.slice(0, 15).map((entry) => (
                     <View
                       key={entry.id}
-                      style={[styles.historyRow, { borderBottomColor: theme.cardBorder }]}>
+                      style={[
+                        styles.historyRow,
+                        { borderBottomColor: theme.cardBorder },
+                      ]}
+                    >
                       <View style={styles.rowText}>
                         <ThemedText type="label" numberOfLines={1}>
                           {entry.label}
                         </ThemedText>
                         <ThemedText type="caption" themeColor="textSecondary">
                           {REASON_LABEL[entry.reason]} ·{' '}
-                          {new Date(entry.created_at).toLocaleDateString('fr-FR')}
+                          {new Date(entry.created_at).toLocaleDateString(
+                            'fr-FR',
+                          )}
                         </ThemedText>
                       </View>
                       <ThemedText
                         type="label"
-                        themeColor={entry.delta > 0 ? 'turquoiseTintText' : 'textSecondary'}>
+                        themeColor={
+                          entry.delta > 0
+                            ? 'turquoiseTintText'
+                            : 'textSecondary'
+                        }
+                      >
                         {entry.delta > 0 ? '+' : ''}
                         {entry.delta}
                       </ThemedText>

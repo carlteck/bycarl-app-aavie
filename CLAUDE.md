@@ -65,14 +65,14 @@ Charte mobile officielle : [docs/charte-graphique-aavie-mobile.pdf](docs/charte-
 
 **Hiérarchie fonctionnelle des couleurs** (voir [src/constants/theme.ts](src/constants/theme.ts) `Palette`/`Colors`, §02-03 du PDF) :
 
-| Rôle | Couleur | Usage | Token |
-|---|---|---|---|
-| Fond principal | Blanc `#FFFFFF` | Écrans, cartes, contenu (dominant) | `background` |
-| Texte principal | Gris anthracite `#222222` | Paragraphes, informations essentielles | `text` |
-| Action principale | Bleu profond `#0E74C7` | Boutons, navigation, liens | `primary` (+ `primaryPressed`) |
-| Texte secondaire | Gris moyen `#666666` | Légendes, dates, métadonnées | `textSecondary` |
-| État sélectionné | Bleu turquoise `#00E7C7` | Identité, sélection, surfaces secondaires (badges, tags) | `turquoise` (+ `turquoisePressed`) |
-| Accent | Rouge corail `#E81E4E` | Logo, badges, attention ponctuelle — **jamais un CTA par défaut** (évoque alerte/suppression sur mobile) | `accent` (+ `accentPressed`) |
+| Rôle              | Couleur                   | Usage                                                                                                    | Token                              |
+| ----------------- | ------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| Fond principal    | Blanc `#FFFFFF`           | Écrans, cartes, contenu (dominant)                                                                       | `background`                       |
+| Texte principal   | Gris anthracite `#222222` | Paragraphes, informations essentielles                                                                   | `text`                             |
+| Action principale | Bleu profond `#0E74C7`    | Boutons, navigation, liens                                                                               | `primary` (+ `primaryPressed`)     |
+| Texte secondaire  | Gris moyen `#666666`      | Légendes, dates, métadonnées                                                                             | `textSecondary`                    |
+| État sélectionné  | Bleu turquoise `#00E7C7`  | Identité, sélection, surfaces secondaires (badges, tags)                                                 | `turquoise` (+ `turquoisePressed`) |
+| Accent            | Rouge corail `#E81E4E`    | Logo, badges, attention ponctuelle — **jamais un CTA par défaut** (évoque alerte/suppression sur mobile) | `accent` (+ `accentPressed`)       |
 
 - `primary`/`accent`/`turquoise` sont des couleurs de marque fixes (identiques clair/sombre) ; chacune a une variante `*Pressed` plus foncée pour l'état pressé, via le pattern `type={pressed ? 'xPressed' : 'x'}` (voir `annuaire-entry-card.tsx`, `onboarding-screen.tsx`).
 - **Composants de référence (§03 PDF)** : bouton plein `primary` = action principale (« Continuer ») ; bouton contour `primary` = action secondaire (« Plus tard », voir [src/components/outline-button.tsx](src/components/outline-button.tsx)) ; ne jamais coder une info uniquement par la couleur (toujours texte/icône associé).
@@ -107,11 +107,11 @@ modifiable du grand livre de crédits.
 Le schéma Supabase versionné vit dans `supabase/migrations/`. La migration initiale
 `202609040001_initial_mobile_data.sql` crée :
 
-| Table | Clé | Contenu |
-|---|---|---|
-| `mobile_profiles` | `user_id UUID` | civilité, prénoms, nom de naissance, naissance, adresse, téléphone et e-mail de préremplissage |
-| `mobile_reminders` | `id UUID`, `user_id UUID` | titre, date, catégorie, activation des notifications, anticipation et suppression logique |
-| `mobile_procedure_progress` | `id UUID`, unicité `(user_id, procedure_id)` | étape courante, statut, valeurs du formulaire, documents cochés et suppression logique |
+| Table                       | Clé                                          | Contenu                                                                                        |
+| --------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `mobile_profiles`           | `user_id UUID`                               | civilité, prénoms, nom de naissance, naissance, adresse, téléphone et e-mail de préremplissage |
+| `mobile_reminders`          | `id UUID`, `user_id UUID`                    | titre, date, catégorie, activation des notifications, anticipation et suppression logique      |
+| `mobile_procedure_progress` | `id UUID`, unicité `(user_id, procedure_id)` | étape courante, statut, valeurs du formulaire, documents cochés et suppression logique         |
 
 Toutes les tables ont la RLS activée avec refus par défaut. Les politiques `select`, `insert`,
 `update` et `delete` sont séparées et imposent `auth.uid() = user_id`. Le rôle `anon` n'a aucun
@@ -153,17 +153,17 @@ au stockage métier. Les copies locales sont cloisonnées par identifiant utilis
 - **Le jeton vit dans le Keychain / Keystore** ([src/lib/session-storage.ts](src/lib/session-storage.ts)), jamais dans un stockage en clair sur natif. Repli `localStorage` sur web, moins sûr, comme partout ailleurs.
 - **Quatre routes publiques, tout le reste protégé** — décalque de la structure du site :
 
-  | Route mobile | Fichier | Équivalent site |
-  |---|---|---|
-  | `/` | [src/app/index.tsx](src/app/index.tsx) | `/` `LandingPage.tsx` |
-  | `/a-propos` | [src/app/a-propos.tsx](src/app/a-propos.tsx) | *(nouveau, contenu issu du CDC)* |
-  | `/connexion` | [src/app/connexion.tsx](src/app/connexion.tsx) | `/connexion` `LoginPage.tsx` |
-  | `/inscription` | [src/app/inscription.tsx](src/app/inscription.tsx) | `/inscription` `RegisterPage.tsx` |
-  | `/accueil` + onglets, `/credits` | `src/app/(tabs)/`, [credits.tsx](src/app/credits.tsx) | `/espace/*` |
+  | Route mobile                     | Fichier                                               | Équivalent site                   |
+  | -------------------------------- | ----------------------------------------------------- | --------------------------------- |
+  | `/`                              | [src/app/index.tsx](src/app/index.tsx)                | `/` `LandingPage.tsx`             |
+  | `/a-propos`                      | [src/app/a-propos.tsx](src/app/a-propos.tsx)          | _(nouveau, contenu issu du CDC)_  |
+  | `/connexion`                     | [src/app/connexion.tsx](src/app/connexion.tsx)        | `/connexion` `LoginPage.tsx`      |
+  | `/inscription`                   | [src/app/inscription.tsx](src/app/inscription.tsx)    | `/inscription` `RegisterPage.tsx` |
+  | `/accueil` + onglets, `/credits` | `src/app/(tabs)/`, [credits.tsx](src/app/credits.tsx) | `/espace/*`                       |
 
 - **Le gardiennage passe par `Stack.Protected`** ([src/app/_layout.tsx](src/app/_layout.tsx)), mécanisme officiel d'Expo Router (doc « Authentication »). `guard={!isAuthenticated}` / `guard={isAuthenticated}` : quand la session bascule, Expo Router redirige seul. **Ne pas remplacer par un `router.replace` dans un effect** — les effects ne s'exécutent pas au rendu serveur web, la page ressortirait vide. Aucun écran de connexion ne navigue à la main après un succès.
 - ⚠️ **`/` appartient à la zone publique, l'accueil de l'app est `/accueil`** (`(tabs)/accueil.tsx`). Deux fichiers ne peuvent pas revendiquer `/`. Le trigger `NativeTabs` et la barre web ([app-tabs.tsx](src/components/app-tabs.tsx), [app-tabs.web.tsx](src/components/app-tabs.web.tsx)) pointent sur `accueil` — les trois doivent rester cohérents.
-- **Crédits** : le quota « questions par jour » a été remplacé par un solde dépensé par action, côté serveur (`api/src/Credits.php` dans `site_aavie`). L'app lit `credits.php` et affiche solde, grille tarifaire et historique. ⚠️ **Aucun achat de crédits dans l'application** : un pack vendu ici serait un *consumable in-app purchase* au sens d'Apple — achat in-app obligatoire, 15 à 30 % de commission, et interdiction de mentionner un paiement web. Tant que la question n'est pas tranchée, l'écran consomme et affiche, il ne vend pas.
+- **Crédits** : le quota « questions par jour » a été remplacé par un solde dépensé par action, côté serveur (`api/src/Credits.php` dans `site_aavie`). L'app lit `credits.php` et affiche solde, grille tarifaire et historique. ⚠️ **Aucun achat de crédits dans l'application** : un pack vendu ici serait un _consumable in-app purchase_ au sens d'Apple — achat in-app obligatoire, 15 à 30 % de commission, et interdiction de mentionner un paiement web. Tant que la question n'est pas tranchée, l'écran consomme et affiche, il ne vend pas.
 - ⚠️ **Historique, à ne pas rétablir par erreur** : jusqu'au 2026-09-03 l'app fonctionnait en local pur, sans backend, avec un code PIN optionnel et la règle « ne verrouille JAMAIS au lancement » au nom de l'accessibilité du public en illectronisme (CDC §1-2). Olivier a tranché pour le compte obligatoire aligné sur le site. Le compromis d'accessibilité qui subsiste : `/` et `/a-propos` expliquent le service avant toute création de compte, et l'inscription est courte et annulable à tout moment. La biométrie reste disponible en confort, plus comme identifiant.
 - **Pas d'état `loading` bloquant dans `AuthProvider`** ([src/context/auth-context.tsx](src/context/auth-context.tsx)) : `welcome` est l'état initial synchrone (pas un état dérivé d'un `useEffect`), et c'est aussi le bon contenu statique puisque c'est la page publique. **Piège rencontré** : un statut initial `'loading'` qui ne se résout que dans un `useEffect` ne se résout jamais pendant le rendu serveur web (les effects ne s'exécutent pas en SSR) — `AuthGate` rendait alors `null`, donc une page vide. `hasAccount`/`displayName`/biométrie se peuplent de façon asynchrone après le premier rendu, sans le bloquer. **`AuthGate` ne doit jamais rendre `null`, quelle que soit la branche.**
 
@@ -175,7 +175,7 @@ au stockage métier. Les copies locales sont cloisonnées par identifiant utilis
   - **Compte serveur partagé avec le site** : inscription, connexion, déconnexion et profil passent par l'API PHP ([src/lib/api.ts](src/lib/api.ts), [src/context/auth-context.tsx](src/context/auth-context.tsx)). Plus de compte local ni de code PIN — `auth-storage.ts`, `pin-pad.tsx`, `lock-screen.tsx`, `onboarding-screen.tsx` et `confirm-reset.ts` ont été supprimés.
   - **Zone publique routée** : `/` (accueil), `/a-propos`, `/connexion`, `/inscription`. Tout le reste est derrière `Stack.Protected`.
   - **Crédits** ([src/app/credits.tsx](src/app/credits.tsx)) : solde, grille tarifaire et historique lus dans `credits.php`, accessibles depuis l'onglet Profil qui affiche le solde en pastille. Écran en lecture seule, aucun achat (voir la note Apple/Google plus haut).
-  - **Annuaire administratif** ([src/app/(tabs)/annuaire.tsx](src/app/(tabs)/annuaire.tsx)) : module abouti — recherche, filtres par catégorie, appel téléphonique, site web, itinéraire. ⚠️ Données encore **en dur** dans [src/constants/annuaire.ts](src/constants/annuaire.ts) alors que `contacts.php` existe côté API : à rebrancher.
+  - **Annuaire administratif** ([src/app/(tabs)/annuaire.tsx](<src/app/(tabs)/annuaire.tsx>)) : module abouti — recherche, filtres par catégorie, appel téléphonique, site web, itinéraire. ⚠️ Données encore **en dur** dans [src/constants/annuaire.ts](src/constants/annuaire.ts) alors que `contacts.php` existe côté API : à rebrancher.
   - **Planificateur et Notifications** ([planificateur.tsx](src/app/planificateur.tsx), [notifications.tsx](src/app/notifications.tsx)) : écrans réels ; rappels persistés dans SQLite avec une outbox prête pour Supabase. ⚠️ La vidange distante attend encore le contrat d'identité/JWT et **aucune notification n'est réellement planifiée** : `expo-notifications` n'est pas installé, l'écran ne fait que lister.
   - **Assistant démarches** ([src/app/demarche/](src/app/demarche/)) : assistant pas-à-pas avec préremplissage, mais **sans IA** — 351 lignes de démarches en dur dans [src/constants/procedures.ts](src/constants/procedures.ts). Le vrai assistant IA (`ai/chat.php`, facturé en crédits) n'est pas branché.
   - **Profil civil** ([user-profile-context.tsx](src/context/user-profile-context.tsx)) : persisté dans SQLite avec une outbox prête pour `mobile_profiles` dans Supabase ; la vidange distante attend le contrat d'identité/JWT.

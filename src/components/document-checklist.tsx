@@ -19,7 +19,11 @@ type DocumentChecklistProps = {
  * Volontairement simple pour la démo (pas d'upload réel) : l'objectif est d'aider l'utilisateur
  * à vérifier qu'il a tout avant de se déplacer ou d'envoyer son dossier.
  */
-export function DocumentChecklist({ documents, checked, onToggle }: DocumentChecklistProps) {
+export function DocumentChecklist({
+  documents,
+  checked,
+  onToggle,
+}: DocumentChecklistProps) {
   const theme = useTheme();
 
   return (
@@ -33,14 +37,22 @@ export function DocumentChecklist({ documents, checked, onToggle }: DocumentChec
             accessibilityRole="checkbox"
             accessibilityState={{ checked: isChecked }}
             accessibilityLabel={document.label}
-            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}>
+            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+          >
             <ThemedView
               type="background"
-              style={[styles.row, { borderColor: isChecked ? theme.primary : theme.cardBorder }]}>
+              style={[
+                styles.row,
+                { borderColor: isChecked ? theme.primary : theme.cardBorder },
+              ]}
+            >
               <ThemedView
                 type={isChecked ? 'primary' : 'backgroundElement'}
-                style={styles.checkbox}>
-                {isChecked && <Ionicons name="checkmark" size={15} color="#FFFFFF" />}
+                style={styles.checkbox}
+              >
+                {isChecked && (
+                  <Ionicons name="checkmark" size={15} color="#FFFFFF" />
+                )}
               </ThemedView>
               <ThemedText style={styles.label}>{document.label}</ThemedText>
             </ThemedView>

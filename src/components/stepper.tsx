@@ -26,13 +26,15 @@ export function Stepper({ steps, currentIndex }: StepperProps) {
             <View style={styles.stepItem}>
               <ThemedView
                 type={done || active ? 'primary' : 'backgroundElement'}
-                style={styles.bullet}>
+                style={styles.bullet}
+              >
                 {done ? (
                   <Ionicons name="checkmark" size={13} color="#FFFFFF" />
                 ) : (
                   <ThemedText
                     type="caption"
-                    style={{ color: active ? '#FFFFFF' : theme.textSecondary }}>
+                    style={{ color: active ? '#FFFFFF' : theme.textSecondary }}
+                  >
                     {index + 1}
                   </ThemedText>
                 )}
@@ -41,12 +43,18 @@ export function Stepper({ steps, currentIndex }: StepperProps) {
                 type="caption"
                 themeColor={active ? 'primary' : 'textSecondary'}
                 numberOfLines={1}
-                style={styles.stepLabel}>
+                style={styles.stepLabel}
+              >
                 {step}
               </ThemedText>
             </View>
             {index < steps.length - 1 && (
-              <View style={[styles.connector, { backgroundColor: done ? theme.primary : theme.cardBorder }]} />
+              <View
+                style={[
+                  styles.connector,
+                  { backgroundColor: done ? theme.primary : theme.cardBorder },
+                ]}
+              />
             )}
           </View>
         );

@@ -16,7 +16,13 @@ type ModuleCardProps = AavieModule & {
   variant?: 'feature' | 'compact';
 };
 
-export function ModuleCard({ title, description, icon, href, variant = 'feature' }: ModuleCardProps) {
+export function ModuleCard({
+  title,
+  description,
+  icon,
+  href,
+  variant = 'feature',
+}: ModuleCardProps) {
   const theme = useTheme();
   const isCompact = variant === 'compact';
   const available = Boolean(href);
@@ -34,20 +40,39 @@ export function ModuleCard({ title, description, icon, href, variant = 'feature'
         pressed && styles.pressed,
       ]}
       accessible={!available}
-      accessibilityRole={available ? undefined : 'text'}>
+      accessibilityRole={available ? undefined : 'text'}
+    >
       <View style={styles.head}>
-        <IconChip name={icon} variant={isCompact ? 'turquoise' : 'primary'} size={isCompact ? 32 : 44} />
+        <IconChip
+          name={icon}
+          variant={isCompact ? 'turquoise' : 'primary'}
+          size={isCompact ? 32 : 44}
+        />
         {available && (
-          <ThemedView type="backgroundSelected" style={[styles.chevron, isCompact && styles.chevronCompact]}>
-            <Ionicons name="chevron-forward" size={isCompact ? 13 : 15} color={theme.primary} />
+          <ThemedView
+            type="backgroundSelected"
+            style={[styles.chevron, isCompact && styles.chevronCompact]}
+          >
+            <Ionicons
+              name="chevron-forward"
+              size={isCompact ? 13 : 15}
+              color={theme.primary}
+            />
           </ThemedView>
         )}
       </View>
       <View style={styles.body}>
-        <ThemedText type={isCompact ? 'label' : 'sectionTitle'}>{title}</ThemedText>
-        {!isCompact && <ThemedText themeColor="textSecondary">{description}</ThemedText>}
+        <ThemedText type={isCompact ? 'label' : 'sectionTitle'}>
+          {title}
+        </ThemedText>
+        {!isCompact && (
+          <ThemedText themeColor="textSecondary">{description}</ThemedText>
+        )}
       </View>
-      <ThemedView type={available ? 'turquoiseTint' : 'backgroundElement'} style={styles.pill}>
+      <ThemedView
+        type={available ? 'turquoiseTint' : 'backgroundElement'}
+        style={styles.pill}
+      >
         <Ionicons
           name={available ? 'checkmark-circle-outline' : 'time-outline'}
           size={11}
@@ -56,8 +81,13 @@ export function ModuleCard({ title, description, icon, href, variant = 'feature'
         <ThemedText
           type="caption"
           style={available ? { color: theme.turquoiseTintText } : undefined}
-          themeColor={available ? undefined : 'textSecondary'}>
-          {available ? 'Disponible' : isCompact ? 'Bientôt' : 'Bientôt disponible'}
+          themeColor={available ? undefined : 'textSecondary'}
+        >
+          {available
+            ? 'Disponible'
+            : isCompact
+              ? 'Bientôt'
+              : 'Bientôt disponible'}
         </ThemedText>
       </ThemedView>
     </ThemedView>
@@ -70,7 +100,8 @@ export function ModuleCard({ title, description, icon, href, variant = 'feature'
       onPress={() => router.push(href as never)}
       accessibilityRole="button"
       accessibilityLabel={`${title}. ${description}`}
-      style={isCompact && styles.pressableCompact}>
+      style={isCompact && styles.pressableCompact}
+    >
       {({ pressed }) => content(pressed)}
     </Pressable>
   );

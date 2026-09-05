@@ -8,9 +8,13 @@ const isWeb = Platform.OS === 'web';
 
 export type StoredUserProfile = Record<string, string>;
 
-export async function readStoredProfile(userId?: string): Promise<StoredUserProfile> {
+export async function readStoredProfile(
+  userId?: string,
+): Promise<StoredUserProfile> {
   void userId;
-  const raw = isWeb ? window.localStorage.getItem(PROFILE_KEY) : await SecureStore.getItemAsync(PROFILE_KEY);
+  const raw = isWeb
+    ? window.localStorage.getItem(PROFILE_KEY)
+    : await SecureStore.getItemAsync(PROFILE_KEY);
   if (!raw) return {};
   try {
     return JSON.parse(raw) as StoredUserProfile;
@@ -19,7 +23,10 @@ export async function readStoredProfile(userId?: string): Promise<StoredUserProf
   }
 }
 
-export async function writeStoredProfile(userId: string, profile: StoredUserProfile): Promise<void> {
+export async function writeStoredProfile(
+  userId: string,
+  profile: StoredUserProfile,
+): Promise<void> {
   void userId;
   const raw = JSON.stringify(profile);
   if (isWeb) {

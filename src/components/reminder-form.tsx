@@ -10,7 +10,11 @@ import { PROCEDURE_CATEGORIES } from '@/constants/procedures';
 import { LEAD_DAYS_PRESETS, type Reminder } from '@/constants/reminders';
 import { CardShadow, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { formatDateDigits, isoToDigits, parseDateDigits } from '@/lib/reminder-date';
+import {
+  formatDateDigits,
+  isoToDigits,
+  parseDateDigits,
+} from '@/lib/reminder-date';
 
 type ReminderInput = Omit<Reminder, 'id'>;
 
@@ -22,14 +26,27 @@ type ReminderFormProps = {
 };
 
 /** Formulaire d'ajout/modification d'une échéance, partagé par Planificateur et Notifications. */
-export function ReminderForm({ initialValue, onSubmit, onCancel, onDelete }: ReminderFormProps) {
+export function ReminderForm({
+  initialValue,
+  onSubmit,
+  onCancel,
+  onDelete,
+}: ReminderFormProps) {
   const theme = useTheme();
   const [title, setTitle] = useState(initialValue?.title ?? '');
-  const [dateDigits, setDateDigits] = useState(initialValue ? isoToDigits(initialValue.dateISO) : '');
+  const [dateDigits, setDateDigits] = useState(
+    initialValue ? isoToDigits(initialValue.dateISO) : '',
+  );
   const [dateError, setDateError] = useState(false);
-  const [category, setCategory] = useState(initialValue?.category ?? PROCEDURE_CATEGORIES[0]);
-  const [notifyEnabled, setNotifyEnabled] = useState(initialValue?.notifyEnabled ?? true);
-  const [leadDays, setLeadDays] = useState(initialValue?.leadDays ?? LEAD_DAYS_PRESETS[1].value);
+  const [category, setCategory] = useState(
+    initialValue?.category ?? PROCEDURE_CATEGORIES[0],
+  );
+  const [notifyEnabled, setNotifyEnabled] = useState(
+    initialValue?.notifyEnabled ?? true,
+  );
+  const [leadDays, setLeadDays] = useState(
+    initialValue?.leadDays ?? LEAD_DAYS_PRESETS[1].value,
+  );
 
   const canSubmit = title.trim().length > 0;
 
@@ -40,11 +57,20 @@ export function ReminderForm({ initialValue, onSubmit, onCancel, onDelete }: Rem
       setDateError(true);
       return;
     }
-    onSubmit({ title: title.trim(), dateISO, category, notifyEnabled, leadDays });
+    onSubmit({
+      title: title.trim(),
+      dateISO,
+      category,
+      notifyEnabled,
+      leadDays,
+    });
   };
 
   return (
-    <ThemedView type="background" style={[styles.card, CardShadow, { borderColor: theme.cardBorder }]}>
+    <ThemedView
+      type="background"
+      style={[styles.card, CardShadow, { borderColor: theme.cardBorder }]}
+    >
       <View style={styles.field}>
         <ThemedText type="label">Titre</ThemedText>
         <TextInput
@@ -53,7 +79,10 @@ export function ReminderForm({ initialValue, onSubmit, onCancel, onDelete }: Rem
           placeholder="Ex : renouveler ma carte d’identité"
           placeholderTextColor={theme.textSecondary}
           accessibilityLabel="Titre de l’échéance"
-          style={[styles.input, { backgroundColor: theme.backgroundElement, color: theme.text }]}
+          style={[
+            styles.input,
+            { backgroundColor: theme.backgroundElement, color: theme.text },
+          ]}
         />
       </View>
 
@@ -96,13 +125,20 @@ export function ReminderForm({ initialValue, onSubmit, onCancel, onDelete }: Rem
                 onPress={() => setCategory(item)}
                 accessibilityRole="button"
                 accessibilityState={{ selected }}
-                hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}>
+                hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+              >
                 <ThemedView
                   type={selected ? 'turquoise' : 'backgroundElement'}
-                  style={styles.chip}>
+                  style={styles.chip}
+                >
                   <ThemedText
                     type="label"
-                    style={{ color: selected ? theme.turquoiseTintText : theme.textSecondary }}>
+                    style={{
+                      color: selected
+                        ? theme.turquoiseTintText
+                        : theme.textSecondary,
+                    }}
+                  >
                     {item}
                   </ThemedText>
                 </ThemedView>
@@ -135,13 +171,20 @@ export function ReminderForm({ initialValue, onSubmit, onCancel, onDelete }: Rem
                   onPress={() => setLeadDays(preset.value)}
                   accessibilityRole="button"
                   accessibilityState={{ selected }}
-                  hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}>
+                  hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+                >
                   <ThemedView
                     type={selected ? 'turquoise' : 'backgroundElement'}
-                    style={styles.chip}>
+                    style={styles.chip}
+                  >
                     <ThemedText
                       type="label"
-                      style={{ color: selected ? theme.turquoiseTintText : theme.textSecondary }}>
+                      style={{
+                        color: selected
+                          ? theme.turquoiseTintText
+                          : theme.textSecondary,
+                      }}
+                    >
                       {preset.label}
                     </ThemedText>
                   </ThemedView>
@@ -165,7 +208,8 @@ export function ReminderForm({ initialValue, onSubmit, onCancel, onDelete }: Rem
           accessibilityRole="button"
           accessibilityLabel="Supprimer cette échéance"
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={styles.deleteRow}>
+          style={styles.deleteRow}
+        >
           <ThemedText type="label" themeColor="accent">
             Supprimer cette échéance
           </ThemedText>

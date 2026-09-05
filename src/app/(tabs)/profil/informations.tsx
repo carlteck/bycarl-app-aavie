@@ -10,7 +10,10 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import type { ProcedureField } from '@/constants/procedures';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { useUserProfile, type UserProfile } from '@/context/user-profile-context';
+import {
+  useUserProfile,
+  type UserProfile,
+} from '@/context/user-profile-context';
 
 /**
  * Champs civils déclaratifs utilisés pour pré-remplir les démarches administratives (voir
@@ -18,10 +21,20 @@ import { useUserProfile, type UserProfile } from '@/context/user-profile-context
  * lancer une démarche sans avoir renseigné son profil, il complétera alors les champs à la main.
  */
 const PROFILE_FIELDS: ProcedureField[] = [
-  { key: 'civilite', label: 'Civilité', type: 'select', options: ['Mme', 'M.'] },
+  {
+    key: 'civilite',
+    label: 'Civilité',
+    type: 'select',
+    options: ['Mme', 'M.'],
+  },
   { key: 'prenom', label: 'Prénom', type: 'text' },
   { key: 'nom', label: 'Nom', type: 'text' },
-  { key: 'dateNaissance', label: 'Date de naissance', type: 'date', placeholder: 'JJ/MM/AAAA' },
+  {
+    key: 'dateNaissance',
+    label: 'Date de naissance',
+    type: 'date',
+    placeholder: 'JJ/MM/AAAA',
+  },
   { key: 'lieuNaissance', label: 'Lieu de naissance', type: 'text' },
   { key: 'adresse', label: 'Adresse', type: 'text' },
   { key: 'codePostal', label: 'Code postal', type: 'text' },
@@ -58,17 +71,22 @@ export default function ProfilInformationsScreen() {
   return (
     <ThemedView style={styles.screen}>
       <ScreenHeaderBar title="Mes informations" onBack={() => router.back()} />
-      <ScrollView style={styles.scrollView} contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}
+      >
         <ThemedView style={styles.container}>
           <ThemedText themeColor="textSecondary">
-            Ces informations restent stockées uniquement sur cet appareil. Elles servent à
-            pré-remplir automatiquement vos démarches administratives.
+            Ces informations restent stockées uniquement sur cet appareil. Elles
+            servent à pré-remplir automatiquement vos démarches administratives.
           </ThemedText>
 
           <DynamicForm
             fields={PROFILE_FIELDS}
             values={values}
-            onChange={(key, value) => setValues((current) => ({ ...current, [key]: value }))}
+            onChange={(key, value) =>
+              setValues((current) => ({ ...current, [key]: value }))
+            }
           />
 
           <PrimaryButton onPress={handleSave} icon="checkmark-outline">

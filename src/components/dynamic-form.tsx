@@ -14,7 +14,12 @@ type DynamicFormProps = {
 };
 
 /** Formulaire généré depuis une définition de démarche (`constants/procedures.ts`). */
-export function DynamicForm({ fields, values, onChange, prefilledKeys }: DynamicFormProps) {
+export function DynamicForm({
+  fields,
+  values,
+  onChange,
+  prefilledKeys,
+}: DynamicFormProps) {
   return (
     <View style={styles.container}>
       {fields.map((field) => (

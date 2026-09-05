@@ -13,7 +13,11 @@ type PrimaryButtonProps = {
 };
 
 /** CTA principal pleine largeur, fond `primary` (pattern "Continuer" de la charte mobile §03). */
-export function PrimaryButton({ onPress, children, icon = 'arrow-forward' }: PrimaryButtonProps) {
+export function PrimaryButton({
+  onPress,
+  children,
+  icon = 'arrow-forward',
+}: PrimaryButtonProps) {
   const theme = useTheme();
 
   return (
@@ -21,9 +25,15 @@ export function PrimaryButton({ onPress, children, icon = 'arrow-forward' }: Pri
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={children}
-      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+    >
       {({ pressed }) => (
-        <View style={[styles.button, { backgroundColor: pressed ? theme.primaryPressed : theme.primary }]}>
+        <View
+          style={[
+            styles.button,
+            { backgroundColor: pressed ? theme.primaryPressed : theme.primary },
+          ]}
+        >
           <ThemedText type="label" style={styles.label}>
             {children}
           </ThemedText>

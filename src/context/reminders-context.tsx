@@ -1,8 +1,19 @@
 import * as Crypto from 'expo-crypto';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import type { Reminder } from '@/constants/reminders';
-import { readStoredReminders, writeStoredReminders } from '@/lib/reminders-storage';
+import {
+  readStoredReminders,
+  writeStoredReminders,
+} from '@/lib/reminders-storage';
 import { useAuth } from '@/context/auth-context';
 
 type ReminderInput = Omit<Reminder, 'id'>;
@@ -46,12 +57,15 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
     })();
   }, [user]);
 
-  const persist = useCallback((next: Reminder[]) => {
-    if (!user) return;
-    writeStoredReminders(user.id, next).catch((error) =>
-      console.warn('Échec de l’enregistrement des échéances locales.', error)
-    );
-  }, [user]);
+  const persist = useCallback(
+    (next: Reminder[]) => {
+      if (!user) return;
+      writeStoredReminders(user.id, next).catch((error) =>
+        console.warn('Échec de l’enregistrement des échéances locales.', error),
+      );
+    },
+    [user],
+  );
 
   const addReminder = useCallback(
     (input: ReminderInput) => {
@@ -61,18 +75,20 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
         return next;
       });
     },
-    [persist]
+    [persist],
   );
 
   const updateReminder = useCallback(
     (id: string, patch: Partial<ReminderInput>) => {
       setReminders((current) => {
-        const next = current.map((reminder) => (reminder.id === id ? { ...reminder, ...patch } : reminder));
+        const next = current.map((reminder) =>
+          reminder.id === id ? { ...reminder, ...patch } : reminder,
+        );
         persist(next);
         return next;
       });
     },
-    [persist]
+    [persist],
   );
 
   const removeReminder = useCallback(
@@ -83,19 +99,30 @@ export function RemindersProvider({ children }: { children: ReactNode }) {
         return next;
       });
     },
-    [persist]
+    [persist],
   );
 
   const value = useMemo(
-    () => ({ reminders, isLoaded, addReminder, updateReminder, removeReminder }),
-    [reminders, isLoaded, addReminder, updateReminder, removeReminder]
+    () => ({
+      reminders,
+      isLoaded,
+      addReminder,
+      updateReminder,
+      removeReminder,
+    }),
+    [reminders, isLoaded, addReminder, updateReminder, removeReminder],
   );
 
-  return <RemindersContext.Provider value={value}>{children}</RemindersContext.Provider>;
+  return (
+    <RemindersContext.Provider value={value}>
+      {children}
+    </RemindersContext.Provider>
+  );
 }
 
 export function useReminders() {
   const context = useContext(RemindersContext);
-  if (!context) throw new Error('useReminders must be used within a RemindersProvider');
+  if (!context)
+    throw new Error('useReminders must be used within a RemindersProvider');
   return context;
 }

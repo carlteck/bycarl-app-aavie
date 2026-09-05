@@ -19,18 +19,31 @@ type ScreenHeaderBarProps = {
  * n'ont pas d'en-tête natif par défaut (voir `demarche/_layout.tsx`, `profil/_layout.tsx`).
  * Bouton retour large (zone tactile ≥44pt) et libellé explicite pour les lecteurs d'écran.
  */
-export function ScreenHeaderBar({ title, onBack, backLabel = 'Retour' }: ScreenHeaderBarProps) {
+export function ScreenHeaderBar({
+  title,
+  onBack,
+  backLabel = 'Retour',
+}: ScreenHeaderBarProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
   return (
-    <ThemedView style={[styles.bar, { paddingTop: insets.top + Spacing.two, borderBottomColor: theme.cardBorder }]}>
+    <ThemedView
+      style={[
+        styles.bar,
+        {
+          paddingTop: insets.top + Spacing.two,
+          borderBottomColor: theme.cardBorder,
+        },
+      ]}
+    >
       <Pressable
         onPress={onBack}
         accessibilityRole="button"
         accessibilityLabel={backLabel}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        style={styles.backButton}>
+        style={styles.backButton}
+      >
         <Ionicons name="chevron-back" size={22} color={theme.primary} />
         <ThemedText type="label" themeColor="primary">
           {backLabel}

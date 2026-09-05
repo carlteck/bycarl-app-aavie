@@ -16,25 +16,39 @@ import { useTheme } from '@/hooks/use-theme';
 type FormState = 'hidden' | 'new' | string;
 
 export default function PlanificateurScreen() {
-  const { reminders, addReminder, updateReminder, removeReminder } = useReminders();
+  const { reminders, addReminder, updateReminder, removeReminder } =
+    useReminders();
   const [formState, setFormState] = useState<FormState>('hidden');
   const safeAreaInsets = useSafeAreaInsets();
   const theme = useTheme();
 
-  const sorted = [...reminders].sort((a, b) => a.dateISO.localeCompare(b.dateISO));
-  const editing = formState !== 'hidden' && formState !== 'new' ? reminders.find((r) => r.id === formState) : undefined;
+  const sorted = [...reminders].sort((a, b) =>
+    a.dateISO.localeCompare(b.dateISO),
+  );
+  const editing =
+    formState !== 'hidden' && formState !== 'new'
+      ? reminders.find((r) => r.id === formState)
+      : undefined;
 
   const contentPlatformStyle = Platform.select({
-    android: { paddingBottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three },
+    android: {
+      paddingBottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
+    },
     web: { paddingTop: Spacing.four, paddingBottom: Spacing.four },
   });
 
   return (
     <ThemedView style={styles.screen}>
-      <ScreenHeaderBar title="Planificateur administratif" onBack={() => router.back()} backLabel="Accueil" />
+      <ScreenHeaderBar
+        title="Planificateur administratif"
+        onBack={() => router.back()}
+        backLabel="Accueil"
+      />
       <ScrollView
         style={[styles.scroll, { backgroundColor: theme.background }]}
-        contentInset={{ bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three }}
+        contentInset={{
+          bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
+        }}
         contentContainerStyle={[
           styles.contentContainer,
           {
@@ -42,7 +56,8 @@ export default function PlanificateurScreen() {
             paddingRight: Spacing.four + safeAreaInsets.right,
           },
           contentPlatformStyle,
-        ]}>
+        ]}
+      >
         <View style={styles.content}>
           {formState === 'new' || editing ? (
             <ReminderForm
@@ -75,7 +90,11 @@ export default function PlanificateurScreen() {
               </ThemedText>
             ) : (
               sorted.map((reminder) => (
-                <ReminderRow key={reminder.id} reminder={reminder} onPress={() => setFormState(reminder.id)} />
+                <ReminderRow
+                  key={reminder.id}
+                  reminder={reminder}
+                  onPress={() => setFormState(reminder.id)}
+                />
               ))
             )}
           </View>

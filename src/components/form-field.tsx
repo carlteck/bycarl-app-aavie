@@ -16,13 +16,20 @@ type FormFieldProps = {
   prefilled?: boolean;
 };
 
-const KEYBOARD_TYPE: Partial<Record<ProcedureField['type'], 'default' | 'phone-pad' | 'email-address'>> = {
+const KEYBOARD_TYPE: Partial<
+  Record<ProcedureField['type'], 'default' | 'phone-pad' | 'email-address'>
+> = {
   tel: 'phone-pad',
   email: 'email-address',
 };
 
 /** Champ générique piloté par la définition de démarche (`DynamicForm`) : texte, date, select... */
-export function FormField({ field, value, onChange, prefilled }: FormFieldProps) {
+export function FormField({
+  field,
+  value,
+  onChange,
+  prefilled,
+}: FormFieldProps) {
   const theme = useTheme();
 
   return (
@@ -34,8 +41,15 @@ export function FormField({ field, value, onChange, prefilled }: FormFieldProps)
         </ThemedText>
         {prefilled && value.length > 0 && (
           <View style={styles.prefillBadge}>
-            <Ionicons name="sparkles-outline" size={11} color={theme.turquoiseTintText} />
-            <ThemedText type="caption" style={{ color: theme.turquoiseTintText }}>
+            <Ionicons
+              name="sparkles-outline"
+              size={11}
+              color={theme.turquoiseTintText}
+            />
+            <ThemedText
+              type="caption"
+              style={{ color: theme.turquoiseTintText }}
+            >
               Pré-rempli
             </ThemedText>
           </View>
@@ -52,13 +66,20 @@ export function FormField({ field, value, onChange, prefilled }: FormFieldProps)
                 onPress={() => onChange(option)}
                 accessibilityRole="button"
                 accessibilityState={{ selected }}
-                hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}>
+                hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+              >
                 <ThemedView
                   type={selected ? 'turquoise' : 'backgroundElement'}
-                  style={styles.optionChip}>
+                  style={styles.optionChip}
+                >
                   <ThemedText
                     type="label"
-                    style={{ color: selected ? theme.turquoiseTintText : theme.textSecondary }}>
+                    style={{
+                      color: selected
+                        ? theme.turquoiseTintText
+                        : theme.textSecondary,
+                    }}
+                  >
                     {option}
                   </ThemedText>
                 </ThemedView>
@@ -77,7 +98,11 @@ export function FormField({ field, value, onChange, prefilled }: FormFieldProps)
           accessibilityLabel={field.label}
           style={[
             styles.input,
-            { backgroundColor: theme.backgroundElement, color: theme.text, borderColor: theme.cardBorder },
+            {
+              backgroundColor: theme.backgroundElement,
+              color: theme.text,
+              borderColor: theme.cardBorder,
+            },
           ]}
         />
       )}

@@ -22,7 +22,9 @@ const sessionStorage = {
   },
 };
 
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabasePublishableKey);
+export const isSupabaseConfigured = Boolean(
+  supabaseUrl && supabasePublishableKey,
+);
 
 /**
  * Supabase porte uniquement les données mobiles synchronisées. Les comptes, crédits, forfaits
@@ -38,5 +40,5 @@ export const supabase = createClient(
       autoRefreshToken: true,
       detectSessionInUrl: false,
     },
-  }
+  },
 );

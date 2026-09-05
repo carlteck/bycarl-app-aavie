@@ -24,7 +24,8 @@ const SERVICES: { icon: IconName; title: string; description: string }[] = [
   {
     icon: 'chatbubbles-outline',
     title: 'Assistant administratif',
-    description: "Une démarche à la fois, expliquée simplement, jusqu'à l'envoi.",
+    description:
+      "Une démarche à la fois, expliquée simplement, jusqu'à l'envoi.",
   },
   {
     icon: 'create-outline',
@@ -85,9 +86,12 @@ export default function AccueilPublicScreen() {
             paddingLeft: Spacing.four + safeAreaInsets.left,
             paddingRight: Spacing.four + safeAreaInsets.right,
           },
-        ]}>
+        ]}
+      >
         <View style={styles.container}>
-          <ThemedText type="sectionTitle">Tout ce qu&apos;il vous faut, au même endroit</ThemedText>
+          <ThemedText type="sectionTitle">
+            Tout ce qu&apos;il vous faut, au même endroit
+          </ThemedText>
 
           <View style={styles.services}>
             {SERVICES.map((service) => (
@@ -95,9 +99,13 @@ export default function AccueilPublicScreen() {
                 key={service.title}
                 style={[
                   styles.serviceRow,
-                  { borderColor: theme.cardBorder, backgroundColor: theme.background },
+                  {
+                    borderColor: theme.cardBorder,
+                    backgroundColor: theme.background,
+                  },
                   CardShadow,
-                ]}>
+                ]}
+              >
                 <IconChip name={service.icon} />
                 <View style={styles.serviceText}>
                   <ThemedText type="label">{service.title}</ThemedText>
@@ -115,7 +123,8 @@ export default function AccueilPublicScreen() {
           <Pressable
             onPress={() => router.push('/a-propos')}
             accessibilityRole="link"
-            accessibilityLabel="À propos d’AAVIE">
+            accessibilityLabel="À propos d’AAVIE"
+          >
             {({ pressed }) => (
               <View
                 style={[
@@ -125,14 +134,16 @@ export default function AccueilPublicScreen() {
                     backgroundColor: theme.turquoiseTint,
                     opacity: pressed ? 0.7 : 1,
                   },
-                ]}>
+                ]}
+              >
                 <IconChip name="information-circle-outline" variant="primary" />
                 <View style={styles.serviceText}>
                   <ThemedText type="label" themeColor="turquoiseTintText">
                     À propos d’AAVIE
                   </ThemedText>
                   <ThemedText type="caption" themeColor="turquoiseTintText">
-                    Notre mission, pour qui, et ce que l’application fait — ou ne fait pas.
+                    Notre mission, pour qui, et ce que l’application fait — ou
+                    ne fait pas.
                   </ThemedText>
                 </View>
               </View>
@@ -152,12 +163,19 @@ export default function AccueilPublicScreen() {
             paddingLeft: Spacing.four + safeAreaInsets.left,
             paddingRight: Spacing.four + safeAreaInsets.right,
           },
-        ]}>
+        ]}
+      >
         <View style={styles.footerInner}>
-          <PrimaryButton onPress={() => router.push('/inscription')} icon="person-add-outline">
+          <PrimaryButton
+            onPress={() => router.push('/inscription')}
+            icon="person-add-outline"
+          >
             Créer mon compte
           </PrimaryButton>
-          <OutlineButton onPress={() => router.push('/connexion')} icon="log-in-outline">
+          <OutlineButton
+            onPress={() => router.push('/connexion')}
+            icon="log-in-outline"
+          >
             J’ai déjà un compte
           </OutlineButton>
         </View>

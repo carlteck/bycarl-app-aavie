@@ -1,13 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
-import { FlatList, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import {
+  FlatList,
+  Platform,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AnnuaireEntryCard } from '@/components/annuaire-entry-card';
 import { GradientHeader } from '@/components/gradient-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { ANNUAIRE_CATEGORIES, ANNUAIRE_ENTRIES, type AnnuaireCategory } from '@/constants/annuaire';
+import {
+  ANNUAIRE_CATEGORIES,
+  ANNUAIRE_ENTRIES,
+  type AnnuaireCategory,
+} from '@/constants/annuaire';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -22,11 +33,12 @@ export default function AnnuaireScreen() {
   const results = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     return ANNUAIRE_ENTRIES.filter((entry) => {
-      const matchesCategory = category === 'Tous' || entry.category === category;
+      const matchesCategory =
+        category === 'Tous' || entry.category === category;
       const matchesQuery =
         normalized.length === 0 ||
         [entry.name, entry.category, entry.description].some((field) =>
-          field.toLowerCase().includes(normalized)
+          field.toLowerCase().includes(normalized),
         );
       return matchesCategory && matchesQuery;
     });
@@ -53,7 +65,9 @@ export default function AnnuaireScreen() {
       />
       <FlatList
         style={[styles.list, { backgroundColor: theme.background }]}
-        contentInset={{ bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three }}
+        contentInset={{
+          bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
+        }}
         contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}
         data={results}
         keyExtractor={(item) => item.id}
@@ -65,8 +79,17 @@ export default function AnnuaireScreen() {
         ItemSeparatorComponent={() => <ThemedView style={styles.separator} />}
         ListHeaderComponent={
           <ThemedView style={styles.header}>
-            <View style={[styles.searchBar, { backgroundColor: theme.backgroundElement }]}>
-              <Ionicons name="search-outline" size={17} color={theme.textSecondary} />
+            <View
+              style={[
+                styles.searchBar,
+                { backgroundColor: theme.backgroundElement },
+              ]}
+            >
+              <Ionicons
+                name="search-outline"
+                size={17}
+                color={theme.textSecondary}
+              />
               <TextInput
                 value={query}
                 onChangeText={setQuery}
@@ -79,32 +102,51 @@ export default function AnnuaireScreen() {
             </View>
 
             <View style={styles.chipRow}>
-              {(['Tous', ...ANNUAIRE_CATEGORIES] as CategoryFilter[]).map((item) => {
-                const selected = item === category;
-                return (
-                  <Pressable
-                    key={item}
-                    onPress={() => setCategory(item)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
-                    hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}>
-                    <ThemedView
-                      type={selected ? 'turquoise' : 'background'}
-                      style={[styles.filterChip, { borderColor: selected ? 'transparent' : theme.cardBorder }]}>
-                      <ThemedText
-                        type="label"
-                        style={{ color: selected ? theme.turquoiseTintText : theme.textSecondary }}>
-                        {item}
-                      </ThemedText>
-                    </ThemedView>
-                  </Pressable>
-                );
-              })}
+              {(['Tous', ...ANNUAIRE_CATEGORIES] as CategoryFilter[]).map(
+                (item) => {
+                  const selected = item === category;
+                  return (
+                    <Pressable
+                      key={item}
+                      onPress={() => setCategory(item)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected }}
+                      hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+                    >
+                      <ThemedView
+                        type={selected ? 'turquoise' : 'background'}
+                        style={[
+                          styles.filterChip,
+                          {
+                            borderColor: selected
+                              ? 'transparent'
+                              : theme.cardBorder,
+                          },
+                        ]}
+                      >
+                        <ThemedText
+                          type="label"
+                          style={{
+                            color: selected
+                              ? theme.turquoiseTintText
+                              : theme.textSecondary,
+                          }}
+                        >
+                          {item}
+                        </ThemedText>
+                      </ThemedView>
+                    </Pressable>
+                  );
+                },
+              )}
             </View>
           </ThemedView>
         }
         ListEmptyComponent={
-          <ThemedText themeColor="textSecondary" style={[styles.centerText, styles.emptyState]}>
+          <ThemedText
+            themeColor="textSecondary"
+            style={[styles.centerText, styles.emptyState]}
+          >
             Aucun organisme ne correspond à votre recherche.
           </ThemedText>
         }

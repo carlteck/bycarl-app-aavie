@@ -1,6 +1,12 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OutlineButton } from '@/components/outline-button';
@@ -45,7 +51,7 @@ export default function ConnexionScreen() {
       setError(
         e instanceof ApiError || e instanceof NetworkError
           ? e.message
-          : 'Connexion impossible. Réessayez dans un instant.'
+          : 'Connexion impossible. Réessayez dans un instant.',
       );
       setIsSubmitting(false);
     }
@@ -53,11 +59,16 @@ export default function ConnexionScreen() {
 
   return (
     <ThemedView style={styles.screen}>
-      <ScreenHeaderBar title="Connexion" onBack={() => router.back()} backLabel="Accueil" />
+      <ScreenHeaderBar
+        title="Connexion"
+        onBack={() => router.back()}
+        backLabel="Accueil"
+      />
 
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         <ScrollView
           style={[styles.flex, { backgroundColor: theme.background }]}
           keyboardShouldPersistTaps="handled"
@@ -68,10 +79,13 @@ export default function ConnexionScreen() {
               paddingRight: Spacing.four + safeAreaInsets.right,
               paddingBottom: safeAreaInsets.bottom + Spacing.four,
             },
-          ]}>
+          ]}
+        >
           <View style={styles.container}>
             <View style={styles.intro}>
-              <ThemedText type="screenTitle">Connexion à votre espace</ThemedText>
+              <ThemedText type="screenTitle">
+                Connexion à votre espace
+              </ThemedText>
               <ThemedText themeColor="textSecondary">
                 Retrouvez vos démarches, vos documents et vos rappels.
               </ThemedText>
@@ -114,12 +128,17 @@ export default function ConnexionScreen() {
             </PrimaryButton>
 
             <View style={styles.alternative}>
-              <ThemedText type="caption" themeColor="textSecondary" style={styles.centerText}>
+              <ThemedText
+                type="caption"
+                themeColor="textSecondary"
+                style={styles.centerText}
+              >
                 Pas encore de compte ?
               </ThemedText>
               <OutlineButton
                 onPress={() => router.replace('/inscription')}
-                icon="person-add-outline">
+                icon="person-add-outline"
+              >
                 Créer mon compte
               </OutlineButton>
             </View>

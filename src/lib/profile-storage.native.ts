@@ -10,7 +10,9 @@ import type { StoredUserProfile } from '@/lib/profile-storage';
 const LEGACY_PROFILE_KEY = 'aavie_user_profile';
 let writeQueue = Promise.resolve();
 
-export async function readStoredProfile(userId: string): Promise<StoredUserProfile> {
+export async function readStoredProfile(
+  userId: string,
+): Promise<StoredUserProfile> {
   const profile = await readProfile(userId);
   if (Object.keys(profile).length > 0) return profile;
 
@@ -26,8 +28,13 @@ export async function readStoredProfile(userId: string): Promise<StoredUserProfi
   }
 }
 
-export function writeStoredProfile(userId: string, profile: StoredUserProfile): Promise<void> {
-  writeQueue = writeQueue.catch(() => {}).then(() => writeProfile(userId, profile));
+export function writeStoredProfile(
+  userId: string,
+  profile: StoredUserProfile,
+): Promise<void> {
+  writeQueue = writeQueue
+    .catch(() => {})
+    .then(() => writeProfile(userId, profile));
   return writeQueue;
 }
 

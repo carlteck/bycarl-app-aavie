@@ -12,11 +12,16 @@ export default function DemarcheCatalogueScreen() {
 
   return (
     <ThemedView style={styles.screen}>
-      <ScreenHeaderBar title="Démarches administratives" onBack={() => router.back()} backLabel="Accueil" />
+      <ScreenHeaderBar
+        title="Démarches administratives"
+        onBack={() => router.back()}
+        backLabel="Accueil"
+      />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={safeAreaInsets.top}>
+        keyboardVerticalOffset={safeAreaInsets.top}
+      >
         <View
           style={[
             styles.content,
@@ -25,7 +30,8 @@ export default function DemarcheCatalogueScreen() {
               paddingRight: Spacing.four + safeAreaInsets.right,
               paddingBottom: safeAreaInsets.bottom + BottomTabInset,
             },
-          ]}>
+          ]}
+        >
           <AssistantPromptCard />
         </View>
       </KeyboardAvoidingView>

@@ -27,7 +27,11 @@ function pairUp(modules: AavieModule[]) {
   return pairs;
 }
 
-export function SectionScreen({ section, showAppTitle, beforeModules }: SectionScreenProps) {
+export function SectionScreen({
+  section,
+  showAppTitle,
+  beforeModules,
+}: SectionScreenProps) {
   const safeAreaInsets = useSafeAreaInsets();
   const theme = useTheme();
 
@@ -47,22 +51,39 @@ export function SectionScreen({ section, showAppTitle, beforeModules }: SectionS
 
   return (
     <ThemedView style={styles.screen}>
-      <GradientHeader icon={section.icon} title={section.heading} intro={section.intro} brand={showAppTitle} />
+      <GradientHeader
+        icon={section.icon}
+        title={section.heading}
+        intro={section.intro}
+        brand={showAppTitle}
+      />
       <ScrollView
         style={[styles.scrollView, { backgroundColor: theme.background }]}
-        contentInset={{ bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three }}
-        contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}>
+        contentInset={{
+          bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
+        }}
+        contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}
+      >
         <ThemedView style={styles.container}>
           {beforeModules}
 
           <ThemedView
             style={[
               styles.list,
-              { paddingLeft: Spacing.four + safeAreaInsets.left, paddingRight: Spacing.four + safeAreaInsets.right },
-            ]}>
-            {featureModule && <ModuleCard {...featureModule} variant="feature" />}
+              {
+                paddingLeft: Spacing.four + safeAreaInsets.left,
+                paddingRight: Spacing.four + safeAreaInsets.right,
+              },
+            ]}
+          >
+            {featureModule && (
+              <ModuleCard {...featureModule} variant="feature" />
+            )}
             {compactPairs.map((pair) => (
-              <View key={pair.map((m) => m.id).join('-')} style={styles.bentoRow}>
+              <View
+                key={pair.map((m) => m.id).join('-')}
+                style={styles.bentoRow}
+              >
                 {pair.map((module) => (
                   <ModuleCard key={module.id} {...module} variant="compact" />
                 ))}

@@ -27,28 +27,30 @@ export const AAVIE_SECTIONS: AavieSection[] = [
     tabTitle: 'Accueil',
     heading: 'Bienvenue sur AAVIE',
     intro:
-      "Votre allié pour comprendre et réaliser vos démarches administratives en toute autonomie, à votre rythme.",
+      'Votre allié pour comprendre et réaliser vos démarches administratives en toute autonomie, à votre rythme.',
     icon: 'home-outline',
     modules: [
       {
         id: 'assistant',
         title: 'Assistant administratif',
         description:
-          "Accompagnement personnalisé pour réaliser une démarche étape par étape, avec pré-remplissage automatique.",
+          'Accompagnement personnalisé pour réaliser une démarche étape par étape, avec pré-remplissage automatique.',
         icon: 'chatbubbles-outline',
         href: '/demarche',
       },
       {
         id: 'planificateur',
         title: 'Planificateur administratif',
-        description: 'Calendrier des rendez-vous et échéances, avec rappels automatiques.',
+        description:
+          'Calendrier des rendez-vous et échéances, avec rappels automatiques.',
         icon: 'calendar-outline',
         href: '/planificateur',
       },
       {
         id: 'rappels',
         title: 'Notifications et rappels',
-        description: 'Alertes pour les échéances importantes : déclarations, renouvellements.',
+        description:
+          'Alertes pour les échéances importantes : déclarations, renouvellements.',
         icon: 'notifications-outline',
         href: '/notifications',
       },
@@ -59,25 +61,28 @@ export const AAVIE_SECTIONS: AavieSection[] = [
     tabTitle: 'Ressources',
     heading: 'Centre de ressources',
     intro:
-      "Guides, tutoriels et veille pour comprendre les démarches administratives et rédiger sereinement vos documents.",
+      'Guides, tutoriels et veille pour comprendre les démarches administratives et rédiger sereinement vos documents.',
     icon: 'book-outline',
     modules: [
       {
         id: 'centre-ressources',
         title: 'Centre de ressources',
-        description: 'Guides pédagogiques, vidéos explicatives et fiches simplifiées.',
+        description:
+          'Guides pédagogiques, vidéos explicatives et fiches simplifiées.',
         icon: 'book-outline',
       },
       {
         id: 'veille',
         title: 'Veille technique et informationnelle',
-        description: 'Suivi des évolutions législatives locales, ultramarines et nationales.',
+        description:
+          'Suivi des évolutions législatives locales, ultramarines et nationales.',
         icon: 'newspaper-outline',
       },
       {
         id: 'redaction',
         title: 'Aide rédactionnelle',
-        description: 'Modèles de lettres et documents, avec assistance à la rédaction.',
+        description:
+          'Modèles de lettres et documents, avec assistance à la rédaction.',
         icon: 'create-outline',
       },
     ],
@@ -86,25 +91,29 @@ export const AAVIE_SECTIONS: AavieSection[] = [
     key: 'annuaire',
     tabTitle: 'Annuaire',
     heading: 'Annuaire administratif',
-    intro: 'Retrouvez rapidement les coordonnées des services administratifs près de chez vous.',
+    intro:
+      'Retrouvez rapidement les coordonnées des services administratifs près de chez vous.',
     icon: 'business-outline',
     modules: [
       {
         id: 'annuaire-local',
         title: 'Services locaux',
-        description: 'Préfecture, mairie, CAF, CPAM et autres organismes de proximité.',
+        description:
+          'Préfecture, mairie, CAF, CPAM et autres organismes de proximité.',
         icon: 'location-outline',
       },
       {
         id: 'annuaire-national',
         title: 'Services nationaux',
-        description: 'Impôts, Pôle emploi, Sécurité sociale et administrations centrales.',
+        description:
+          'Impôts, Pôle emploi, Sécurité sociale et administrations centrales.',
         icon: 'flag-outline',
       },
       {
         id: 'annuaire-contact',
         title: 'Contact direct',
-        description: 'Coordonnées et accès rapide pour joindre chaque organisme.',
+        description:
+          'Coordonnées et accès rapide pour joindre chaque organisme.',
         icon: 'call-outline',
       },
     ],
@@ -120,19 +129,22 @@ export const AAVIE_SECTIONS: AavieSection[] = [
       {
         id: 'sauvegarde',
         title: 'Outil de sauvegarde',
-        description: 'Espace sécurisé pour numériser et organiser vos documents administratifs.',
+        description:
+          'Espace sécurisé pour numériser et organiser vos documents administratifs.',
         icon: 'folder-outline',
       },
       {
         id: 'budget',
         title: 'Gestion de budget',
-        description: 'Suivi des revenus et dépenses, aide à la préparation des déclarations fiscales.',
+        description:
+          'Suivi des revenus et dépenses, aide à la préparation des déclarations fiscales.',
         icon: 'bar-chart-outline',
       },
       {
         id: 'accessibilite',
         title: 'Accessibilité',
-        description: 'Contraste, taille de texte, lecteur d’écran et navigation adaptée.',
+        description:
+          'Contraste, taille de texte, lecteur d’écran et navigation adaptée.',
         icon: 'accessibility-outline',
       },
     ],

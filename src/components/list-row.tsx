@@ -19,7 +19,13 @@ type ListRowProps = {
 };
 
 /** Ligne de liste groupée façon Réglages : puce d'icône, libellé, élément de fin. */
-export function ListRow({ icon, label, onPress, trailing, danger }: ListRowProps) {
+export function ListRow({
+  icon,
+  label,
+  onPress,
+  trailing,
+  danger,
+}: ListRowProps) {
   const theme = useTheme();
 
   const content = (
@@ -28,10 +34,18 @@ export function ListRow({ icon, label, onPress, trailing, danger }: ListRowProps
       <ThemedText
         type="label"
         style={[styles.label, danger ? { color: theme.accent } : undefined]}
-        numberOfLines={1}>
+        numberOfLines={1}
+      >
         {label}
       </ThemedText>
-      {trailing ?? (onPress && <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />)}
+      {trailing ??
+        (onPress && (
+          <Ionicons
+            name="chevron-forward"
+            size={16}
+            color={theme.textSecondary}
+          />
+        ))}
     </View>
   );
 
@@ -42,7 +56,8 @@ export function ListRow({ icon, label, onPress, trailing, danger }: ListRowProps
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={({ pressed }) => pressed && styles.pressed}>
+      style={({ pressed }) => pressed && styles.pressed}
+    >
       {content}
     </Pressable>
   );

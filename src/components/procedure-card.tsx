@@ -22,8 +22,12 @@ export function ProcedureCard({ procedure, onPress }: ProcedureCardProps) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${procedure.title}, ${procedure.durationEstimate}`}
-      style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView type="background" style={[styles.card, CardShadow, { borderColor: theme.cardBorder }]}>
+      style={({ pressed }) => pressed && styles.pressed}
+    >
+      <ThemedView
+        type="background"
+        style={[styles.card, CardShadow, { borderColor: theme.cardBorder }]}
+      >
         <IconChip name={procedure.icon} variant="turquoise" />
         <View style={styles.body}>
           <ThemedText type="sectionTitle">{procedure.title}</ThemedText>
@@ -32,14 +36,22 @@ export function ProcedureCard({ procedure, onPress }: ProcedureCardProps) {
           </ThemedText>
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
-              <Ionicons name="time-outline" size={13} color={theme.textSecondary} />
+              <Ionicons
+                name="time-outline"
+                size={13}
+                color={theme.textSecondary}
+              />
               <ThemedText type="caption" themeColor="textSecondary">
                 {procedure.durationEstimate}
               </ThemedText>
             </View>
             {procedure.cerfaNumber && (
               <View style={styles.metaItem}>
-                <Ionicons name="document-text-outline" size={13} color={theme.textSecondary} />
+                <Ionicons
+                  name="document-text-outline"
+                  size={13}
+                  color={theme.textSecondary}
+                />
                 <ThemedText type="caption" themeColor="textSecondary">
                   {procedure.cerfaNumber}
                 </ThemedText>
@@ -57,7 +69,11 @@ export function ProcedureCard({ procedure, onPress }: ProcedureCardProps) {
             </View>
           </View>
         </View>
-        <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
+        <Ionicons
+          name="chevron-forward"
+          size={18}
+          color={theme.textSecondary}
+        />
       </ThemedView>
     </Pressable>
   );

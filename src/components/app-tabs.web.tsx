@@ -16,9 +16,21 @@ type TabDef = {
 };
 
 const TABS: TabDef[] = [
-  { href: '/accueil', label: 'Accueil', match: (p) => p === '/accueil' || p.startsWith('/demarche') },
-  { href: '/ressources', label: 'Ressources', match: (p) => p.startsWith('/ressources') },
-  { href: '/annuaire', label: 'Annuaire', match: (p) => p.startsWith('/annuaire') },
+  {
+    href: '/accueil',
+    label: 'Accueil',
+    match: (p) => p === '/accueil' || p.startsWith('/demarche'),
+  },
+  {
+    href: '/ressources',
+    label: 'Ressources',
+    match: (p) => p.startsWith('/ressources'),
+  },
+  {
+    href: '/annuaire',
+    label: 'Annuaire',
+    match: (p) => p.startsWith('/annuaire'),
+  },
   { href: '/profil', label: 'Profil', match: (p) => p.startsWith('/profil') },
 ];
 
@@ -37,7 +49,11 @@ export default function AppTabs() {
       <Slot />
       <CustomTabList>
         {TABS.map((tab) => (
-          <TabButton key={tab.href} focused={tab.match(pathname)} onPress={() => router.push(tab.href as never)}>
+          <TabButton
+            key={tab.href}
+            focused={tab.match(pathname)}
+            onPress={() => router.push(tab.href as never)}
+          >
             {tab.label}
           </TabButton>
         ))}
@@ -61,9 +77,16 @@ function TabButton({
       accessibilityRole="button"
       accessibilityState={{ selected: focused }}
       hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-      style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView type={focused ? 'backgroundSelected' : 'backgroundElement'} style={styles.tabButtonView}>
-        <ThemedText type="label" themeColor={focused ? 'primary' : 'textSecondary'}>
+      style={({ pressed }) => pressed && styles.pressed}
+    >
+      <ThemedView
+        type={focused ? 'backgroundSelected' : 'backgroundElement'}
+        style={styles.tabButtonView}
+      >
+        <ThemedText
+          type="label"
+          themeColor={focused ? 'primary' : 'textSecondary'}
+        >
           {children}
         </ThemedText>
       </ThemedView>
@@ -87,10 +110,13 @@ function CustomTabList({ children }: { children: ReactNode }) {
         style={[
           styles.innerContainer,
           {
-            backgroundColor: isDark ? 'rgba(21,24,28,0.7)' : 'rgba(255,255,255,0.7)',
+            backgroundColor: isDark
+              ? 'rgba(21,24,28,0.7)'
+              : 'rgba(255,255,255,0.7)',
             backdropFilter: 'blur(20px)',
           },
-        ]}>
+        ]}
+      >
         <ThemedText type="label" themeColor="primary" style={styles.brandText}>
           AAVIE
         </ThemedText>

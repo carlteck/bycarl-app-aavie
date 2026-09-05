@@ -22,7 +22,12 @@ export async function readStoredReminders(userId: string): Promise<Reminder[]> {
   }
 }
 
-export function writeStoredReminders(userId: string, reminders: Reminder[]): Promise<void> {
-  writeQueue = writeQueue.catch(() => {}).then(() => writeReminders(userId, reminders));
+export function writeStoredReminders(
+  userId: string,
+  reminders: Reminder[],
+): Promise<void> {
+  writeQueue = writeQueue
+    .catch(() => {})
+    .then(() => writeReminders(userId, reminders));
   return writeQueue;
 }

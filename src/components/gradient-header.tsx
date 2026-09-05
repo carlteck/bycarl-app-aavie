@@ -22,7 +22,12 @@ type GradientHeaderProps = {
  * couverture de la charte graphique) + panneau vitré (glass) pour le titre — texte toujours sur
  * fond quasi-opaque, jamais directement sur le flou, pour garder un contraste plein.
  */
-export function GradientHeader({ icon, title, intro, brand }: GradientHeaderProps) {
+export function GradientHeader({
+  icon,
+  title,
+  intro,
+  brand,
+}: GradientHeaderProps) {
   const insets = useSafeAreaInsets();
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
@@ -32,7 +37,8 @@ export function GradientHeader({ icon, title, intro, brand }: GradientHeaderProp
       colors={[Palette.deepBlue, Palette.deepBluePressed]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={[styles.backdrop, { paddingTop: insets.top + Spacing.three }]}>
+      style={[styles.backdrop, { paddingTop: insets.top + Spacing.three }]}
+    >
       <View style={styles.blobAHalo} />
       <View style={styles.blobA} />
       <View style={styles.blobBHalo} />
@@ -42,12 +48,21 @@ export function GradientHeader({ icon, title, intro, brand }: GradientHeaderProp
         AAVIE
       </ThemedText>
 
-      <BlurView intensity={40} tint={isDark ? 'dark' : 'light'} style={styles.glassOuter}>
+      <BlurView
+        intensity={40}
+        tint={isDark ? 'dark' : 'light'}
+        style={styles.glassOuter}
+      >
         <View
           style={[
             styles.glassInner,
-            { backgroundColor: isDark ? 'rgba(21,24,28,0.78)' : 'rgba(255,255,255,0.82)' },
-          ]}>
+            {
+              backgroundColor: isDark
+                ? 'rgba(21,24,28,0.78)'
+                : 'rgba(255,255,255,0.82)',
+            },
+          ]}
+        >
           <View style={styles.glassTop}>
             {brand ? (
               // Logotype AAVIE officiel (anneau turquoise + bulle corail souriante) : l'anneau fait
@@ -63,7 +78,11 @@ export function GradientHeader({ icon, title, intro, brand }: GradientHeaderProp
                 <Ionicons name={icon} size={20} color={Palette.white} />
               </View>
             )}
-            <ThemedText type="sectionTitle" themeColor="text" style={styles.title}>
+            <ThemedText
+              type="sectionTitle"
+              themeColor="text"
+              style={styles.title}
+            >
               {title}
             </ThemedText>
           </View>

@@ -1,6 +1,7 @@
 import type { Ionicons } from '@expo/vector-icons';
 
-export type AnnuaireCategory = 'Local (Guyane)' | 'National' | 'Emploi' | 'Santé' | 'Logement';
+export type AnnuaireCategory =
+  'Local (Guyane)' | 'National' | 'Emploi' | 'Santé' | 'Logement';
 
 export type AnnuaireEntry = {
   id: string;
@@ -20,7 +21,10 @@ export const ANNUAIRE_CATEGORIES: AnnuaireCategory[] = [
   'Logement',
 ];
 
-export const ANNUAIRE_CATEGORY_ICON: Record<AnnuaireCategory, keyof typeof Ionicons.glyphMap> = {
+export const ANNUAIRE_CATEGORY_ICON: Record<
+  AnnuaireCategory,
+  keyof typeof Ionicons.glyphMap
+> = {
   'Local (Guyane)': 'location-outline',
   National: 'flag-outline',
   Santé: 'medkit-outline',
@@ -78,7 +82,8 @@ export const ANNUAIRE_ENTRIES: AnnuaireEntry[] = [
     id: 'impots-gouv',
     name: 'Impôts (DGFiP)',
     category: 'National',
-    description: 'Déclaration de revenus, avis d’imposition, paiement en ligne.',
+    description:
+      'Déclaration de revenus, avis d’imposition, paiement en ligne.',
     phone: '0809401401',
     website: 'https://www.impots.gouv.fr',
   },
@@ -86,7 +91,8 @@ export const ANNUAIRE_ENTRIES: AnnuaireEntry[] = [
     id: 'service-public',
     name: 'Service-Public.fr',
     category: 'National',
-    description: 'Portail officiel de toutes les démarches administratives françaises.',
+    description:
+      'Portail officiel de toutes les démarches administratives françaises.',
     website: 'https://www.service-public.fr',
   },
   {

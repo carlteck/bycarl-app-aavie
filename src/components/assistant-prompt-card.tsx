@@ -40,15 +40,21 @@ export function AssistantPromptCard() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Parler à l’assistant"
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
           {({ pressed }) => (
             <View
               style={[
                 styles.micButton,
                 CardShadow,
                 { backgroundColor: theme.background },
-              ]}>
-              <Ionicons name="mic" size={30} color={pressed ? theme.primaryPressed : theme.primary} />
+              ]}
+            >
+              <Ionicons
+                name="mic"
+                size={30}
+                color={pressed ? theme.primaryPressed : theme.primary}
+              />
             </View>
           )}
         </Pressable>
@@ -61,7 +67,9 @@ export function AssistantPromptCard() {
         Décrivez votre situation, on vous oriente vers la bonne démarche.
       </ThemedText>
 
-      <View style={[styles.inputRow, { backgroundColor: theme.backgroundElement }]}>
+      <View
+        style={[styles.inputRow, { backgroundColor: theme.backgroundElement }]}
+      >
         <TextInput
           value={value}
           onChangeText={setValue}
@@ -77,7 +85,8 @@ export function AssistantPromptCard() {
           accessibilityRole="button"
           accessibilityLabel="Envoyer"
           accessibilityState={{ disabled: !canSend }}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
           {({ pressed }) => (
             <View
               style={[
@@ -89,7 +98,8 @@ export function AssistantPromptCard() {
                       ? theme.primaryPressed
                       : theme.primary,
                 },
-              ]}>
+              ]}
+            >
               <Ionicons name="arrow-up" size={18} color="#FFFFFF" />
             </View>
           )}

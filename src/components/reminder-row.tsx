@@ -34,7 +34,8 @@ export function ReminderRow({ reminder, onPress, trailing }: ReminderRowProps) {
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${reminder.title}, échéance le ${formatISODateLong(reminder.dateISO)}`}>
+      accessibilityLabel={`${reminder.title}, échéance le ${formatISODateLong(reminder.dateISO)}`}
+    >
       {({ pressed }) => (
         <ThemedView
           type="background"
@@ -42,8 +43,12 @@ export function ReminderRow({ reminder, onPress, trailing }: ReminderRowProps) {
             styles.card,
             CardShadow,
             { borderColor: theme.cardBorder, opacity: pressed ? 0.85 : 1 },
-          ]}>
-          <IconChip name={PROCEDURE_CATEGORY_ICON[reminder.category]} variant="primary" />
+          ]}
+        >
+          <IconChip
+            name={PROCEDURE_CATEGORY_ICON[reminder.category]}
+            variant="primary"
+          />
           <View style={styles.body}>
             <ThemedText type="label" numberOfLines={1}>
               {reminder.title}
@@ -54,7 +59,10 @@ export function ReminderRow({ reminder, onPress, trailing }: ReminderRowProps) {
               </ThemedText>
               <ThemedText
                 type="caption"
-                style={{ color: overdue ? theme.accent : theme.turquoiseTintText }}>
+                style={{
+                  color: overdue ? theme.accent : theme.turquoiseTintText,
+                }}
+              >
                 {relativeLabel(days)}
               </ThemedText>
             </View>

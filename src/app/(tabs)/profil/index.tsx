@@ -11,7 +11,13 @@ import { CardShadow, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function ProfilScreen() {
-  const { user, biometricAvailable, biometricEnabled, toggleBiometrics, signOut } = useAuth();
+  const {
+    user,
+    biometricAvailable,
+    biometricEnabled,
+    toggleBiometrics,
+    signOut,
+  } = useAuth();
   const theme = useTheme();
 
   return (
@@ -21,7 +27,12 @@ export default function ProfilScreen() {
         <ThemedView style={styles.accountSection}>
           <ThemedView
             type="background"
-            style={[styles.listCard, CardShadow, { borderColor: theme.cardBorder }]}>
+            style={[
+              styles.listCard,
+              CardShadow,
+              { borderColor: theme.cardBorder },
+            ]}
+          >
             <ListRow
               icon="person-outline"
               label="Mes informations"
@@ -41,7 +52,10 @@ export default function ProfilScreen() {
               <ThemedText type="sectionTitle">
                 {user ? `${user.first_name} ${user.last_name}` : '—'}
               </ThemedText>
-              <ThemedText type="label" style={{ color: theme.turquoiseTintText }}>
+              <ThemedText
+                type="label"
+                style={{ color: theme.turquoiseTintText }}
+              >
                 {user?.plan_name ?? 'Sans forfait'}
               </ThemedText>
             </View>
@@ -49,7 +63,12 @@ export default function ProfilScreen() {
 
           <ThemedView
             type="background"
-            style={[styles.listCard, CardShadow, { borderColor: theme.cardBorder }]}>
+            style={[
+              styles.listCard,
+              CardShadow,
+              { borderColor: theme.cardBorder },
+            ]}
+          >
             {biometricAvailable && (
               <>
                 <ListRow
@@ -63,7 +82,12 @@ export default function ProfilScreen() {
                     />
                   }
                 />
-                <View style={[styles.divider, { backgroundColor: theme.cardBorder }]} />
+                <View
+                  style={[
+                    styles.divider,
+                    { backgroundColor: theme.cardBorder },
+                  ]}
+                />
               </>
             )}
             <ListRow
@@ -78,8 +102,15 @@ export default function ProfilScreen() {
               }
               onPress={() => router.push('/credits')}
             />
-            <View style={[styles.divider, { backgroundColor: theme.cardBorder }]} />
-            <ListRow icon="log-out-outline" label="Se déconnecter" danger onPress={signOut} />
+            <View
+              style={[styles.divider, { backgroundColor: theme.cardBorder }]}
+            />
+            <ListRow
+              icon="log-out-outline"
+              label="Se déconnecter"
+              danger
+              onPress={signOut}
+            />
           </ThemedView>
         </ThemedView>
       }

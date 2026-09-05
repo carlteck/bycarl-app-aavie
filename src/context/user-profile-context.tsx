@@ -1,6 +1,18 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 
-import { clearStoredProfile, readStoredProfile, writeStoredProfile } from '@/lib/profile-storage';
+import {
+  clearStoredProfile,
+  readStoredProfile,
+  writeStoredProfile,
+} from '@/lib/profile-storage';
 import { useAuth } from '@/context/auth-context';
 
 /**
@@ -56,16 +68,22 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
     })();
   }, [user]);
 
-  const updateProfile = useCallback(async (patch: Partial<UserProfile>) => {
-    if (!user) return;
-    setProfile((current) => {
-      const next = { ...current, ...patch };
-      writeStoredProfile(user.id, next).catch((error) =>
-        console.warn('Échec de l’enregistrement du profil civil local.', error)
-      );
-      return next;
-    });
-  }, [user]);
+  const updateProfile = useCallback(
+    async (patch: Partial<UserProfile>) => {
+      if (!user) return;
+      setProfile((current) => {
+        const next = { ...current, ...patch };
+        writeStoredProfile(user.id, next).catch((error) =>
+          console.warn(
+            'Échec de l’enregistrement du profil civil local.',
+            error,
+          ),
+        );
+        return next;
+      });
+    },
+    [user],
+  );
 
   const resetProfile = useCallback(async () => {
     if (!user) return;
@@ -75,14 +93,19 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({ profile, isLoaded, updateProfile, resetProfile }),
-    [profile, isLoaded, updateProfile, resetProfile]
+    [profile, isLoaded, updateProfile, resetProfile],
   );
 
-  return <UserProfileContext.Provider value={value}>{children}</UserProfileContext.Provider>;
+  return (
+    <UserProfileContext.Provider value={value}>
+      {children}
+    </UserProfileContext.Provider>
+  );
 }
 
 export function useUserProfile() {
   const context = useContext(UserProfileContext);
-  if (!context) throw new Error('useUserProfile must be used within a UserProfileProvider');
+  if (!context)
+    throw new Error('useUserProfile must be used within a UserProfileProvider');
   return context;
 }
