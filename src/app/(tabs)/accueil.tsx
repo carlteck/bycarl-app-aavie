@@ -1,11 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import {
   ActivityIndicator,
+  Keyboard,
   Pressable,
   ScrollView,
   StyleSheet,
+  TextInput,
   View,
   useWindowDimensions,
 } from 'react-native';
@@ -37,6 +40,16 @@ export default function AccueilScreen() {
     .sort((a, b) => a.dateISO.localeCompare(b.dateISO))
     .slice(0, 3);
   const overdue = reminders.filter((r) => r.dateISO < today).length;
+
+  // La question reste locale : l'assistant n'est pas branché, rien ne part nulle part.
+  const [question, setQuestion] = useState('');
+  const [answered, setAnswered] = useState(false);
+
+  const submitQuestion = () => {
+    if (!question.trim()) return;
+    Keyboard.dismiss();
+    setAnswered(true);
+  };
 
   return (
     <ThemedView type="background" style={styles.screen}>
@@ -90,15 +103,7 @@ export default function AccueilScreen() {
               On avance une chose après l’autre.
             </ThemedText>
           </View>
-          <Pressable
-            onPress={() => router.push('/assistant')}
-            accessibilityRole="button"
-            accessibilityLabel="Ouvrir l’assistant administratif, bientôt disponible"
-            style={({ pressed }) => [
-              styles.hero,
-              { backgroundColor: theme.primary, opacity: pressed ? 0.9 : 1 },
-            ]}
-          >
+          <View style={[styles.hero, { backgroundColor: theme.primary }]}>
             <View
               pointerEvents="none"
               accessibilityElementsHidden
@@ -126,30 +131,80 @@ export default function AccueilScreen() {
               l’administratif et rédige vos courriers.
             </ThemedText>
 
-            {/* Champ volontairement NON saisissable : l'assistant n'est pas encore branché, et
-                un champ qui accepte du texte sans jamais répondre ferait conclure à l'usager
-                qu'il s'y est mal pris. Toucher le bloc ouvre l'écran qui explique où on en est. */}
-            <View
-              style={styles.heroField}
-              pointerEvents="none"
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-            >
-              <ThemedText type="caption" style={styles.heroFieldPlaceholder}>
-                Posez votre question…
-              </ThemedText>
-              <Ionicons name="mic-outline" size={20} color={Palette.midGrey} />
-              <View
-                style={[styles.heroSend, { backgroundColor: theme.primary }]}
+            <View style={styles.heroField}>
+              <TextInput
+                value={question}
+                onChangeText={(text) => {
+                  setQuestion(text);
+                  if (answered) setAnswered(false);
+                }}
+                onSubmitEditing={submitQuestion}
+                returnKeyType="send"
+                placeholder="Posez votre question…"
+                placeholderTextColor={Palette.midGrey}
+                accessibilityLabel="Votre question à l’assistant"
+                style={styles.heroInput}
+              />
+              <Pressable
+                onPress={() => setAnswered(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Dicter la question"
+                hitSlop={8}
+              >
+                <Ionicons
+                  name="mic-outline"
+                  size={20}
+                  color={Palette.midGrey}
+                />
+              </Pressable>
+              <Pressable
+                onPress={submitQuestion}
+                accessibilityRole="button"
+                accessibilityLabel="Envoyer la question"
+                style={({ pressed }) => [
+                  styles.heroSend,
+                  {
+                    backgroundColor: pressed
+                      ? theme.primaryPressed
+                      : theme.primary,
+                  },
+                ]}
               >
                 <Ionicons
                   name="arrow-forward"
                   size={16}
                   color={Palette.white}
                 />
-              </View>
+              </Pressable>
             </View>
-          </Pressable>
+
+            {/* Réponse rendue SUR PLACE : l'usager reste dans son écran, et personne ne lui
+                laisse croire que sa question est partie quelque part. */}
+            {answered && (
+              <View style={styles.heroAnswer}>
+                <Ionicons
+                  name="information-circle-outline"
+                  size={18}
+                  color={Palette.white}
+                />
+                <View style={styles.flex}>
+                  <ThemedText style={styles.heroAnswerText}>
+                    L’assistant n’est pas encore disponible dans l’application.
+                    Votre question n’a pas été envoyée.
+                  </ThemedText>
+                  <Pressable
+                    onPress={() => router.push('/assistant')}
+                    accessibilityRole="link"
+                    style={styles.heroAnswerLink}
+                  >
+                    <ThemedText type="label" style={styles.heroAnswerLinkText}>
+                      Ce qu’il fera →
+                    </ThemedText>
+                  </Pressable>
+                </View>
+              </View>
+            )}
+          </View>
           <View style={styles.section}>
             <ThemedText type="sectionTitle" accessibilityRole="header">
               À portée de main
@@ -339,7 +394,26 @@ const styles = StyleSheet.create({
     minHeight: 52,
     marginTop: 4,
   },
-  heroFieldPlaceholder: { flex: 1, color: Palette.midGrey },
+  heroInput: {
+    flex: 1,
+    color: Palette.anthracite,
+    fontSize: 15,
+    // Hauteur portée par le conteneur : sur Android un TextInput sans hauteur explicite se
+    // recentre mal à côté d'icônes.
+    paddingVertical: 0,
+  },
+  heroAnswer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderRadius: 16,
+    padding: 14,
+    marginTop: 4,
+  },
+  heroAnswerText: { color: Palette.white, fontSize: 14, lineHeight: 20 },
+  heroAnswerLink: { minHeight: 44, justifyContent: 'center' },
+  heroAnswerLinkText: { color: Palette.white, textDecorationLine: 'underline' },
   heroSend: {
     width: 38,
     height: 38,
