@@ -12,7 +12,11 @@ import {
 import type { User } from '@supabase/supabase-js';
 import { AppState, Platform } from 'react-native';
 import { ApiError } from '@/lib/api';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import {
+  AUTH_EMAIL_REDIRECT,
+  isSupabaseConfigured,
+  supabase,
+} from '@/lib/supabase';
 import {
   isBiometricEnabled,
   setBiometricEnabled as persistBiometricEnabled,
@@ -194,6 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: input.email,
       password: input.password,
       options: {
+        emailRedirectTo: AUTH_EMAIL_REDIRECT,
         data: {
           first_name: input.firstName,
           last_name: input.lastName,
