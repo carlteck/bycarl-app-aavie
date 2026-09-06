@@ -3,6 +3,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { UpdateBanner } from '@/components/update-banner';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { SyncProvider } from '@/context/sync-context';
 import { RemindersProvider } from '@/context/reminders-context';
@@ -61,6 +62,7 @@ export default function RootLayout() {
             <RemindersProvider>
               <AnimatedSplashOverlay />
               <RootNavigator />
+              <UpdateBanner />
             </RemindersProvider>
           </UserProfileProvider>
         </SyncProvider>
