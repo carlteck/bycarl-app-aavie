@@ -77,6 +77,10 @@ jobs:
     name: Mise à jour OTA
     if: ${{ startsWith(github.commit_message, '[OTA]') }}
     type: update
+    # Sans cet environnement, le bundle est reconstruit SANS les variables
+    # `EXPO_PUBLIC_SUPABASE_*` : une mise à jour censée corriger l'application la casserait à la
+    # place, en y réintroduisant l'absence de configuration.
+    environment: production
     params:
       platform: all
       # Le canal, et non la branche : c'est lui que portent les builds de production

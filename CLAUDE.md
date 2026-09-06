@@ -240,6 +240,34 @@ ouvre la voie ; ceux d'avant ne peuvent être mis à jour que par un nouveau bin
 **Le canal vit dans `eas.json`** (`channel: "production"` sur le profil de build), pas dans
 `app.config.ts` : un même code doit pouvoir alimenter `production` et `preview` selon le profil.
 
+### Variables d'environnement : `.env.local` ne suit pas dans les builds
+
+⚠️ **`EXPO_PUBLIC_SUPABASE_URL` et `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` doivent exister côté
+EAS, pas seulement dans `.env.local`.** Ce fichier est gitignoré : il n'est jamais envoyé aux
+serveurs de build. Les deux variables valaient donc `undefined` dans le bundle compilé,
+`isSupabaseConfigured` était faux, et l'application livrée affichait « La connexion n'est pas
+encore configurée dans cette application ». Invisible en développement, où `.env.local` est là.
+
+Elles sont déclarées dans les environnements `production` et `preview` du projet EAS
+(`eas env:list --environment production`), en visibilité **plaintext** : elles sont inlinées dans
+le bundle JavaScript de toute façon, et la clé publishable est conçue pour être publique. Une
+visibilité `secret` les rendrait illisibles au moment du bundling, donc inutilisables.
+
+Les profils de `eas.json` déclarent l'environnement à charger (`"environment": "production"`), et
+le job `update` du workflow aussi — sans quoi une mise à jour OTA reconstruirait le bundle **sans**
+ces variables et réintroduirait la panne qu'elle est censée corriger.
+
+⚠️ **Un changement de variable d'environnement ne se rattrape pas toujours par un OTA.** La
+politique `fingerprint` recalcule le runtime à partir, entre autres, de `eas.json` et de
+`.gitignore` : les modifier déplace l'empreinte, et l'OTA ne rejoint plus les binaires déjà
+distribués. Vérifier avant de choisir :
+
+```bash
+eas fingerprint:compare --build-id <id> --environment production
+```
+
+S'il annonce un écart, c'est un build qu'il faut, pas une mise à jour.
+
 ### Ce que la soumission automatique exige, et qui ne s'automatise pas
 
 - ✅ **Premiers dépôts manuels faits sur les deux stores le 5 septembre 2026.** Google Play refuse
