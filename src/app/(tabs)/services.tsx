@@ -1,8 +1,7 @@
-import { router } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ScreenHeaderBar } from '@/components/screen-header-bar';
 import { ModuleCard } from '@/components/module-card';
+import { PageHeader } from '@/components/page-header';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { SERVICE_GROUPS } from '@/constants/modules';
@@ -11,10 +10,10 @@ export default function ServicesScreen() {
   const insets = useSafeAreaInsets();
   return (
     <ThemedView style={styles.screen}>
-      <ScreenHeaderBar
+      <PageHeader
+        icon="grid-outline"
         title="Vos services"
-        onBack={() => router.back()}
-        backLabel="Mon espace"
+        intro="Le bon outil, au bon moment."
       />
       <ScrollView
         contentContainerStyle={{
@@ -24,9 +23,6 @@ export default function ServicesScreen() {
         }}
       >
         <View style={styles.content}>
-          <ThemedText themeColor="textSecondary">
-            Le bon outil, au bon moment.
-          </ThemedText>
           {SERVICE_GROUPS.map((group) => (
             <View key={group.title} style={styles.group}>
               <ThemedText type="sectionTitle" accessibilityRole="header">

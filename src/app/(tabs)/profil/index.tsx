@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
-import { StyleSheet, Switch, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, StyleSheet, Switch, View } from 'react-native';
 
 import { ListRow } from '@/components/list-row';
 import { SectionScreen } from '@/components/section-screen';
@@ -20,6 +21,7 @@ export default function ProfilScreen() {
     signOut,
   } = useAuth();
   const theme = useTheme();
+  const [changingBiometrics, setChangingBiometrics] = useState(false);
   const { status, retry } = useSync();
 
   return (
@@ -79,7 +81,7 @@ export default function ProfilScreen() {
             type="pageBackground"
             style={[styles.listCard, { borderColor: theme.cardBorder }]}
           >
-            {biometricAvailable && (
+            {(biometricAvailable || biometricEnabled) && (
               <>
                 <ListRow
                   icon="finger-print-outline"
@@ -87,7 +89,19 @@ export default function ProfilScreen() {
                   trailing={
                     <Switch
                       value={biometricEnabled}
-                      onValueChange={toggleBiometrics}
+                      disabled={changingBiometrics}
+                      onValueChange={(enabled) => {
+                        if (changingBiometrics) return;
+                        setChangingBiometrics(true);
+                        void toggleBiometrics(enabled)
+                          .catch(() =>
+                            Alert.alert(
+                              'Réglage non enregistré',
+                              'Veuillez réessayer.',
+                            ),
+                          )
+                          .finally(() => setChangingBiometrics(false));
+                      }}
                       accessibilityLabel="Activer le déverrouillage biométrique"
                     />
                   }

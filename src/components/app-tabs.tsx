@@ -2,13 +2,16 @@ import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useColorScheme } from 'react-native';
 
 import { Colors } from '@/constants/theme';
+import { useTabletLayout } from '@/hooks/use-tablet-layout';
 
 export default function AppTabs() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
+  const isTablet = useTabletLayout();
 
   return (
     <NativeTabs
+      hidden={isTablet}
       backgroundColor={colors.background}
       indicatorColor={colors.turquoiseTint}
       labelStyle={{ selected: { color: colors.primary } }}
@@ -26,23 +29,26 @@ export default function AppTabs() {
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="ressources">
-        <NativeTabs.Trigger.Label>Ressources</NativeTabs.Trigger.Label>
+      <NativeTabs.Trigger name="services">
+        <NativeTabs.Trigger.Label>Services</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          sf="books.vertical"
-          md="menu_book"
+          sf="square.grid.2x2"
+          md="apps"
           selectedColor={colors.primary}
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="annuaire">
-        <NativeTabs.Trigger.Label>Annuaire</NativeTabs.Trigger.Label>
+      <NativeTabs.Trigger name="planificateur">
+        <NativeTabs.Trigger.Label>Agenda</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          sf="building.2"
-          md="business"
+          sf="calendar"
+          md="calendar_month"
           selectedColor={colors.primary}
         />
       </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="ressources" hidden />
+      <NativeTabs.Trigger name="annuaire" hidden />
 
       <NativeTabs.Trigger name="profil">
         <NativeTabs.Trigger.Label>Compte</NativeTabs.Trigger.Label>

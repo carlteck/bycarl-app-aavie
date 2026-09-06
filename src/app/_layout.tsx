@@ -3,6 +3,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { AdaptiveNavigationShell } from '@/components/adaptive-navigation-shell';
+import { BiometricGate } from '@/components/biometric-gate';
 import { UpdateBanner } from '@/components/update-banner';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { SyncProvider } from '@/context/sync-context';
@@ -37,11 +39,13 @@ function RootNavigator() {
       <Stack.Protected guard={isAuthenticated}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="demarche" />
-        <Stack.Screen name="planificateur" />
         <Stack.Screen name="notifications" />
         <Stack.Screen name="credits" />
-        <Stack.Screen name="services" />
         <Stack.Screen name="assistant" />
+        <Stack.Screen name="aide-redactionnelle" />
+        <Stack.Screen name="budget" />
+        <Stack.Screen name="coffre-fort" />
+        <Stack.Screen name="veille-reglementaire" />
       </Stack.Protected>
       <Stack.Screen name="a-propos" />
       {/* Hors des deux gardes : au retour du lien de confirmation, l'usager n'est pas encore
@@ -62,8 +66,12 @@ export default function RootLayout() {
           <UserProfileProvider>
             <RemindersProvider>
               <AnimatedSplashOverlay />
-              <RootNavigator />
-              <UpdateBanner />
+              <BiometricGate>
+                <AdaptiveNavigationShell>
+                  <RootNavigator />
+                  <UpdateBanner />
+                </AdaptiveNavigationShell>
+              </BiometricGate>
             </RemindersProvider>
           </UserProfileProvider>
         </SyncProvider>

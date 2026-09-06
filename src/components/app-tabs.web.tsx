@@ -6,6 +6,7 @@ import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useTabletLayout } from '@/hooks/use-tablet-layout';
 
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 
@@ -24,14 +25,14 @@ const TABS: TabDef[] = [
     match: (p) => p === '/accueil' || p.startsWith('/demarche'),
   },
   {
-    href: '/ressources',
-    label: 'Ressources',
-    match: (p) => p.startsWith('/ressources'),
+    href: '/services',
+    label: 'Services',
+    match: (p) => p.startsWith('/services'),
   },
   {
-    href: '/annuaire',
-    label: 'Annuaire',
-    match: (p) => p.startsWith('/annuaire'),
+    href: '/planificateur',
+    label: 'Agenda',
+    match: (p) => p.startsWith('/planificateur'),
   },
   { href: '/profil', label: 'Compte', match: (p) => p.startsWith('/profil') },
 ];
@@ -45,21 +46,24 @@ const TABS: TabDef[] = [
  */
 export default function AppTabs() {
   const pathname = usePathname();
+  const isTablet = useTabletLayout();
 
   return (
     <View style={styles.root}>
       <Slot />
-      <CustomTabList>
-        {TABS.map((tab) => (
-          <TabButton
-            key={tab.href}
-            focused={tab.match(pathname)}
-            onPress={() => router.push(tab.href as never)}
-          >
-            {tab.label}
-          </TabButton>
-        ))}
-      </CustomTabList>
+      {!isTablet && (
+        <CustomTabList>
+          {TABS.map((tab) => (
+            <TabButton
+              key={tab.href}
+              focused={tab.match(pathname)}
+              onPress={() => router.push(tab.href as never)}
+            >
+              {tab.label}
+            </TabButton>
+          ))}
+        </CustomTabList>
+      )}
     </View>
   );
 }

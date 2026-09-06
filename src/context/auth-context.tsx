@@ -1,4 +1,4 @@
-import * as LocalAuthentication from 'expo-local-authentication';
+import { useBiometricLock } from '@/hooks/use-biometric-lock';
 import {
   createContext,
   useCallback,
@@ -17,10 +17,6 @@ import {
   isSupabaseConfigured,
   supabase,
 } from '@/lib/supabase';
-import {
-  isBiometricEnabled,
-  setBiometricEnabled as persistBiometricEnabled,
-} from '@/lib/session-storage';
 
 export type AccountType = 'individual' | 'company';
 
@@ -69,6 +65,8 @@ type AuthContextValue = {
   /** La session a fini d'être vérifiée auprès du serveur. Ne bloque aucun rendu. */
   sessionChecked: boolean;
   biometricEnabled: boolean;
+  biometricReady: boolean;
+  biometricLocked: boolean;
   biometricAvailable: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   register: (
@@ -132,8 +130,14 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AavieUser | null>(null);
   const [sessionChecked, setSessionChecked] = useState(false);
-  const [biometricEnabled, setBiometricEnabledState] = useState(false);
-  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const {
+    biometricEnabled,
+    biometricAvailable,
+    biometricReady,
+    biometricLocked,
+    toggleBiometrics,
+    confirmBiometrics,
+  } = useBiometricLock(user?.id);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -164,22 +168,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       appState?.remove();
       if (Platform.OS !== 'web') supabase.auth.stopAutoRefresh();
     };
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const [enabled, hasHardware, isEnrolled] = await Promise.all([
-          isBiometricEnabled(),
-          LocalAuthentication.hasHardwareAsync(),
-          LocalAuthentication.isEnrolledAsync(),
-        ]);
-        setBiometricEnabledState(enabled);
-        setBiometricAvailable(hasHardware && isEnrolled);
-      } catch (error) {
-        console.warn('Échec de la lecture des réglages biométriques.', error);
-      }
-    })();
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
@@ -221,19 +209,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!error && data.user) setUser(toAppUser(data.user));
   }, []);
 
-  const toggleBiometrics = useCallback(async (enabled: boolean) => {
-    await persistBiometricEnabled(enabled);
-    setBiometricEnabledState(enabled);
-  }, []);
-
-  const confirmBiometrics = useCallback(async () => {
-    const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Confirmer votre identité',
-      cancelLabel: 'Annuler',
-    });
-    return result.success;
-  }, []);
-
   const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut({ scope: 'local' });
     if (error) throw authError(error);
@@ -247,6 +222,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionChecked,
       biometricEnabled,
       biometricAvailable,
+      biometricReady,
+      biometricLocked,
       signIn,
       register,
       refreshUser,
@@ -259,6 +236,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionChecked,
       biometricEnabled,
       biometricAvailable,
+      biometricReady,
+      biometricLocked,
       signIn,
       register,
       refreshUser,

@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 
@@ -7,6 +6,28 @@ import { ThemedText } from './themed-text';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+
+/**
+ * ⚠️ Chargement protégé, et non `import * as Speech from 'expo-speech'`.
+ *
+ * `expo-speech` initialise son module natif à l'import : dans un binaire qui ne le contient pas,
+ * l'import LÈVE. La route qui l'utilise n'exporte alors plus rien, et l'écran entier disparaît
+ * avec un message qui parle de `default export` — sans jamais nommer la vraie cause.
+ *
+ * Deux situations où ça arrive, et aucune n'est théorique : un client de développement construit
+ * avant l'ajout du paquet, et une mise à jour OTA livrée à des binaires antérieurs au build qui
+ * embarque le module. Dans les deux cas le bouton ne s'affiche simplement pas, plutôt que
+ * d'emporter l'écran avec lui.
+ */
+type SpeechModule = typeof import('expo-speech');
+
+let speech: SpeechModule | null = null;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  speech = require('expo-speech') as SpeechModule;
+} catch {
+  speech = null;
+}
 
 /**
  * Bouton « Écouter » : lit un texte à voix haute avec la voix du système.
@@ -32,18 +53,20 @@ export function SpeakButton({
 
   // La voix doit s'arrêter quand on quitte l'écran : sans ça elle poursuit sa lecture
   // par-dessus l'écran suivant, sans aucun bouton pour la faire taire.
-  useEffect(() => () => void Speech.stop(), []);
+  useEffect(() => () => void speech?.stop(), []);
 
   const toggle = useCallback(() => {
     if (speaking) {
-      void Speech.stop();
+      void speech?.stop();
       setSpeaking(false);
       return;
     }
 
+    if (!speech) return;
+
     setFailed(false);
     setSpeaking(true);
-    Speech.speak(text, {
+    speech.speak(text, {
       language: 'fr-FR',
       onDone: () => setSpeaking(false),
       onStopped: () => setSpeaking(false),
@@ -55,6 +78,9 @@ export function SpeakButton({
       },
     });
   }, [speaking, text]);
+
+  // Rien à proposer si le module n'est pas là : un bouton inerte vaut moins que pas de bouton.
+  if (!speech) return null;
 
   return (
     <>

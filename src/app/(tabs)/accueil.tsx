@@ -13,6 +13,10 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  DictationButton,
+  isDictationAvailable,
+} from '@/components/dictation-button';
 import { ReminderRow } from '@/components/reminder-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -44,6 +48,7 @@ export default function AccueilScreen() {
   // La question reste locale : l'assistant n'est pas branché, rien ne part nulle part.
   const [question, setQuestion] = useState('');
   const [answered, setAnswered] = useState(false);
+  const [dictationError, setDictationError] = useState('');
 
   const submitQuestion = () => {
     if (!question.trim()) return;
@@ -145,18 +150,14 @@ export default function AccueilScreen() {
                 accessibilityLabel="Votre question à l’assistant"
                 style={styles.heroInput}
               />
-              <Pressable
-                onPress={() => setAnswered(true)}
-                accessibilityRole="button"
-                accessibilityLabel="Dicter la question"
-                hitSlop={8}
-              >
-                <Ionicons
-                  name="mic-outline"
-                  size={20}
-                  color={Palette.midGrey}
-                />
-              </Pressable>
+              <DictationButton
+                onTranscript={(text) =>
+                  setQuestion((current) =>
+                    current ? `${current} ${text}` : text,
+                  )
+                }
+                onError={setDictationError}
+              />
               <Pressable
                 onPress={submitQuestion}
                 accessibilityRole="button"
@@ -180,6 +181,22 @@ export default function AccueilScreen() {
 
             {/* Réponse rendue SUR PLACE : l'usager reste dans son écran, et personne ne lui
                 laisse croire que sa question est partie quelque part. */}
+            {/* La dictée n'est pas locale partout : Android passe par le service de Google, iOS ne
+                reste sur l'appareil que si le modèle de la langue y est installé. Une question à
+                l'assistant contient des informations administratives — il faut le dire. */}
+            {isDictationAvailable && (
+              <ThemedText type="caption" style={styles.heroNotice}>
+                La dictée peut envoyer votre voix au service de reconnaissance
+                de votre téléphone.
+              </ThemedText>
+            )}
+
+            {dictationError !== '' && (
+              <ThemedText type="caption" style={styles.heroError}>
+                {dictationError}
+              </ThemedText>
+            )}
+
             {answered && (
               <View style={styles.heroAnswer}>
                 <Ionicons
@@ -402,6 +419,8 @@ const styles = StyleSheet.create({
     // recentre mal à côté d'icônes.
     paddingVertical: 0,
   },
+  heroError: { color: Palette.white, marginTop: 4 },
+  heroNotice: { color: 'rgba(255,255,255,0.75)', marginTop: 4 },
   heroAnswer: {
     flexDirection: 'row',
     alignItems: 'flex-start',

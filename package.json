@@ -22,6 +22,7 @@
     "expo-router": "57.0.19",
     "expo-secure-store": "57.0.3",
     "expo-speech": "~57.0.2",
+    "expo-speech-recognition": "^57.0.0",
     "expo-splash-screen": "~57.0.8",
     "expo-sqlite": "~57.0.2",
     "expo-status-bar": "~57.0.1",
@@ -60,7 +61,8 @@
     "typecheck": "tsc --noEmit",
     "check": "pnpm lint && pnpm format:check && pnpm typecheck",
     "test:sync": "node --test tests/sync.test.cjs",
-    "test:router": "node --test tests/router-linking.test.cjs"
+    "test:router": "node --test tests/router-linking.test.cjs",
+    "test:lifecycle": "node --test tests/lifecycle.test.cjs"
   },
   "private": true
 }
