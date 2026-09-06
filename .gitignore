@@ -152,16 +152,18 @@ expo-env.d.ts
 /ios
 /android
 
-# Expo build/prebuild caches (regenerated automatically)
-/.expo/prebuild
-/.expo/web
-/.expo/cache
+# Tout `.expo/` : caches de build, état du serveur de développement, réglages et registre
+# d'appareils sont propres à la machine. C'est la convention Expo, et `expo doctor` la vérifie
+# telle quelle — il refuse une couverture partielle, même complète en apparence.
+#
+# Les types de routes (`.expo/types/router.d.ts`) étaient versionnés pour que `pnpm typecheck`
+# fonctionne sur un clone neuf. Vérifié : il passe sans eux. Ils ne servaient qu'à durcir le
+# typage des routes en intégration, au prix d'un fichier généré à recommiter à chaque
+# changement de route — et qui dérivait.
+/.expo/
 
 # macOS
 .DS_Store
-
-# Local Expo dev client device registry (machine-specific)
-/.expo/devices.json
 
 # Identifiants de signature et de dépôt sur les stores. Ils n'ont rien à faire dans un dépôt :
 # EAS les conserve pour nous (`eas credentials`), mais leur téléchargement laisse souvent un

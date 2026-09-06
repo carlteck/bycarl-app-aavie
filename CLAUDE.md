@@ -275,6 +275,34 @@ quelques minutes sans revue Google, et la promotion vers `production` reste un g
 `track: "production"` ferait de chaque push sur `main` une mise en ligne pour tous les usagers,
 avec un retour arrière qui se compte en heures.
 
+## Hygiène du dépôt : `.gitignore` et `expo doctor`
+
+**`.expo/` est ignoré en bloc**, et `expo doctor` en fait une vérification. Il ne regarde pas si
+le contenu machine-spécifique est couvert au cas par cas : il exige que le dossier entier soit
+ignoré, et échoue sinon. Une couverture partielle — ignorer `prebuild`, `web`, `cache` et
+`devices.json` un par un — le fait échouer même quand elle paraît complète, et laissait en fait
+passer `.expo/dev` et `.expo/settings.json`.
+
+⚠️ **Ne pas re-versionner `.expo/types/router.d.ts`.** Il l'a été pour que `pnpm typecheck`
+fonctionne sur un clone neuf, `tsconfig.json` incluant `.expo/types/**/*.ts`. Vérifié le
+5 septembre 2026 en le retirant : le typecheck passe sans lui. Il ne servait qu'à durcir le
+typage des routes en intégration, au prix d'un fichier généré à recommiter à chaque changement
+de route — et qui dérivait déjà. Une vérification qui échoue en permanence coûte plus cher que
+ce qu'elle rapporte : elle masque les alertes suivantes.
+
+**Les identifiants de stores sont ignorés par motif** : `*.p8`, `*.p12`, `*.mobileprovision`,
+`*.keystore`, `*.jks`, `google-services.json`, `GoogleService-Info.plist`, `*service-account*.json`,
+`play-store-*.json`, `aavie-*.json`, et le dossier `/secrets/`.
+
+⚠️ **Google ne nomme pas ses clés d'après leur usage.** Le JSON téléchargé depuis Google Cloud
+s'appelle `<id-du-projet>-<empreinte>.json` — par exemple `aavie-507723-bd7cf453bef0.json`. Aucun
+motif du genre `*service-account*.json` ne l'attrape. Constaté sur une clé réellement posée à la
+racine du projet, que `git status` proposait de commiter. D'où `aavie-*.json`, et surtout
+`/secrets/` : un dossier ignoré en bloc évite d'avoir à deviner le prochain nom.
+
+Une clé téléversée dans EAS n'a plus aucune raison de rester sur le disque — EAS en conserve la
+copie qui sert aux envois automatiques. La supprimer vaut mieux que la ranger.
+
 ## Notes de conception
 
 - Toute nouvelle fonctionnalité doit être pensée accessibilité-first (voir section ci-dessus), pas ajoutée après coup.
