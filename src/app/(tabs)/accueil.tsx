@@ -90,7 +90,15 @@ export default function AccueilScreen() {
               On avance une chose après l’autre.
             </ThemedText>
           </View>
-          <View style={[styles.hero, { backgroundColor: theme.primary }]}>
+          <Pressable
+            onPress={() => router.push('/assistant')}
+            accessibilityRole="button"
+            accessibilityLabel="Ouvrir l’assistant administratif, bientôt disponible"
+            style={({ pressed }) => [
+              styles.hero,
+              { backgroundColor: theme.primary, opacity: pressed ? 0.9 : 1 },
+            ]}
+          >
             <View
               pointerEvents="none"
               accessibilityElementsHidden
@@ -98,82 +106,49 @@ export default function AccueilScreen() {
               style={styles.heroDecoration}
             >
               <Ionicons
-                name="calendar-outline"
+                name="chatbubbles-outline"
                 size={86}
                 color={Palette.white}
               />
             </View>
-            <ThemedText style={styles.heroTitle}>
-              Un peu d’ordre.{'\n'}L’esprit plus léger.
-            </ThemedText>
-            <ThemedText style={styles.heroCopy}>
-              Vos rendez-vous et vos dates importantes, au même endroit.
-            </ThemedText>
-            <Pressable
-              onPress={() => router.push('/planificateur')}
-              accessibilityRole="button"
-              style={({ pressed }) => [
-                styles.heroButton,
-                { opacity: pressed ? 0.8 : 1 },
-              ]}
-            >
-              <ThemedText type="label" style={styles.heroButtonText}>
-                Organiser mon quotidien
+            <View style={styles.heroHeading}>
+              <ThemedText style={styles.heroTitle}>
+                Une question ?{'\n'}On la démêle ensemble.
               </ThemedText>
-              <Ionicons
-                name="arrow-forward"
-                size={18}
-                color={Palette.deepBluePressed}
-              />
-            </Pressable>
-          </View>
-          <Pressable
-            onPress={() => router.push('/assistant')}
-            accessibilityRole="button"
-            accessibilityLabel="Ouvrir l’assistant administratif, bientôt disponible"
-            style={({ pressed }) => [
-              styles.assistant,
-              {
-                backgroundColor: theme.turquoiseTint,
-                borderColor: theme.cardBorder,
-                opacity: pressed ? 0.75 : 1,
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.assistantIcon,
-                { backgroundColor: theme.background },
-              ]}
-            >
-              <Ionicons
-                name="chatbubbles-outline"
-                size={26}
-                color={theme.turquoiseTintText}
-              />
-            </View>
-            <View style={styles.flex}>
-              <View style={styles.assistantHeading}>
-                <ThemedText type="label" themeColor="turquoiseTintText">
-                  Assistant administratif
+              <View style={styles.heroBadge}>
+                <ThemedText type="caption" style={styles.heroBadgeText}>
+                  Bientôt
                 </ThemedText>
-                <View
-                  style={[styles.badge, { backgroundColor: theme.background }]}
-                >
-                  <ThemedText type="caption" themeColor="turquoiseTintText">
-                    Bientôt
-                  </ThemedText>
-                </View>
               </View>
-              <ThemedText type="caption" themeColor="turquoiseTintText">
-                Poser une question, faire rédiger un courrier.
-              </ThemedText>
             </View>
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={theme.turquoiseTintText}
-            />
+            <ThemedText style={styles.heroCopy}>
+              Expliquez votre situation avec vos mots. L’assistant traduit
+              l’administratif et rédige vos courriers.
+            </ThemedText>
+
+            {/* Champ volontairement NON saisissable : l'assistant n'est pas encore branché, et
+                un champ qui accepte du texte sans jamais répondre ferait conclure à l'usager
+                qu'il s'y est mal pris. Toucher le bloc ouvre l'écran qui explique où on en est. */}
+            <View
+              style={styles.heroField}
+              pointerEvents="none"
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              <ThemedText type="caption" style={styles.heroFieldPlaceholder}>
+                Posez votre question…
+              </ThemedText>
+              <Ionicons name="mic-outline" size={20} color={Palette.midGrey} />
+              <View
+                style={[styles.heroSend, { backgroundColor: theme.primary }]}
+              >
+                <Ionicons
+                  name="arrow-forward"
+                  size={16}
+                  color={Palette.white}
+                />
+              </View>
+            </View>
           </Pressable>
           <View style={styles.section}>
             <ThemedText type="sectionTitle" accessibilityRole="header">
@@ -332,6 +307,7 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '12deg' }],
   },
   heroTitle: {
+    flex: 1,
     fontSize: 28,
     lineHeight: 33,
     letterSpacing: -0.8,
@@ -339,18 +315,38 @@ const styles = StyleSheet.create({
     color: Palette.white,
   },
   heroCopy: { color: Palette.white, fontSize: 14, lineHeight: 22 },
-  heroButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: Palette.white,
+  heroHeading: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    minHeight: 48,
-    padding: 13,
-    borderRadius: 14,
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  heroBadge: {
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 999,
     marginTop: 4,
   },
-  heroButtonText: { color: Palette.deepBluePressed, flexShrink: 1 },
+  heroBadgeText: { color: Palette.white, fontWeight: '600' },
+  heroField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: Palette.white,
+    borderRadius: 999,
+    paddingLeft: 18,
+    paddingRight: 6,
+    minHeight: 52,
+    marginTop: 4,
+  },
+  heroFieldPlaceholder: { flex: 1, color: Palette.midGrey },
+  heroSend: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   section: { gap: 16 },
   sectionHeading: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   flex: { flex: 1 },
