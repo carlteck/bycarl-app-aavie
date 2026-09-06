@@ -26,14 +26,14 @@ nouveaux identifiants de signature côté EAS.
 
 - **Périmètre : application mobile uniquement**, dans `bycarl-app-aavie`, et son projet Supabase. Ne pas consulter ni modifier le site, sa base ou son serveur sans accord explicite préalable. La cohérence graphique avec le site n'autorise aucune intervention sur celui-ci.
 - **Proposition A « L’essentiel » validée** pour l’accueil public. Référence : [directions-mobile.html](design/propositions/directions-mobile.html), variante A. L’utilisateur a refusé la simple recoloration et la longue liste de cartes uniformes : il veut une nouvelle composition moderne.
-- **Accueil public distinct de l’espace utilisateur** : `/` présente AAVIE à tous ; seuls `/a-propos`, `/connexion` et `/inscription` sont également publics. Les services restent derrière l’authentification. Ne pas placer de services utilisables ni de données personnelles sur l’accueil public.
+- **Accueil public distinct de l’espace utilisateur** : `/` présente AAVIE à tous ; seuls `/a-propos`, `/connexion` et `/inscription` sont également publics. La route technique `/auth/callback` est également accessible pour terminer la confirmation d’e-mail. Les services restent derrière l’authentification. Ne pas placer de services utilisables ni de données personnelles sur l’accueil public.
 - **Composition A**, implémentée dans [src/app/index.tsx](src/app/index.tsx) : petit logo officiel et lien « À propos », illustration native de deux cartes décalées sur un disque turquoise doux, titre « Moins de papiers. Plus de sérénité. », description courte, mention Guyane. Un seul bouton plein « Créer mon compte » et un lien « Déjà un compte ? Se connecter ». Aucun catalogue de huit cartes sur cette page.
 - Le titre éditorial de cet accueil utilise une taille spécifique (33–38), distincte des titres fonctionnels des autres écrans. Conserver la police système, le thème sombre, les zones sûres, les cibles tactiles de 48 points minimum et le défilement sur petit écran/grands caractères. L’illustration est décorative, masquée aux lecteurs d’écran et retirée aux très grandes tailles de texte.
-- **Extension approuvée aux écrans connectés** : l’utilisateur a demandé de reprendre la direction A pour l’espace utilisateur. Les variantes B/C restent écartées. L’accueil connecté (`src/app/(tabs)/accueil.tsx`) présente une marque compacte, une salutation éditoriale, un encart bleu vers le planificateur, trois accès rapides et les échéances réelles. L’assistant indisponible est une ligne secondaire ; aucun rendez-vous ni compteur de démonstration.
+- **Extension approuvée aux écrans connectés** : direction A conservée. L’accueil connecté présente désormais l’assistant dans l’encart bleu principal, avec saisie et dictée d’une question. Cette question reste locale : le service IA n’est pas branché. Les accès rapides et échéances réelles restent disponibles.
 - Le catalogue complet est dans `/services` (`src/app/services.tsx`), sous `Stack.Protected`, avec les trois groupes « Se faire aider », « M’organiser », « M’informer ». La navigation native conserve Accueil / Ressources / Annuaire / Compte.
 - Les écrans Ressources, Annuaire, Compte et Planificateur reprennent la composition aérée, les titres éditoriaux, les surfaces turquoise douces et les arrondis de la direction A. Les échéances sont présentées en lignes avec un pavé date, via `reminder-row.tsx`, partagé avec les notifications. Les ressources indisponibles restent annoncées « En préparation » sans contenu fictif.
 - **Authentification mobile actuelle : Supabase Auth**, via `signInWithPassword`, `signUp` et `onAuthStateChange` dans [auth-context.tsx](src/context/auth-context.tsx). Les utilisateurs sont dans `auth.users`. Les secrets ne doivent jamais être consignés ici. Un nom d’adresse contenant « admin » ne confère aucun privilège ; seul `app_metadata.role` est lu pour le rôle applicatif.
-- Le retour de confirmation d’e-mail vers l’application reste à configurer : `localhost:3000` ne convient qu’au développement sur l’ordinateur. Ne pas le présenter comme un lien de retour mobile final.
+- **Confirmation d’e-mail** : flux PKCE configuré dans le client, cible `https://aavieapp.com/app/auth`, retour `aavie://auth/callback`, puis échange du code contre une session. La page de relais et la liste des redirections Supabase sont des dépendances externes à vérifier lors du déploiement ; elles ne sont pas vérifiées par les tests locaux.
 - Les crédits et forfaits ne sont pas encore raccordés aux comptes Supabase ; l’écran mobile l’indique et n’appelle plus `credits.php`. Les données locales sont isolées par identifiant Supabase ; les anciens enregistrements sans propriétaire ne sont pas automatiquement attribués au premier compte connecté.
 
 ## Contexte et mission
@@ -188,7 +188,7 @@ réseau simulé). Vérification du contrat distant :
 - **Authentification** : Supabase Auth, stockage de session via `expo-secure-store` en natif et `localStorage` en web. Le renouvellement suit l’état actif de l’application. Les inscriptions demandent une confirmation par e-mail lorsque le projet Supabase l’exige.
 - **Ancienne couche PHP** : `src/lib/api.ts` subsiste mais ne pilote plus la connexion ni les crédits. Ne pas la réactiver sans décision explicite sur le raccordement des comptes.
 - **Le jeton vit dans le Keychain / Keystore** ([src/lib/supabase.ts](src/lib/supabase.ts)), jamais dans un stockage en clair sur natif. Repli `localStorage` sur web, moins sûr, comme partout ailleurs.
-- **Quatre routes publiques, tout le reste protégé** — décalque de la structure du site :
+- **Quatre écrans publics, un callback technique public, services protégés** — décalque de la structure du site :
 
   | Route mobile                     | Fichier                                               | Équivalent site                   |
   | -------------------------------- | ----------------------------------------------------- | --------------------------------- |
@@ -200,9 +200,9 @@ réseau simulé). Vérification du contrat distant :
 
 - **Le gardiennage passe par `Stack.Protected`** ([src/app/_layout.tsx](src/app/_layout.tsx)), mécanisme officiel d'Expo Router (doc « Authentication »). `guard={!isAuthenticated}` / `guard={isAuthenticated}` : quand la session bascule, Expo Router redirige seul. **Ne pas remplacer par un `router.replace` dans un effect** — les effects ne s'exécutent pas au rendu serveur web, la page ressortirait vide. Aucun écran de connexion ne navigue à la main après un succès.
 - ⚠️ **`/` appartient à la zone publique, l'accueil de l'app est `/accueil`** (`(tabs)/accueil.tsx`). Deux fichiers ne peuvent pas revendiquer `/`. Le trigger `NativeTabs` et la barre web ([app-tabs.tsx](src/components/app-tabs.tsx), [app-tabs.web.tsx](src/components/app-tabs.web.tsx)) pointent sur `accueil` — les trois doivent rester cohérents.
-- **Crédits** : le quota « questions par jour » a été remplacé par un solde dépensé par action, côté serveur (`api/src/Credits.php` dans `site_aavie`). L'app lit `credits.php` et affiche solde, grille tarifaire et historique. ⚠️ **Aucun achat de crédits dans l'application** : un pack vendu ici serait un _consumable in-app purchase_ au sens d'Apple — achat in-app obligatoire, 15 à 30 % de commission, et interdiction de mentionner un paiement web. Tant que la question n'est pas tranchée, l'écran consomme et affiche, il ne vend pas.
-- ⚠️ **Historique, à ne pas rétablir par erreur** : jusqu'au 2026-09-03 l'app fonctionnait en local pur, sans backend, avec un code PIN optionnel et la règle « ne verrouille JAMAIS au lancement » au nom de l'accessibilité du public en illectronisme (CDC §1-2). Olivier a tranché pour le compte obligatoire aligné sur le site. Le compromis d'accessibilité qui subsiste : `/` et `/a-propos` expliquent le service avant toute création de compte, et l'inscription est courte et annulable à tout moment. La biométrie reste disponible en confort, plus comme identifiant.
-- **Pas d'état `loading` bloquant dans `AuthProvider`** ([src/context/auth-context.tsx](src/context/auth-context.tsx)) : `welcome` est l'état initial synchrone (pas un état dérivé d'un `useEffect`), et c'est aussi le bon contenu statique puisque c'est la page publique. **Piège rencontré** : un statut initial `'loading'` qui ne se résout que dans un `useEffect` ne se résout jamais pendant le rendu serveur web (les effects ne s'exécutent pas en SSR) — `AuthGate` rendait alors `null`, donc une page vide. `hasAccount`/`displayName`/biométrie se peuplent de façon asynchrone après le premier rendu, sans le bloquer. **`AuthGate` ne doit jamais rendre `null`, quelle que soit la branche.**
+- **Crédits et forfaits** : non raccordés aux comptes mobiles Supabase. L’écran `/credits` est explicatif ; aucun appel à `credits.php`, aucun solde réel et aucun achat intégré ne sont actuellement proposés.
+- ⚠️ **Historique, à ne pas rétablir par erreur** : jusqu'au 2026-09-03 l'app fonctionnait en local pur, sans backend, avec un code PIN optionnel et la règle « ne verrouille JAMAIS au lancement » au nom de l'accessibilité du public en illectronisme (CDC §1-2). Olivier a tranché pour le compte obligatoire aligné sur le site. Le compromis d'accessibilité qui subsiste : `/` et `/a-propos` expliquent le service avant toute création de compte, et l'inscription est courte et annulable à tout moment. La biométrie est désormais un verrou local optionnel de l’espace connecté, distinct de l’identité Supabase.
+- **Session et affichage** : `AuthProvider` restaure la session Supabase. La zone publique reste rendue sans attendre une requête réseau. Sur natif, une session restaurée ne donne accès aux écrans privés qu’après lecture du réglage biométrique et, si celui-ci est activé, déverrouillage.
 
 ## Publication : builds, envoi aux stores et mises à jour OTA
 
@@ -369,7 +369,7 @@ copie qui sert aux envois automatiques. La supprimer vaut mieux que la ranger.
 - Le projet vise l'autonomisation de l'utilisateur, pas la dépendance : privilégier des parcours pédagogiques (tutoriels, explications) plutôt que des raccourcis qui masquent la démarche administrative réelle.
 - État actuel du dépôt (2026-09-05) :
   - **Compte mobile Supabase** : inscription, connexion, restauration de session et déconnexion via Supabase Auth. Aucun compte partagé automatiquement avec le site.
-  - **Zone publique routée** : `/` (accueil), `/a-propos`, `/connexion`, `/inscription`. Tout le reste est derrière `Stack.Protected`.
+  - **Zone publique routée** : `/` (accueil), `/a-propos`, `/connexion`, `/inscription`. La route technique `/auth/callback` reste publique ; les services sont derrière `Stack.Protected`.
   - **Crédits** : écran explicatif ; les crédits et forfaits ne sont pas encore raccordés aux comptes mobiles Supabase.
   - **Annuaire administratif** ([src/app/(tabs)/annuaire.tsx](<src/app/(tabs)/annuaire.tsx>)) : module abouti — recherche, filtres par catégorie, appel téléphonique, site web, itinéraire. ⚠️ Données encore **en dur** dans [src/constants/annuaire.ts](src/constants/annuaire.ts) alors que `contacts.php` existe côté API : à rebrancher.
   - **Planificateur et Notifications** ([planificateur.tsx](src/app/planificateur.tsx), [notifications.tsx](src/app/notifications.tsx)) : écrans réels ; rappels persistés dans SQLite et synchronisés avec Supabase. ⚠️ **Aucune notification n'est réellement planifiée** : `expo-notifications` n'est pas installé, l'écran ne fait que lister.
@@ -399,3 +399,53 @@ Le calcul de l’état de navigation reste inchangé. Ne pas masquer cet avertis
 LogBox ; vérifier ce patch avant toute mise à jour d’Expo Router.
 Test : `pnpm test:router` (résolution avant/après montage, démontage, URL synchrone,
 rendu abandonné). Après application du patch, redémarrer Metro avec `pnpm start --clear`.
+
+### Corrections de l’audit — 6 septembre 2026
+
+- `use-biometric-lock.ts` porte le verrou local natif. `BiometricGate` masque les
+  écrans privés et les retire de l’arbre d’accessibilité tant que le verrou est actif,
+  sans démonter la navigation ni effacer les saisies. Le retour d’arrière-plan reverrouille ;
+  l’état inactif masque les données sans invalider à lui seul la fenêtre biométrique iOS.
+- Activation et désactivation exigent une confirmation système. Un échec ou une
+  annulation conserve le réglage précédent. Le code du téléphone peut servir de repli
+  système ; la déconnexion reste accessible si le déverrouillage est impossible.
+  Ce réglage est propre à l’appareil et ne remplace pas Supabase Auth.
+- Un changement de session ou un passage en arrière-plan invalide toute confirmation
+  biométrique encore en attente. Une préférence illisible ne déverrouille pas le compte.
+- Dictée : permission et démarrage protégés par gestion d’erreur, requêtes concurrentes
+  interdites, résultat tardif ignoré après perte de focus/démontage/arrière-plan. Le micro
+  est arrêté même lorsque la navigation conserve l’écran monté.
+- Lecture à voix haute et dictée sont présentes ; elles ne constituent pas un assistant IA.
+  Les modules vocaux absents d’un ancien binaire restent masqués. Aucun changement natif
+  ni publication EAS n’est effectué par cette correction.
+
+Tests de non-régression : `pnpm test:lifecycle`, en plus de `pnpm test:sync` et `pnpm test:router`. Les dialogues système Face ID/empreinte/micro restent à valider sur les appareils natifs.
+
+### Permissions Apple / Google — 6 septembre 2026
+
+La configuration suit https://docs.expo.dev/guides/permissions/ : les plugins ajoutent
+les déclarations natives ; les API demandent l’autorisation au moment de l’usage.
+
+| Usage        | iOS                                                                               | Android                                                 | Déclenchement                                               |
+| ------------ | --------------------------------------------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------- |
+| Dictée       | `NSMicrophoneUsageDescription`, `NSSpeechRecognitionUsageDescription` en français | `RECORD_AUDIO`, visibilité du service de reconnaissance | Appui sur le micro ; lecture de l’état avant toute demande  |
+| Verrou local | `NSFaceIDUsageDescription` en français                                            | `USE_BIOMETRIC`, compatibilité `USE_FINGERPRINT`        | Activation/désactivation du réglage ou bouton Déverrouiller |
+
+`expo-speech-recognition` et `expo-local-authentication` sont déclarés dans les plugins.
+La biométrie Android ne possède pas de dialogue de permission dangereuse à demander
+séparément : c’est la fenêtre d’authentification système qui valide l’utilisateur.
+Pour la dictée, un refus permanent propose les réglages ; une autorisation déjà accordée
+ne provoque pas une nouvelle demande. Une permission en attente n’est pas poursuivie
+si l’écran a été quitté. Aucun écran global ne réclame toutes les permissions au lancement.
+
+Pas de permission caméra, photos, contacts, géolocalisation ou suivi publicitaire : ces
+accès ne sont pas utilisés. L’annuaire ouvre l’application Téléphone/Plans sans lire les
+contacts ni la position. La lecture vocale n’utilise pas le micro. Les notifications
+système ne sont pas encore implémentées : leur permission sera raccordée avec leur
+programmation, pas demandée par un interrupteur sans effet.
+
+**Nouveau build natif requis** après ce changement de configuration (profils EAS existants,
+sans marqueur `[OTA]`). Ne pas confondre les permissions système et les déclarations
+App Privacy / Data Safety des stores, qui doivent décrire les traitements réellement
+réalisés et ne sont pas remplies automatiquement par EAS. Aucun build distant ni envoi
+aux stores n’est déclenché par ces modifications.

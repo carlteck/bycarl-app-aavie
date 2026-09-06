@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
-import { Pressable } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { Alert, AppState, Linking, Platform, Pressable } from 'react-native';
 
+import { requestDictationPermission } from '@/lib/dictation-permission';
 import { Palette } from '@/constants/theme';
 
 /**
@@ -52,54 +54,133 @@ export function DictationButton(props: Props) {
 function DictationButtonInner({ onTranscript, onError, color }: Props) {
   const module = recognition!;
   const [listening, setListening] = useState(false);
+  const [requesting, setRequesting] = useState(false);
+  const lifecycle = useRef({
+    active: false,
+    generation: 0,
+    busy: false,
+    listening: false,
+  });
+  useFocusEffect(
+    useCallback(() => {
+      const life = lifecycle.current;
+      life.active = true;
+      setListening(false);
+      const cancel = () => {
+        life.generation++;
+        life.listening = false;
+        try {
+          module.ExpoSpeechRecognitionModule.abort();
+        } catch {
+          /* Le service peut déjà être arrêté. */
+        }
+      };
+      const subscription = AppState.addEventListener('change', (state) => {
+        if (state === 'background') {
+          cancel();
+          setListening(false);
+        }
+      });
+      return () => {
+        life.active = false;
+        cancel();
+        subscription.remove();
+      };
+    }, [module]),
+  );
 
   module.useSpeechRecognitionEvent('result', (event) => {
     const text = event.results?.[0]?.transcript?.trim();
-    if (text) onTranscript(text);
+    if (text && lifecycle.current.active && lifecycle.current.listening)
+      onTranscript(text);
   });
-  module.useSpeechRecognitionEvent('end', () => setListening(false));
+  module.useSpeechRecognitionEvent('end', () => {
+    lifecycle.current.listening = false;
+    if (lifecycle.current.active) setListening(false);
+  });
   module.useSpeechRecognitionEvent('error', (event) => {
+    if (!lifecycle.current.active || !lifecycle.current.listening) return;
+    lifecycle.current.listening = false;
     setListening(false);
     onError(messageFor(event.error));
   });
 
-  // La reconnaissance doit s'arrêter en quittant l'écran : sinon le micro reste ouvert,
-  // sans plus aucun bouton pour le refermer.
-  useEffect(() => () => module.ExpoSpeechRecognitionModule.abort(), [module]);
-
   const toggle = useCallback(() => {
-    if (listening) {
-      module.ExpoSpeechRecognitionModule.stop();
+    const life = lifecycle.current;
+    if (!life.active || life.busy) return;
+    if (life.listening) {
+      try {
+        module.ExpoSpeechRecognitionModule.stop();
+      } catch {
+        life.listening = false;
+        onError('La dictée n’a pas pu s’arrêter normalement.');
+      }
       setListening(false);
       return;
     }
-
+    life.busy = true;
+    setRequesting(true);
+    const generation = life.generation;
+    const current = () => life.active && generation === life.generation;
     void (async () => {
-      // Demandée explicitement, pour la même raison que sur le site : sans ça, un refus passé
-      // fait échouer les tentatives suivantes sans que rien ne soit redemandé.
-      const permission =
-        await module.ExpoSpeechRecognitionModule.requestPermissionsAsync();
-      if (!permission.granted) {
-        onError(
-          'Le micro n’est pas autorisé. Ouvrez les réglages de votre téléphone pour l’activer.',
+      try {
+        const permission = await requestDictationPermission(
+          module.ExpoSpeechRecognitionModule,
+          current,
         );
-        return;
+        if (!current() || permission === 'cancelled') return;
+        if (permission !== 'granted') {
+          const message =
+            permission === 'blocked'
+              ? 'Autorisez le micro et, sur iPhone, la reconnaissance vocale dans les réglages pour utiliser la dictée.'
+              : 'La dictée a besoin de votre autorisation. Vous pouvez réessayer ou écrire votre question.';
+          onError(message);
+          if (permission === 'blocked' && Platform.OS !== 'web') {
+            Alert.alert('Autoriser la dictée', message, [
+              { text: 'Plus tard', style: 'cancel' },
+              {
+                text: 'Ouvrir les réglages',
+                onPress: () => {
+                  if (!current()) return;
+                  void Linking.openSettings().catch(() => {
+                    if (current())
+                      onError(
+                        'Ouvrez les réglages du téléphone, puis les autorisations d’AAVIE.',
+                      );
+                  });
+                },
+              },
+            ]);
+          }
+          return;
+        }
+        life.listening = true;
+        setListening(true);
+        module.ExpoSpeechRecognitionModule.start({
+          lang: 'fr-FR',
+          interimResults: false,
+          continuous: false,
+        });
+      } catch {
+        if (current()) {
+          life.listening = false;
+          setListening(false);
+          onError(
+            'La dictée n’a pas fonctionné. Vous pouvez écrire votre question.',
+          );
+        }
+      } finally {
+        life.busy = false;
+        if (life.active) setRequesting(false);
       }
-
-      setListening(true);
-      module.ExpoSpeechRecognitionModule.start({
-        // Aucun service ne reconnaît le créole guyanais : le français est la langue dans
-        // laquelle les démarches sont formulées de toute façon.
-        lang: 'fr-FR',
-        interimResults: false,
-        continuous: false,
-      });
     })();
-  }, [listening, module, onError]);
+  }, [module, onError]);
 
   return (
     <Pressable
       onPress={toggle}
+      disabled={requesting}
+      accessibilityState={{ disabled: requesting, busy: requesting }}
       accessibilityRole="button"
       accessibilityLabel={
         listening ? 'Arrêter la dictée' : 'Dicter la question'

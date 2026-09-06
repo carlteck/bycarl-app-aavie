@@ -61,7 +61,8 @@
     "typecheck": "tsc --noEmit",
     "check": "pnpm lint && pnpm format:check && pnpm typecheck",
     "test:sync": "node --test tests/sync.test.cjs",
-    "test:router": "node --test tests/router-linking.test.cjs"
+    "test:router": "node --test tests/router-linking.test.cjs",
+    "test:lifecycle": "node --test tests/lifecycle.test.cjs"
   },
   "private": true
 }

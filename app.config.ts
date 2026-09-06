@@ -27,7 +27,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     infoPlist: {
       CFBundleDevelopmentRegion: 'fr',
       NSFaceIDUsageDescription:
-        "AAVIE utilise Face ID pour déverrouiller l'application en toute sécurité.",
+        'AAVIE utilise Face ID pour déverrouiller votre espace personnel lorsque vous activez cette protection.',
       ITSAppUsesNonExemptEncryption: false,
     },
   },
@@ -61,6 +61,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-status-bar',
     'expo-web-browser',
     'expo-secure-store',
+    [
+      'expo-local-authentication',
+      {
+        faceIDPermission:
+          'AAVIE utilise Face ID pour déverrouiller votre espace personnel lorsque vous activez cette protection.',
+      },
+    ],
     [
       'expo-speech-recognition',
       {
