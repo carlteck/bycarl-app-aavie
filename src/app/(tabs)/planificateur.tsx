@@ -1,13 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { useState } from 'react';
 import { Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/primary-button';
+import { PageHeader } from '@/components/page-header';
 import { ReminderForm } from '@/components/reminder-form';
 import { ReminderRow } from '@/components/reminder-row';
-import { ScreenHeaderBar } from '@/components/screen-header-bar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useReminders } from '@/context/reminders-context';
@@ -40,10 +39,10 @@ export default function PlanificateurScreen() {
 
   return (
     <ThemedView type="background" style={styles.screen}>
-      <ScreenHeaderBar
+      <PageHeader
+        icon="calendar-outline"
         title="Planificateur"
-        onBack={() => router.back()}
-        backLabel="Accueil"
+        intro="Vos rendez-vous et vos dates importantes au même endroit."
       />
       <ScrollView
         style={[styles.scroll, { backgroundColor: theme.background }]}

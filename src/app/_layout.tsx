@@ -3,6 +3,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { AdaptiveNavigationShell } from '@/components/adaptive-navigation-shell';
 import { BiometricGate } from '@/components/biometric-gate';
 import { UpdateBanner } from '@/components/update-banner';
 import { AuthProvider, useAuth } from '@/context/auth-context';
@@ -38,10 +39,8 @@ function RootNavigator() {
       <Stack.Protected guard={isAuthenticated}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="demarche" />
-        <Stack.Screen name="planificateur" />
         <Stack.Screen name="notifications" />
         <Stack.Screen name="credits" />
-        <Stack.Screen name="services" />
         <Stack.Screen name="assistant" />
         <Stack.Screen name="aide-redactionnelle" />
         <Stack.Screen name="budget" />
@@ -68,8 +67,10 @@ export default function RootLayout() {
             <RemindersProvider>
               <AnimatedSplashOverlay />
               <BiometricGate>
-                <RootNavigator />
-                <UpdateBanner />
+                <AdaptiveNavigationShell>
+                  <RootNavigator />
+                  <UpdateBanner />
+                </AdaptiveNavigationShell>
               </BiometricGate>
             </RemindersProvider>
           </UserProfileProvider>
