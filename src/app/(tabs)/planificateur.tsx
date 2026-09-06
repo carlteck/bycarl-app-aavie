@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -66,6 +66,7 @@ export default function PlanificateurScreen() {
     useReminders();
   const [formState, setFormState] = useState<FormState>('hidden');
   const [filter, setFilter] = useState<Filter>('upcoming');
+  const scrollRef = useRef<ScrollView>(null);
   const safeAreaInsets = useSafeAreaInsets();
   const theme = useTheme();
 
@@ -85,11 +86,18 @@ export default function PlanificateurScreen() {
       : undefined;
 
   const contentPlatformStyle = Platform.select({
+    ios: {
+      paddingBottom: safeAreaInsets.bottom + BottomTabInset + Spacing.six,
+    },
     android: {
-      paddingBottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
+      paddingBottom: safeAreaInsets.bottom + BottomTabInset + Spacing.six,
     },
     web: { paddingTop: Spacing.four, paddingBottom: Spacing.four },
   });
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [formState]);
 
   const confirmDelete = () => {
     if (!editing) return;
@@ -119,7 +127,12 @@ export default function PlanificateurScreen() {
         intro="Vos rendez-vous et vos dates importantes au même endroit."
       />
       <ScrollView
+        ref={scrollRef}
         style={[styles.scroll, { backgroundColor: theme.background }]}
+        automaticallyAdjustKeyboardInsets
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+        keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled
         contentInset={{
           bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
         }}
