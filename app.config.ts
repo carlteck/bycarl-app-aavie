@@ -61,6 +61,20 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-status-bar',
     'expo-web-browser',
     'expo-secure-store',
+    [
+      'expo-speech-recognition',
+      {
+        // Ces phrases sont ce que l'usager lit dans la fenêtre du système : elles doivent dire
+        // à quoi ça sert, en français simple, pas citer un nom d'API.
+        microphonePermission:
+          'AAVIE utilise le micro pour vous permettre de dicter vos questions au lieu de les écrire.',
+        speechRecognitionPermission:
+          'AAVIE transforme votre voix en texte pour remplir vos questions à votre place.',
+        androidSpeechServicePackages: [
+          'com.google.android.googlequicksearchbox',
+        ],
+      },
+    ],
     'expo-sqlite',
   ],
   experiments: {
