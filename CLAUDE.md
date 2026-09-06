@@ -375,7 +375,8 @@ copie qui sert aux envois automatiques. La supprimer vaut mieux que la ranger.
   - **Planificateur et Notifications** ([planificateur.tsx](src/app/planificateur.tsx), [notifications.tsx](src/app/notifications.tsx)) : écrans réels ; rappels persistés dans SQLite et synchronisés avec Supabase. ⚠️ **Aucune notification n'est réellement planifiée** : `expo-notifications` n'est pas installé, l'écran ne fait que lister.
   - **Assistant démarches** ([src/app/demarche/](src/app/demarche/)) : assistant pas-à-pas avec préremplissage, mais **sans IA** — 351 lignes de démarches en dur dans [src/constants/procedures.ts](src/constants/procedures.ts). Le vrai assistant IA (`ai/chat.php`, facturé en crédits) n'est pas branché.
   - **Profil civil** ([user-profile-context.tsx](src/context/user-profile-context.tsx)) : persisté dans SQLite et synchronisé avec `mobile_profiles` dans Supabase.
-  - Pas encore implémenté : assistant IA, aide rédactionnelle, veille réglementaire, centre de ressources, gestion de budget, coffre-fort, multilingue.
+  - Les routes de présentation existent pour l’assistant IA, l’aide rédactionnelle, la veille réglementaire, la gestion de budget et le coffre-fort. Elles décrivent clairement les fonctions à venir sans simuler d’enregistrement. Le Centre de ressources et l’Annuaire ont leurs écrans dédiés.
+  - Pas encore implémenté : moteur de l’assistant IA, génération de courriers, contenus de veille réels, données budgétaires, stockage documentaire et multilingue.
   - Composants de démo du starter Expo (hint-row, collapsible, web-badge, external-link, l'export `AnimatedIcon` inutilisé) supprimés — plus aucune trace de l'app Expo par défaut dans `src/`.
 
 ### Correction des déclencheurs Supabase mobiles
