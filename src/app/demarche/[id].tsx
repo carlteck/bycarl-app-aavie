@@ -10,6 +10,7 @@ import { IconChip } from '@/components/icon-chip';
 import { OutlineButton } from '@/components/outline-button';
 import { PrimaryButton } from '@/components/primary-button';
 import { ScreenHeaderBar } from '@/components/screen-header-bar';
+import { SpeakButton } from '@/components/speak-button';
 import { Stepper } from '@/components/stepper';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -48,6 +49,28 @@ export default function DemarcheDetailScreen() {
   const safeAreaInsets = useSafeAreaInsets();
 
   const { progress, isLoaded, change } = useProcedureProgress(id);
+
+  /**
+   * Texte lu à voix haute. Reconstruit ici plutôt que ramassé dans l'écran : les libellés
+   * affichés sont entrecoupés d'icônes et de puces, et une synthèse vocale qui les enchaîne
+   * donne une bouillie. On énonce des phrases.
+   */
+  const spokenSummary = useMemo(() => {
+    if (!procedure) return '';
+    const pieces = procedure.documents.map((d) => d.label).join('. ');
+    return [
+      procedure.title + '.',
+      procedure.summary,
+      `Durée estimée : ${procedure.durationEstimate}.`,
+      procedure.online
+        ? 'Cette démarche est réalisable en ligne.'
+        : 'Cette démarche est à faire sur place.',
+      procedure.cerfaNumber ? `Formulaire ${procedure.cerfaNumber}.` : '',
+      `Pièces à prévoir : ${pieces}.`,
+    ]
+      .filter(Boolean)
+      .join(' ');
+  }, [procedure]);
   const step: WizardStep = progress?.step ?? 'overview';
   const values: Record<string, string> = {};
   const prefilledKeys = new Set<string>();
@@ -205,6 +228,13 @@ export default function DemarcheDetailScreen() {
 
               <ThemedView style={styles.section}>
                 <ThemedText type="sectionTitle">Pièces à prévoir</ThemedText>
+                {/* Lecture de la démarche entière, pas seulement des pièces : quelqu'un qui écoute a
+                    besoin du contexte — de quoi il s'agit, combien de temps, sur place ou en ligne —
+                    avant d'entendre la liste. */}
+                <SpeakButton
+                  text={spokenSummary}
+                  accessibilityLabel="Écouter le résumé de la démarche et les pièces à prévoir"
+                />
                 <View style={styles.docPreviewList}>
                   {procedure.documents.map((document) => (
                     <View key={document.id} style={styles.docPreviewRow}>
