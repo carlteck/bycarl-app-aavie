@@ -240,6 +240,38 @@ ouvre la voie ; ceux d'avant ne peuvent être mis à jour que par un nouveau bin
 **Le canal vit dans `eas.json`** (`channel: "production"` sur le profil de build), pas dans
 `app.config.ts` : un même code doit pouvoir alimenter `production` et `preview` selon le profil.
 
+### Réception des mises à jour OTA
+
+`expo-updates` fait le gros du travail seul : au lancement, l'application interroge le serveur,
+télécharge en tâche de fond et applique **au démarrage suivant**. Sans une ligne de code, une
+mise à jour arrive donc — à la deuxième ouverture.
+
+`UpdateBanner` (monté dans le layout racine) ajoute deux choses : une vérification à chaque
+retour au premier plan, pour attraper une mise à jour publiée pendant la session, et un bandeau
+qui propose de redémarrer tout de suite.
+
+⚠️ **Rien ne recharge l'application automatiquement, et c'est délibéré.** « Recharger au retour
+d'arrière-plan » paraît un moment sûr : il ne l'est pas. Quelqu'un qui s'inscrit quitte
+l'application pour aller chercher le lien de confirmation dans sa boîte mail, puis revient — un
+rechargement à cet instant lui ferait tout ressaisir, dans le parcours le plus fragile de
+l'application. Seule l'application du changement demande un geste ; la vérification, elle, est
+automatique parce qu'elle ne casse rien.
+
+`Updates.isEnabled` garde la vérification : il est faux en développement et dans Expo Go, sans
+quoi chaque passage au premier plan lèverait une erreur pendant le développement. Un échec de
+vérification est avalé en silence — sur une connexion faible, une mise à jour qui tarde ne vaut
+pas un message d'erreur.
+
+⚠️ **`checkAutomatically` et `fallbackToCacheTimeout` sont laissés à leurs valeurs par défaut**
+(`ON_LOAD`, `0`), qui sont les bonnes : ne jamais bloquer le démarrage, ce qui compte sur les
+connexions faibles visées par le projet. Les rendre explicites dans `app.config.ts` serait plus
+lisible, **mais déplacerait l'empreinte** et couperait la livraison OTA aux binaires en
+circulation. À faire au prochain build réel, pas dans une mise à jour.
+
+⚠️ **Ce mécanisme ne s'installe pas rétroactivement** : les binaires qui ne l'ont pas encore ne
+peuvent l'obtenir qu'en recevant d'abord la mise à jour qui le contient, donc au démarrage
+suivant. Le premier bandeau n'apparaîtra qu'à la mise à jour d'après.
+
 ### Variables d'environnement : `.env.local` ne suit pas dans les builds
 
 ⚠️ **`EXPO_PUBLIC_SUPABASE_URL` et `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` doivent exister côté
