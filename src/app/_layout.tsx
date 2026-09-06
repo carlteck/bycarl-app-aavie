@@ -41,6 +41,7 @@ function RootNavigator() {
         <Stack.Screen name="notifications" />
         <Stack.Screen name="credits" />
         <Stack.Screen name="services" />
+        <Stack.Screen name="assistant" />
       </Stack.Protected>
       <Stack.Screen name="a-propos" />
       {/* Hors des deux gardes : au retour du lien de confirmation, l'usager n'est pas encore
