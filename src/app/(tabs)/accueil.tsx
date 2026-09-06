@@ -127,6 +127,54 @@ export default function AccueilScreen() {
               />
             </Pressable>
           </View>
+          <Pressable
+            onPress={() => router.push('/assistant')}
+            accessibilityRole="button"
+            accessibilityLabel="Ouvrir l’assistant administratif, bientôt disponible"
+            style={({ pressed }) => [
+              styles.assistant,
+              {
+                backgroundColor: theme.turquoiseTint,
+                borderColor: theme.cardBorder,
+                opacity: pressed ? 0.75 : 1,
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.assistantIcon,
+                { backgroundColor: theme.background },
+              ]}
+            >
+              <Ionicons
+                name="chatbubbles-outline"
+                size={26}
+                color={theme.turquoiseTintText}
+              />
+            </View>
+            <View style={styles.flex}>
+              <View style={styles.assistantHeading}>
+                <ThemedText type="label" themeColor="turquoiseTintText">
+                  Assistant administratif
+                </ThemedText>
+                <View
+                  style={[styles.badge, { backgroundColor: theme.background }]}
+                >
+                  <ThemedText type="caption" themeColor="turquoiseTintText">
+                    Bientôt
+                  </ThemedText>
+                </View>
+              </View>
+              <ThemedText type="caption" themeColor="turquoiseTintText">
+                Poser une question, faire rédiger un courrier.
+              </ThemedText>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={theme.turquoiseTintText}
+            />
+          </Pressable>
           <View style={styles.section}>
             <ThemedText type="sectionTitle" accessibilityRole="header">
               À portée de main
@@ -238,32 +286,6 @@ export default function AccueilScreen() {
               </>
             )}
           </View>
-          <Pressable
-            onPress={() => router.push('/demarche')}
-            accessibilityRole="button"
-            accessibilityLabel="Découvrir l’assistant, bientôt disponible"
-            style={({ pressed }) => [
-              styles.assistant,
-              { borderColor: theme.cardBorder, opacity: pressed ? 0.6 : 1 },
-            ]}
-          >
-            <Ionicons
-              name="chatbubbles-outline"
-              size={24}
-              color={theme.turquoiseTintText}
-            />
-            <View style={styles.flex}>
-              <ThemedText type="label">À vos côtés, bientôt.</ThemedText>
-              <ThemedText type="caption" themeColor="textSecondary">
-                Votre assistant administratif se prépare.
-              </ThemedText>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={17}
-              color={theme.textSecondary}
-            />
-          </Pressable>
         </View>
       </ScrollView>
     </ThemedView>
@@ -355,11 +377,30 @@ const styles = StyleSheet.create({
   },
   emptyCopy: { marginTop: 6, lineHeight: 20 },
   assistant: {
-    borderTopWidth: 1,
-    paddingTop: Spacing.four,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    minHeight: 72,
+    minHeight: 88,
+    padding: Spacing.four,
+    borderRadius: 22,
+    borderWidth: 1,
+  },
+  assistantIcon: {
+    width: 54,
+    height: 54,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  assistantHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
   },
 });

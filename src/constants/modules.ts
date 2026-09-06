@@ -25,7 +25,9 @@ export const SERVICE_GROUPS: { title: string; modules: AavieModule[] }[] = [
         title: 'Assistant administratif',
         description: 'Bientôt sur mobile : préparer une démarche, pas à pas.',
         icon: 'chatbubbles-outline',
-        href: '/demarche',
+        // `/demarche` auparavant : la carte annonçait l'assistant et ouvrait la liste des
+        // démarches. Un libellé qui ne tient pas sa promesse fait douter l'usager de lui-même.
+        href: '/assistant',
       },
       {
         id: 'redaction',
