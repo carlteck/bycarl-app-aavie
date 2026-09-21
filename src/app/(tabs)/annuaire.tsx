@@ -1,60 +1,78 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
-import {
-  FlatList,
-  Platform,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  View,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { AnnuaireEntryCard } from '@/components/annuaire-entry-card';
+import { FilterChips } from '@/components/filter-chips';
 import { PageHeader } from '@/components/page-header';
+import { SearchField } from '@/components/search-field';
+import { EmptyState, LoadingState, Notice } from '@/components/screen-state';
+import { useTabListInsets } from '@/components/stack-screen';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import {
   ANNUAIRE_CATEGORIES,
   ANNUAIRE_ENTRIES,
-  type AnnuaireCategory,
+  type AnnuaireEntry,
 } from '@/constants/annuaire';
-import { BottomTabInset, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
+import { useAnnuaire } from '@/hooks/use-catalogs';
+import { usePullToRefresh } from '@/hooks/use-pull-to-refresh';
 import { useTheme } from '@/hooks/use-theme';
+import { normalize } from '@/lib/manual';
 
-type CategoryFilter = AnnuaireCategory | 'Tous';
+const ALL = '__all__';
+
+/** Catégories connues d'abord (ordre du produit), puis les autres par ordre alphabétique. */
+function categoriesOf(entries: readonly AnnuaireEntry[]): string[] {
+  const present = new Set(entries.map((entry) => entry.category));
+  const known = ANNUAIRE_CATEGORIES.filter((name) => present.has(name));
+  const others = [...present]
+    .filter((name) => !ANNUAIRE_CATEGORIES.some((known) => known === name))
+    .sort((a, b) => a.localeCompare(b, 'fr'));
+  return [...known, ...others];
+}
 
 export default function AnnuaireScreen() {
-  const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<CategoryFilter>('Tous');
-  const safeAreaInsets = useSafeAreaInsets();
   const theme = useTheme();
+  const insets = useTabListInsets();
+  const directory = useAnnuaire();
+  const { refreshing, onRefresh } = usePullToRefresh(directory.reload);
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState(ALL);
+
+  // Source affichée. Jamais de repli SILENCIEUX : la liste intégrée ne remplace l'annuaire publié
+  // que s'il est vide ou injoignable, et l'écran le dit. Justification : cette liste (préfecture,
+  // CAF, CPAM…) est réelle et déjà utile hors ligne ; une page vide serait pire pour un public
+  // peu connecté.
+  const published = directory.data ?? [];
+  const usesEmbedded = published.length === 0;
+  const entries = usesEmbedded ? ANNUAIRE_ENTRIES : published;
+  const loading = directory.status === 'loading';
+
+  const chips = useMemo(
+    () => [
+      { value: ALL, label: 'Tous' },
+      ...categoriesOf(entries).map((name) => ({ value: name, label: name })),
+    ],
+    [entries],
+  );
+
+  // Une catégorie choisie puis disparue (actualisation) équivaut à « Tous ».
+  const activeCategory = chips.some((chip) => chip.value === category)
+    ? category
+    : ALL;
 
   const results = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    return ANNUAIRE_ENTRIES.filter((entry) => {
-      const matchesCategory =
-        category === 'Tous' || entry.category === category;
-      const matchesQuery =
-        normalized.length === 0 ||
-        [entry.name, entry.category, entry.description].some((field) =>
-          field.toLowerCase().includes(normalized),
-        );
-      return matchesCategory && matchesQuery;
+    const words = normalize(query).split(' ').filter(Boolean);
+    return entries.filter((entry) => {
+      if (activeCategory !== ALL && entry.category !== activeCategory)
+        return false;
+      const haystack = normalize(
+        `${entry.name} ${entry.category} ${entry.description} ${entry.address ?? ''}`,
+      );
+      return words.every((word) => haystack.includes(word));
     });
-  }, [query, category]);
-
-  const contentPlatformStyle = Platform.select({
-    android: {
-      paddingLeft: Spacing.four + safeAreaInsets.left,
-      paddingRight: Spacing.four + safeAreaInsets.right,
-      paddingBottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
-    },
-    web: {
-      paddingTop: Spacing.four,
-      paddingBottom: Spacing.four,
-    },
-  });
+  }, [entries, query, activeCategory]);
 
   return (
     <ThemedView type="background" style={styles.screen}>
@@ -64,98 +82,75 @@ export default function AnnuaireScreen() {
         intro="Trouvez le bon interlocuteur pour avancer."
       />
       <FlatList
-        style={[styles.list, { backgroundColor: theme.background }]}
-        contentInset={{
-          bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
-        }}
-        contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}
-        data={results}
+        style={{ backgroundColor: theme.background }}
+        data={loading ? [] : results}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <ThemedView style={styles.cardWrapper}>
-            <AnnuaireEntryCard {...item} />
-          </ThemedView>
-        )}
-        ItemSeparatorComponent={() => <ThemedView style={styles.separator} />}
+        renderItem={({ item }) => <AnnuaireEntryCard {...item} />}
+        contentContainerStyle={insets}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void onRefresh()}
+          />
+        }
         ListHeaderComponent={
-          <ThemedView type="background" style={styles.header}>
-            <View
-              style={[
-                styles.searchBar,
-                { backgroundColor: theme.backgroundElement },
-              ]}
-            >
-              <Ionicons
-                name="search-outline"
-                size={17}
-                color={theme.textSecondary}
-              />
-              <TextInput
-                value={query}
-                onChangeText={setQuery}
-                placeholder="CAF, mairie, préfecture…"
-                placeholderTextColor={theme.textSecondary}
-                autoCapitalize="none"
-                accessibilityLabel="Rechercher un organisme"
-                style={[styles.searchInput, { color: theme.text }]}
-              />
-            </View>
-
-            <ThemedText
-              type="caption"
-              themeColor="textSecondary"
-              accessibilityLiveRegion="polite"
-            >
-              {results.length} organisme{results.length > 1 ? 's' : ''}
-            </ThemedText>
-            <View style={styles.chipRow}>
-              {(['Tous', ...ANNUAIRE_CATEGORIES] as CategoryFilter[]).map(
-                (item) => {
-                  const selected = item === category;
-                  return (
-                    <Pressable
-                      key={item}
-                      onPress={() => setCategory(item)}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected }}
-                      hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
-                    >
-                      <ThemedView
-                        type={selected ? 'turquoiseTint' : 'background'}
-                        style={[
-                          styles.filterChip,
-                          {
-                            borderColor: selected
-                              ? 'transparent'
-                              : theme.cardBorder,
-                          },
-                        ]}
-                      >
-                        <ThemedText
-                          type="label"
-                          style={{
-                            color: selected
-                              ? theme.turquoiseTintText
-                              : theme.textSecondary,
-                          }}
-                        >
-                          {item}
-                        </ThemedText>
-                      </ThemedView>
-                    </Pressable>
-                  );
-                },
-              )}
-            </View>
-          </ThemedView>
+          <View style={styles.header}>
+            {directory.status === 'error' && usesEmbedded ? (
+              <Notice
+                icon="cloud-offline-outline"
+                action={{ label: 'Réessayer', onPress: directory.retry }}
+              >
+                L’annuaire à jour n’a pas pu être chargé. La liste de référence
+                intégrée à l’application est affichée en attendant.
+              </Notice>
+            ) : directory.status === 'ready' && usesEmbedded ? (
+              <Notice icon="information-circle-outline">
+                L’annuaire à jour n’est pas encore publié. La liste de référence
+                intégrée à l’application est affichée en attendant.
+              </Notice>
+            ) : directory.status === 'error' ? (
+              <Notice
+                icon="cloud-offline-outline"
+                action={{ label: 'Réessayer', onPress: directory.retry }}
+              >
+                La mise à jour a échoué : cette liste peut ne pas être à jour.
+              </Notice>
+            ) : null}
+            <SearchField
+              value={query}
+              onChangeText={setQuery}
+              placeholder="CAF, mairie, préfecture…"
+              label="Rechercher un organisme"
+            />
+            <FilterChips
+              options={chips}
+              value={activeCategory}
+              onChange={setCategory}
+              label="Filtrer par catégorie"
+            />
+            {!loading ? (
+              <ThemedText
+                type="caption"
+                themeColor="textSecondary"
+                accessibilityLiveRegion="polite"
+              >
+                {results.length} organisme{results.length > 1 ? 's' : ''}
+              </ThemedText>
+            ) : null}
+          </View>
         }
         ListEmptyComponent={
-          <ThemedText
-            themeColor="textSecondary"
-            style={[styles.centerText, styles.emptyState]}
-          >
-            Aucun organisme ne correspond à votre recherche.
-          </ThemedText>
+          loading ? (
+            <LoadingState label="Chargement de l’annuaire…" />
+          ) : (
+            <EmptyState
+              icon="search-outline"
+              title="Aucun organisme trouvé"
+              message="Essayez d’autres mots ou une autre catégorie."
+            />
+          )
         }
       />
     </ThemedView>
@@ -163,61 +158,6 @@ export default function AnnuaireScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
-  list: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingHorizontal: Spacing.four,
-  },
-  header: {
-    width: '100%',
-    maxWidth: 560,
-    alignSelf: 'center',
-    gap: Spacing.three,
-    paddingTop: Spacing.four,
-    paddingBottom: Spacing.four,
-  },
-  centerText: {
-    textAlign: 'center',
-  },
-  searchBar: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    borderRadius: 18,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    paddingVertical: Spacing.two,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.two,
-  },
-  filterChip: {
-    paddingHorizontal: Spacing.three,
-    minHeight: 44,
-    justifyContent: 'center',
-    paddingVertical: Spacing.two,
-    borderRadius: Spacing.five,
-    borderWidth: 1,
-  },
-  cardWrapper: {
-    width: '100%',
-    maxWidth: 560,
-    alignSelf: 'center',
-  },
-  separator: {
-    height: Spacing.three,
-  },
-  emptyState: {
-    paddingTop: Spacing.four,
-  },
+  screen: { flex: 1 },
+  header: { gap: Spacing.three },
 });

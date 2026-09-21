@@ -372,13 +372,46 @@ copie qui sert aux envois automatiques. La supprimer vaut mieux que la ranger.
   - **Compte mobile Supabase** : inscription, connexion, restauration de session et déconnexion via Supabase Auth. Aucun compte partagé automatiquement avec le site.
   - **Zone publique routée** : `/` (accueil), `/a-propos`, `/connexion`, `/inscription`. La route technique `/auth/callback` reste publique ; les services sont derrière `Stack.Protected`.
   - **Crédits** : écran explicatif ; les crédits et forfaits ne sont pas encore raccordés aux comptes mobiles Supabase.
-  - **Annuaire administratif** ([src/app/(tabs)/annuaire.tsx](<src/app/(tabs)/annuaire.tsx>)) : module abouti — recherche, filtres par catégorie, appel téléphonique, site web, itinéraire. ⚠️ Données encore **en dur** dans [src/constants/annuaire.ts](src/constants/annuaire.ts) alors que `contacts.php` existe côté API : à rebrancher.
+  - **Annuaire administratif** ([src/app/(tabs)/annuaire.tsx](<src/app/(tabs)/annuaire.tsx>)) : lit `directory_contacts` dans Supabase (voir « Modules fonctionnels »). La liste embarquée de [src/constants/annuaire.ts](src/constants/annuaire.ts) n'est plus qu'un repli **annoncé à l'écran**.
   - **Planificateur et Notifications** ([planificateur.tsx](src/app/planificateur.tsx), [notifications.tsx](src/app/notifications.tsx)) : écrans réels ; rappels persistés dans SQLite et synchronisés avec Supabase. ⚠️ **Aucune notification n'est réellement planifiée** : `expo-notifications` n'est pas installé, l'écran ne fait que lister.
   - **Assistant démarches** ([src/app/demarche/](src/app/demarche/)) : assistant pas-à-pas avec préremplissage, mais **sans IA** — 351 lignes de démarches en dur dans [src/constants/procedures.ts](src/constants/procedures.ts). Le vrai assistant IA (`ai/chat.php`, facturé en crédits) n'est pas branché.
   - **Profil civil** ([user-profile-context.tsx](src/context/user-profile-context.tsx)) : persisté dans SQLite et synchronisé avec `mobile_profiles` dans Supabase.
-  - Les routes de présentation existent pour l’assistant IA, l’aide rédactionnelle, la veille réglementaire, la gestion de budget et le coffre-fort. Elles décrivent clairement les fonctions à venir sans simuler d’enregistrement. Le Centre de ressources et l’Annuaire ont leurs écrans dédiés.
-  - Pas encore implémenté : moteur de l’assistant IA, génération de courriers, contenus de veille réels, données budgétaires, stockage documentaire et multilingue.
+  - Seule l’**aide rédactionnelle** reste une page de présentation. Support, budget, coffre-fort, veille, ressources, annuaire, manuel et assistant ont leurs écrans (voir « Modules fonctionnels »).
+  - Pas encore livré côté serveur : la fonction de l’assistant IA, le stockage des fichiers du coffre-fort, l’alimentation des catalogues et des tickets par le site, et le multilingue.
   - Composants de démo du starter Expo (hint-row, collapsible, web-badge, external-link, l'export `AnimatedIcon` inutilisé) supprimés — plus aucune trace de l'app Expo par défaut dans `src/`.
+
+## Modules fonctionnels — 20 septembre 2026
+
+Le mobile parle **exclusivement à Supabase** (Auth + PostgREST + Edge Functions). Aucun appel à l'API PHP du site, aucune session PHP, aucune clé `service_role` ni clé d'IA dans le bundle. Flux : site → MySQL → synchronisation → Supabase → application.
+
+Migrations `202609200002` à `202609200006`, tests pgTAP `supabase/tests/database/mobile_modules.test.sql`, jeu fictif local `supabase/seed.sql` (jamais envoyé au projet distant).
+
+| Module      | Route                                                  | Tables Supabase                                                                         | Écriture mobile                                                     | Hors ligne                                   |
+| ----------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | -------------------------------------------- |
+| Budget      | `/budget`                                              | `mobile_budget_entries`                                                                 | oui (RLS propriétaire)                                              | oui, via le moteur de sync (entité `budget`) |
+| Support     | `/support`, `/support/nouvelle`, `/support/[id]`       | `mobile_support_tickets`, `mobile_support_messages`                                     | ouvrir, répondre, clore                                             | non                                          |
+| Veille      | `/veille-reglementaire`, `…/[id]`                      | `regulatory_news`                                                                       | lecture seule                                                       | non                                          |
+| Ressources  | `/ressources` (onglet masqué), `/ressource/[id]`       | `resources`                                                                             | lecture seule                                                       | non                                          |
+| Annuaire    | `/annuaire` (onglet masqué)                            | `directory_contacts`                                                                    | lecture seule                                                       | repli embarqué annoncé                       |
+| Manuel      | `/manuel-utilisateur`, `…/[id]`                        | `mobile_manual_sections`, `mobile_manual_articles`                                      | lecture seule                                                       | non                                          |
+| Coffre-fort | `/coffre-fort`                                         | `mobile_vault_documents` (métadonnées)                                                  | aucune tant que le stockage n'est pas choisi                        | non                                          |
+| Assistant   | `/assistant`, `/assistant/nouvelle`, `/assistant/[id]` | `mobile_assistant_conversations`, `mobile_assistant_messages`, `mobile_credit_balances` | renommer/supprimer une conversation ; **jamais** insérer un message | non                                          |
+
+⚠️ **`mobile_budget_entries` existait déjà en production** : le site l'a créée (schéma v2) sans qu'elle soit versionnée ici. La migration `…0002` en est la copie fidèle et idempotente. Elle doit rester alignée avec le registre du site (`SupabaseEntities`).
+
+⚠️ **Le site n'alimente PAS les catalogues ni les tickets aujourd'hui** : son architecture exclut « tickets » et « contenus publiés » de la synchronisation. Les tables `regulatory_news`, `resources`, `directory_contacts` restent vides tant qu'une décision et un développement côté site ne les remplissent ; les écrans traitent cet état comme un état vide normal. `directory_contacts.description` et `.website` n'existent pas dans MySQL (colonnes nullables ajoutées côté Supabase).
+
+⚠️ **L'assistant n'a pas de service.** La fonction `assistant-chat` (contrat dans `src/lib/assistant.ts`) n'est pas écrite ; sans elle l'envoi répond « indisponible », sans débit. C'est elle qui écrit les messages (`service_role`) : un client qui pourrait insérer ses propres messages fabriquerait de faux échanges passés. Retirer `comingSoon` dans `modules.ts` une fois la fonction déployée. Le solde (`mobile_credit_balances`) est une copie en lecture seule du grand livre du site — l'argent ne se modifie jamais depuis le mobile.
+
+⚠️ **Le coffre-fort ne stocke rien.** `VaultStorage` (`src/lib/vault.ts`) est le seul point d'accroche : l'implémentation par défaut refuse tout. Aucune permission Photos/Fichiers n'est demandée ; une implémentation les demandera au moment d'un import, jamais au lancement. Aucun bucket ni politique de stockage n'est créé.
+
+- **Données distantes validées à la lecture** (`remote-values.ts`, `mapXxx`) : une ligne invalide est écartée, jamais affichée à moitié. Les liens ne sont ouverts que s'ils sont en `https:` (`safeExternalUrl`) ; les numéros doivent être composables (`safePhoneNumber`). La recherche assainit le motif (`toIlikePattern`) : virgule et parenthèse d'un filtre `or(...)` PostgREST ne doivent pas venir de l'usager.
+- **Contenu Markdown** (ressources, manuel) : `simple-markdown.ts` + `RichText`, en composants natifs — jamais du HTML, donc rien à assainir. Aucune dépendance ajoutée.
+- **Socle commun** : `useRemoteList` (pagination par page + ligne témoin, tirer-pour-rafraîchir, délai maximal 15 s, annulation), `useRemoteResource`, `screen-state.tsx` (chargement / erreur / vide), `StackScreen`, `FilterChips`, `SearchField`. L'état « chargement » est **dérivé** du critère de requête (la règle React `set-state-in-effect` interdit de le réinitialiser dans un effet).
+- **Support** : identifiants générés côté client avant l'envoi, violation d'unicité ignorée — un renvoi après coupure ne crée pas de doublon. Privilèges **par colonne** : le mobile ne peut ni choisir un statut initial, ni écrire au nom de l'équipe, ni modifier un message envoyé.
+- **Navigation** : ordre Assistant → Support (→ Aide rédactionnelle, conservée mais en dernier) ; Planificateur → Budget → Coffre-fort ; Veille → Ressources → Annuaire → Manuel. Le sidebar tablette et l'écran Services dérivent tous deux de `SERVICE_GROUPS`.
+
+Tests : `pnpm test:modules` (logique pure, mapping de sync du budget, construction des requêtes, idempotence du support), en plus de `test:sync`, `test:router`, `test:lifecycle`. Les tests SQL exigent Docker : `supabase test db`.
 
 ### Correction des déclencheurs Supabase mobiles
 

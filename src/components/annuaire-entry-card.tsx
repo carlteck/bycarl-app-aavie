@@ -6,10 +6,7 @@ import { OutlineButton } from './outline-button';
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
-import {
-  ANNUAIRE_CATEGORY_ICON,
-  type AnnuaireEntry,
-} from '@/constants/annuaire';
+import { annuaireCategoryIcon, type AnnuaireEntry } from '@/constants/annuaire';
 import { openDirections } from '@/lib/maps';
 import { Palette, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -21,6 +18,7 @@ export function AnnuaireEntryCard({
   phone,
   website,
   address,
+  hours,
 }: AnnuaireEntry) {
   const theme = useTheme();
 
@@ -30,7 +28,7 @@ export function AnnuaireEntryCard({
       style={[styles.card, { borderColor: theme.cardBorder }]}
     >
       <View style={styles.top}>
-        <IconChip name={ANNUAIRE_CATEGORY_ICON[category]} variant="turquoise" />
+        <IconChip name={annuaireCategoryIcon(category)} variant="turquoise" />
         <View style={styles.body}>
           <ThemedText type="sectionTitle">{name}</ThemedText>
           <ThemedView type="turquoiseTint" style={styles.tag}>
@@ -44,7 +42,14 @@ export function AnnuaireEntryCard({
         </View>
       </View>
 
-      <ThemedText themeColor="textSecondary">{description}</ThemedText>
+      {description ? (
+        <ThemedText themeColor="textSecondary">{description}</ThemedText>
+      ) : null}
+      {hours ? (
+        <ThemedText type="caption" themeColor="textSecondary">
+          Horaires : {hours}
+        </ThemedText>
+      ) : null}
       {address && (
         <ThemedText type="caption" themeColor="textSecondary">
           {address}

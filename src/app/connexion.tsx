@@ -1,8 +1,10 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import * as LocalAuthentication from 'expo-local-authentication';
+import { useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   View,
@@ -19,6 +21,16 @@ import { useAuth } from '@/context/auth-context';
 import { ApiError, NetworkError } from '@/lib/api';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import {
+  clearSavedLogin,
+  hasBiometricLogin,
+  readBiometricLogin,
+  readRememberedEmail,
+  saveLogin,
+} from '@/lib/saved-login';
+import { Ionicons } from '@expo/vector-icons';
+
+type BiometricName = 'Face ID' | 'Touch ID' | 'empreinte' | 'biométrie';
 
 export default function ConnexionScreen() {
   const { signIn } = useAuth();
@@ -29,6 +41,56 @@ export default function ConnexionScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [biometricName, setBiometricName] =
+    useState<BiometricName>('biométrie');
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [savedBiometricLogin, setSavedBiometricLogin] = useState(false);
+  const active = useRef(true);
+
+  useEffect(() => {
+    active.current = true;
+    void (async () => {
+      try {
+        const rememberedEmail = await readRememberedEmail();
+        if (active.current && rememberedEmail) {
+          setEmail(rememberedEmail);
+          setRememberMe(true);
+        }
+        if (Platform.OS === 'web') return;
+        const [hardware, enrolled, types, saved] = await Promise.all([
+          LocalAuthentication.hasHardwareAsync(),
+          LocalAuthentication.isEnrolledAsync(),
+          LocalAuthentication.supportedAuthenticationTypesAsync(),
+          hasBiometricLogin(),
+        ]);
+        if (!active.current) return;
+        const available = hardware && enrolled;
+        setBiometricAvailable(available);
+        setSavedBiometricLogin(available && saved);
+        if (
+          types.includes(
+            LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION,
+          )
+        )
+          setBiometricName('Face ID');
+        else if (
+          Platform.OS === 'ios' &&
+          types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)
+        )
+          setBiometricName('Touch ID');
+        else if (
+          types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)
+        )
+          setBiometricName('empreinte');
+      } catch {
+        // Le formulaire classique reste entièrement utilisable sans biométrie.
+      }
+    })();
+    return () => {
+      active.current = false;
+    };
+  }, []);
 
   async function handleSubmit() {
     if (isSubmitting) return;
@@ -42,7 +104,15 @@ export default function ConnexionScreen() {
     try {
       // `Stack.Protected` bascule seul vers la zone protégée dès que la session s'ouvre :
       // aucune navigation manuelle après la connexion.
-      await signIn(email.trim(), password);
+      const normalizedEmail = email.trim().toLowerCase();
+      await signIn(normalizedEmail, password);
+      if (rememberMe)
+        await saveLogin(
+          normalizedEmail,
+          password,
+          Platform.OS !== 'web' && biometricAvailable,
+        );
+      else await clearSavedLogin();
     } catch (e) {
       setError(
         e instanceof ApiError || e instanceof NetworkError
@@ -50,6 +120,32 @@ export default function ConnexionScreen() {
           : 'Connexion impossible. Réessayez dans un instant.',
       );
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleBiometricLogin() {
+    if (isSubmitting) return;
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      const credentials = await readBiometricLogin();
+      if (!credentials) {
+        setSavedBiometricLogin(false);
+        setError(
+          `La connexion avec ${biometricName} doit être configurée à nouveau.`,
+        );
+        return;
+      }
+      setEmail(credentials.email);
+      await signIn(credentials.email, credentials.password);
+    } catch (e) {
+      setError(
+        e instanceof ApiError || e instanceof NetworkError
+          ? e.message
+          : `Connexion avec ${biometricName} non effectuée.`,
+      );
+    } finally {
+      if (active.current) setIsSubmitting(false);
     }
   }
 
@@ -121,15 +217,50 @@ export default function ConnexionScreen() {
               onSubmitEditing={handleSubmit}
             />
 
+            <Pressable
+              onPress={() => setRememberMe((value) => !value)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: rememberMe }}
+              accessibilityLabel="Se souvenir de mon compte sur cet appareil"
+              style={styles.rememberRow}
+            >
+              <Ionicons
+                name={rememberMe ? 'checkbox' : 'square-outline'}
+                size={24}
+                color={rememberMe ? theme.primary : theme.textSecondary}
+              />
+              <View style={styles.rememberText}>
+                <ThemedText type="label">Se souvenir de mon compte</ThemedText>
+                <ThemedText type="caption" themeColor="textSecondary">
+                  {Platform.OS !== 'web' && biometricAvailable
+                    ? `Le mot de passe sera protégé par ${biometricName}.`
+                    : 'Seule votre adresse e-mail sera mémorisée.'}
+                </ThemedText>
+              </View>
+            </Pressable>
+
             {error && (
               <ThemedText type="label" themeColor="accent">
                 {error}
               </ThemedText>
             )}
 
-            <PrimaryButton onPress={handleSubmit} icon="log-in-outline">
+            <PrimaryButton
+              onPress={handleSubmit}
+              icon="log-in-outline"
+              disabled={isSubmitting}
+            >
               {isSubmitting ? 'Connexion…' : 'Se connecter'}
             </PrimaryButton>
+
+            {savedBiometricLogin && (
+              <OutlineButton
+                onPress={() => void handleBiometricLogin()}
+                icon="finger-print-outline"
+              >
+                Se connecter avec {biometricName}
+              </OutlineButton>
+            )}
 
             <View style={styles.alternative}>
               <ThemedText
@@ -178,6 +309,15 @@ const styles = StyleSheet.create({
   intro: {
     gap: Spacing.one,
     marginBottom: Spacing.two,
+  },
+  rememberRow: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  rememberText: {
+    flex: 1,
   },
   alternative: {
     marginTop: Spacing.three,

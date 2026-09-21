@@ -15,15 +15,15 @@ import { syncRemote } from '@/lib/sync-remote';
 import { isSupabaseConfigured } from '@/lib/supabase';
 
 type Status = 'waiting' | 'syncing' | 'synced' | 'pending';
-const Context = createContext<{ status: Status; retry: () => void }>({
+const Context = createContext<{ status: Status; retry: () => Promise<void> }>({
   status: 'waiting',
-  retry: () => {},
+  retry: () => Promise.resolve(),
 });
 export function SyncProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const userId = user?.id;
   const [state, setState] = useState<{ userId: string; status: Status }>();
-  const retryRef = useRef(() => {});
+  const retryRef = useRef<() => Promise<void>>(() => Promise.resolve());
   useEffect(() => {
     if (!userId || !isSupabaseConfigured) return;
     let stopped = false;
@@ -67,9 +67,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       clearTimeout(debounce);
       debounce = setTimeout(() => void run(), 700);
     };
-    retryRef.current = () => {
-      void run();
-    };
+    retryRef.current = () => run();
     const unsubscribe = subscribeToData((owner, _entity, local) => {
       if (owner === userId && local) schedule();
     });
@@ -96,7 +94,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       clearTimeout(debounce);
       unsubscribe();
       subscription.remove();
-      retryRef.current = () => {};
+      retryRef.current = () => Promise.resolve();
       if (Platform.OS === 'web') {
         window.removeEventListener('online', onOnline);
         document.removeEventListener('visibilitychange', onOnline);

@@ -65,3 +65,10 @@ Le schéma distant des trois tables a été vérifié par lecture d’`informati
 Cette étape réutilise les tables existantes. Une migration corrige les droits des
 déclencheurs internes qui bloquaient les écritures personnelles ; elle ne crée pas les tables proposées
 pour les futurs modules et ne raccorde pas les contenus éditoriaux du site.
+
+## Mise à jour du 20 septembre 2026
+
+`mobile_budget_entries` existe (créée par le site, schéma v2) et est désormais versionnée ici
+(`202609200002`). Les tables du support, des catalogues, du manuel, de l'assistant et du coffre-fort
+(métadonnées) sont préparées dans `202609200003` à `202609200006` : voir « Modules fonctionnels »
+dans `CLAUDE.md`. Ces migrations sont **écrites mais pas appliquées** au projet distant.

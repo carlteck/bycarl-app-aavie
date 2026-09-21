@@ -5,7 +5,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: 'AAVIE',
   slug: 'aavie-app',
   version: '1.0.0',
-  orientation: 'portrait',
+  // L'interface s'adapte avec `useWindowDimensions`; ne pas verrouiller la rotation au niveau
+  // natif afin de prendre en charge les tablettes et l'usage en paysage.
+  orientation: 'default',
   icon: './assets/images/icon.png',
   scheme: 'aavie',
   userInterfaceStyle: 'automatic',
@@ -47,6 +49,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-router',
+    [
+      'expo-build-properties',
+      {
+        ios: {
+          enableSceneSupport: true,
+        },
+      },
+    ],
     [
       'expo-splash-screen',
       {

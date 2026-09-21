@@ -6,11 +6,13 @@ export type AnnuaireCategory =
 export type AnnuaireEntry = {
   id: string;
   name: string;
-  category: AnnuaireCategory;
+  /** Catégorie libre côté Supabase ; les cinq de `ANNUAIRE_CATEGORIES` ont une icône dédiée. */
+  category: string;
   description: string;
   phone?: string;
   website?: string;
   address?: string;
+  hours?: string;
 };
 
 export const ANNUAIRE_CATEGORIES: AnnuaireCategory[] = [
@@ -20,6 +22,18 @@ export const ANNUAIRE_CATEGORIES: AnnuaireCategory[] = [
   'Emploi',
   'Logement',
 ];
+
+const DEFAULT_ICON: keyof typeof Ionicons.glyphMap = 'business-outline';
+
+export function annuaireCategoryIcon(
+  category: string,
+): keyof typeof Ionicons.glyphMap {
+  return (
+    (ANNUAIRE_CATEGORY_ICON as Record<string, keyof typeof Ionicons.glyphMap>)[
+      category
+    ] ?? DEFAULT_ICON
+  );
+}
 
 export const ANNUAIRE_CATEGORY_ICON: Record<
   AnnuaireCategory,

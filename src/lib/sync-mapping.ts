@@ -16,6 +16,7 @@ export const tables: Record<Entity, string> = {
   profile: 'mobile_profiles',
   reminder: 'mobile_reminders',
   progress: 'mobile_procedure_progress',
+  budget: 'mobile_budget_entries',
 };
 export function toRemote(change: PendingChange): Payload {
   const p = change.payload;
@@ -41,6 +42,17 @@ export function toRemote(change: PendingChange): Payload {
       category: p.category,
       notifications_enabled: p.notifyEnabled,
       lead_days: p.leadDays,
+      deleted_at: null,
+    };
+  if (change.entity === 'budget')
+    return {
+      id: change.id,
+      user_id: change.userId,
+      label: p.label,
+      amount: Number(p.amountCents) / 100,
+      type: p.kind,
+      category: p.category,
+      entry_date: p.dateISO,
       deleted_at: null,
     };
   return {
@@ -80,6 +92,19 @@ export function fromRemote(entity: Entity, row: Payload): LocalRecord {
         category: row.category,
         notifyEnabled: row.notifications_enabled,
         leadDays: row.lead_days,
+      },
+    };
+  if (entity === 'budget')
+    return {
+      id: String(row.id),
+      payload: {
+        id: row.id,
+        label: row.label,
+        // `numeric(10,2)` : le sens est porté par `type`, on ne garde que la valeur absolue.
+        amountCents: Math.abs(Math.round(Number(row.amount) * 100)),
+        kind: row.type,
+        category: row.category,
+        dateISO: row.entry_date,
       },
     };
   return {

@@ -1,4 +1,4 @@
-export type Entity = 'profile' | 'reminder' | 'progress';
+export type Entity = 'profile' | 'reminder' | 'progress' | 'budget';
 export type Payload = Record<string, unknown>;
 export type LocalRecord = { id: string; payload: Payload };
 export type PendingChange = LocalRecord & {
@@ -30,4 +30,14 @@ export type ProcedureProgress = {
   step: 'overview' | 'form' | 'documents' | 'recap';
   values: Record<string, string>;
   checkedDocuments: Record<string, boolean>;
+};
+export type BudgetKind = 'income' | 'expense';
+/** Opération de budget telle que conservée sur l'appareil : montant en centimes entiers. */
+export type BudgetEntry = {
+  id: string;
+  label: string;
+  amountCents: number;
+  kind: BudgetKind;
+  category: string;
+  dateISO: string;
 };
