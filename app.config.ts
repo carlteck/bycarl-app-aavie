@@ -30,6 +30,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       CFBundleDevelopmentRegion: 'fr',
       NSFaceIDUsageDescription:
         'AAVIE utilise Face ID pour déverrouiller votre espace personnel lorsque vous activez cette protection.',
+      // ⚠️ Chaîne exigée par Apple (erreur 90683, build 1.0.0 (7)) alors que l'app n'accède PAS à la
+      // photothèque : `expo-image` embarque un chargeur d'assets Photos (URI `ph://`) et Apple
+      // rejette tout binaire qui référence l'API sans cette clé. Retirer `expo-image` ne serait
+      // pas anodin ; on déclare donc la clé, en disant la vérité. Aucune autorisation n'est
+      // demandée au lancement ni ailleurs : l'invite système n'apparaît que si du code charge
+      // réellement un asset `ph://`, ce que l'application ne fait pas.
+      NSPhotoLibraryUsageDescription:
+        'AAVIE n’accède pas à votre photothèque. Une image de vos photos ne serait affichée que si vous la choisissiez vous-même ; aucune photo n’est lue ni envoyée sans votre action.',
       ITSAppUsesNonExemptEncryption: false,
     },
   },

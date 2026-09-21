@@ -474,7 +474,12 @@ ne provoque pas une nouvelle demande. Une permission en attente n’est pas pour
 si l’écran a été quitté. Aucun écran global ne réclame toutes les permissions au lancement.
 
 Pas de permission caméra, photos, contacts, géolocalisation ou suivi publicitaire : ces
-accès ne sont pas utilisés. L’annuaire ouvre l’application Téléphone/Plans sans lire les
+accès ne sont pas utilisés.
+⚠️ **`NSPhotoLibraryUsageDescription` est pourtant déclarée** (`app.config.ts`) : Apple a rejeté le
+build 1.0.0 (7) avec l'erreur 90683, car `expo-image` référence l'API Photos (`ph://`). L'app ne lit
+pas la photothèque et ne demande aucune autorisation ; la chaîne le dit. Ne pas la retirer sans
+avoir retiré ou remplacé `expo-image`. Autres API sensibles (caméra, contacts, position, suivi,
+Bluetooth, santé…) : recherchées dans les modules Expo natifs, aucune référence. L’annuaire ouvre l’application Téléphone/Plans sans lire les
 contacts ni la position. La lecture vocale n’utilise pas le micro. Les notifications
 système ne sont pas encore implémentées : leur permission sera raccordée avec leur
 programmation, pas demandée par un interrupteur sans effet.
