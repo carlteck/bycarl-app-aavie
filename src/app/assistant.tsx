@@ -1,143 +1,208 @@
-import type { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useRef } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Platform,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  View,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-import { IconChip } from '@/components/icon-chip';
-import { ScreenHeaderBar } from '@/components/screen-header-bar';
+import { CreditsBadge } from '@/components/credits-badge';
+import { PrimaryButton } from '@/components/primary-button';
+import {
+  EmptyState,
+  ErrorState,
+  InlineError,
+  LoadingState,
+} from '@/components/screen-state';
+import { StackScreen, useListInsets } from '@/components/stack-screen';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { CardShadow, MaxContentWidth, Spacing } from '@/constants/theme';
+import { CardShadow, Spacing } from '@/constants/theme';
+import { useAssistantConversations, useCredits } from '@/hooks/use-assistant';
 import { useTheme } from '@/hooks/use-theme';
+import {
+  deleteConversation,
+  type AssistantConversation,
+} from '@/lib/assistant';
+import { formatInstant } from '@/lib/remote-values';
 
-type IconName = keyof typeof Ionicons.glyphMap;
-
-/**
- * Assistant administratif — présentation, en attendant le service.
- *
- * ⚠️ **Cet écran n'appelle rien et ne doit pas faire semblant.** L'assistant existe côté site,
- * mais il s'appuie sur l'identité et le solde de crédits de la base MySQL, alors que
- * l'application authentifie ses usagers dans Supabase : ce sont deux fichiers de personnes
- * différents. Le brancher suppose d'abord de décider où vivent l'identité et les crédits — un
- * arbitrage en cours, pas un branchement à faire.
- *
- * D'ici là, mieux vaut une page qui dit ce qui arrive qu'un champ de saisie qui ne répond pas.
- * Le public visé est en difficulté avec le numérique : une fonctionnalité qui échoue en silence
- * lui fait conclure qu'il s'y est mal pris.
- */
-const SECTIONS: { icon: IconName; title: string; body: string }[] = [
-  {
-    icon: 'chatbubbles-outline',
-    title: 'Poser vos questions simplement',
-    body: "Vous écrirez votre situation avec vos mots, sans vocabulaire administratif. L'assistant expliquera chaque terme compliqué et vous guidera une étape à la fois.",
-  },
-  {
-    icon: 'document-text-outline',
-    title: 'Faire rédiger vos courriers',
-    body: "Vous demanderez un courrier ou un e-mail — à la CAF, à la préfecture, à votre caisse de retraite — et vous pourrez le copier, l'imprimer ou l'enregistrer dans votre coffre-fort.",
-  },
-  {
-    icon: 'shield-checkmark-outline',
-    title: 'Ce qu’il ne fera pas',
-    body: "L'assistant n'est pas un juriste et ne remplacera jamais un professionnel du droit sur un cas complexe. Il vous aide à comprendre et à préparer, pas à décider à votre place.",
-  },
-];
-
-export default function AssistantScreen() {
-  const insets = useSafeAreaInsets();
+function ConversationRow({
+  conversation,
+  onDelete,
+}: {
+  conversation: AssistantConversation;
+  onDelete: () => void;
+}) {
   const theme = useTheme();
-
   return (
-    <ThemedView type="pageBackground" style={styles.screen}>
-      <ScreenHeaderBar
-        title="Assistant administratif"
-        onBack={() => router.back()}
-        backLabel="Accueil"
-      />
-
-      <ScrollView
-        style={[styles.scrollView, { backgroundColor: theme.pageBackground }]}
-        contentContainerStyle={[
-          styles.contentContainer,
-          {
-            paddingLeft: Spacing.four + insets.left,
-            paddingRight: Spacing.four + insets.right,
-            paddingBottom: insets.bottom + Spacing.four,
-          },
+    <View
+      style={[
+        styles.row,
+        CardShadow,
+        { backgroundColor: theme.background, borderColor: theme.cardBorder },
+      ]}
+    >
+      <Pressable
+        onPress={() => router.push(`/assistant/${conversation.id}`)}
+        accessibilityRole="button"
+        accessibilityLabel={`${conversation.title}. Dernier échange le ${formatInstant(conversation.lastMessageAt)}.`}
+        accessibilityHint="Ouvre la conversation"
+        style={({ pressed }) => [
+          styles.rowMain,
+          { opacity: pressed ? 0.7 : 1 },
         ]}
       >
-        <View style={styles.container}>
-          <View
-            style={[
-              styles.notice,
-              {
-                backgroundColor: theme.turquoiseTint,
-                borderColor: theme.cardBorder,
-              },
-            ]}
-          >
-            <IconChip name="time-outline" />
-            <View style={styles.flex}>
-              <ThemedText type="label" themeColor="turquoiseTintText">
-                Bientôt disponible
-              </ThemedText>
-              <ThemedText type="caption" themeColor="turquoiseTintText">
-                L’assistant se prépare. Voici ce qu’il fera pour vous.
-              </ThemedText>
-            </View>
-          </View>
+        <ThemedText type="label" numberOfLines={2}>
+          {conversation.title}
+        </ThemedText>
+        <ThemedText type="caption" themeColor="textSecondary">
+          {formatInstant(conversation.lastMessageAt)}
+        </ThemedText>
+      </Pressable>
+      <Pressable
+        onPress={onDelete}
+        accessibilityRole="button"
+        accessibilityLabel={`Supprimer la conversation ${conversation.title}`}
+        style={styles.trash}
+      >
+        <Ionicons name="trash-outline" size={20} color={theme.accent} />
+      </Pressable>
+    </View>
+  );
+}
 
-          {SECTIONS.map((section) => (
-            <View
-              key={section.title}
-              style={[
-                styles.card,
-                {
-                  borderColor: theme.cardBorder,
-                  backgroundColor: theme.background,
-                },
-                CardShadow,
-              ]}
+export default function AssistantScreen() {
+  const list = useAssistantConversations();
+  const credits = useCredits();
+  const insets = useListInsets();
+
+  // Au retour d'une conversation (créée, supprimée), la liste et le solde sont relus.
+  const latest = useRef({ list: list.refresh, credits: credits.reload });
+  useEffect(() => {
+    latest.current = { list: list.refresh, credits: credits.reload };
+  }, [list.refresh, credits.reload]);
+  const seen = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (seen.current) {
+        latest.current.list();
+        void latest.current.credits();
+      }
+      seen.current = true;
+    }, []),
+  );
+
+  const confirmDelete = (conversation: AssistantConversation) => {
+    const remove = () => {
+      deleteConversation(conversation.id)
+        .then(() => list.refresh())
+        .catch(() =>
+          Alert.alert(
+            'Suppression impossible',
+            'La conversation n’a pas été supprimée. Réessayez.',
+          ),
+        );
+    };
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Supprimer « ${conversation.title} » ?`)) remove();
+      return;
+    }
+    Alert.alert(
+      'Supprimer cette conversation ?',
+      'Tous ses messages seront effacés définitivement.',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Supprimer', style: 'destructive', onPress: remove },
+      ],
+    );
+  };
+
+  return (
+    <StackScreen title="Assistant administratif">
+      <FlatList
+        data={list.items}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <ConversationRow
+            conversation={item}
+            onDelete={() => confirmDelete(item)}
+          />
+        )}
+        contentContainerStyle={insets}
+        onEndReached={list.loadMore}
+        onEndReachedThreshold={0.4}
+        refreshControl={
+          <RefreshControl
+            refreshing={list.refreshing}
+            onRefresh={() => {
+              list.refresh();
+              void credits.reload();
+            }}
+          />
+        }
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <ThemedText themeColor="textSecondary">
+              Posez vos questions avec vos mots : l’assistant vous guide une
+              étape à la fois.
+            </ThemedText>
+            <CreditsBadge
+              loading={credits.status === 'loading'}
+              credits={credits.data}
+            />
+            <PrimaryButton
+              icon="add"
+              onPress={() => router.push('/assistant/nouvelle')}
             >
-              <View style={styles.cardTop}>
-                <IconChip name={section.icon} />
-                <ThemedText type="sectionTitle" style={styles.flex}>
-                  {section.title}
-                </ThemedText>
-              </View>
-              <ThemedText themeColor="textSecondary">{section.body}</ThemedText>
-            </View>
-          ))}
-        </View>
-      </ScrollView>
-    </ThemedView>
+              Nouvelle conversation
+            </PrimaryButton>
+            {list.status === 'ready' && list.error ? (
+              <InlineError kind={list.error} onRetry={list.refresh} />
+            ) : null}
+          </View>
+        }
+        ListEmptyComponent={
+          list.status === 'loading' ? (
+            <LoadingState label="Chargement de vos conversations…" />
+          ) : list.status === 'error' && list.error ? (
+            <ErrorState kind={list.error} onRetry={list.retry} />
+          ) : (
+            <EmptyState
+              icon="chatbubbles-outline"
+              title="Aucune conversation"
+              message="Vos échanges avec l’assistant seront conservés ici, pour les retrouver quand vous voulez."
+            />
+          )
+        }
+        ListFooterComponent={
+          list.loadingMore ? (
+            <ActivityIndicator accessibilityLabel="Chargement de la suite" />
+          ) : null
+        }
+      />
+    </StackScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
-  scrollView: { flex: 1 },
-  contentContainer: { paddingTop: Spacing.four },
-  container: {
-    width: '100%',
-    maxWidth: MaxContentWidth,
-    alignSelf: 'center',
-    gap: Spacing.four,
-  },
-  notice: {
+  header: { gap: Spacing.three },
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three,
-    padding: Spacing.four,
-    borderRadius: 22,
+    borderRadius: 18,
     borderWidth: 1,
+    minHeight: 64,
   },
-  card: {
-    gap: Spacing.three,
-    padding: Spacing.four,
-    borderRadius: 22,
-    borderWidth: 1,
+  rowMain: { flex: 1, gap: Spacing.half, padding: Spacing.three },
+  trash: {
+    width: 56,
+    minHeight: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  cardTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  flex: { flex: 1 },
 });

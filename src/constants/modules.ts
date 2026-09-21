@@ -21,6 +21,8 @@ export const SERVICE_GROUPS: { title: string; modules: AavieModule[] }[] = [
     modules: [
       {
         id: 'assistant',
+        // ⚠️ À retirer quand l'Edge Function `assistant-chat` sera déployée et vérifiée : l'écran
+        // et le contrat de données sont prêts (voir `src/lib/assistant.ts`), pas le service.
         comingSoon: true,
         title: 'Assistant administratif',
         description: 'Bientôt sur mobile : préparer une démarche, pas à pas.',
@@ -29,6 +31,17 @@ export const SERVICE_GROUPS: { title: string; modules: AavieModule[] }[] = [
         // démarches. Un libellé qui ne tient pas sa promesse fait douter l'usager de lui-même.
         href: '/assistant',
       },
+      {
+        id: 'support',
+        title: 'Support',
+        description: 'Obtenir de l’aide lorsque vous êtes bloqué.',
+        icon: 'help-buoy-outline',
+        href: '/support',
+      },
+      // ⚠️ Décision de placement : l'aide rédactionnelle ne fait pas partie de la liste minimale
+      // (Assistant → Support). Elle est conservée, mais EN DERNIER du groupe, pour ne pas
+      // s'intercaler dans l'ordre demandé. Sur le site elle a fusionné avec l'assistant : elle
+      // pourra disparaître d'ici quand le mobile suivra.
       {
         id: 'redaction',
         title: 'Aide rédactionnelle',
@@ -79,6 +92,7 @@ export const SERVICE_GROUPS: { title: string; modules: AavieModule[] }[] = [
         title: 'Centre de ressources',
         description: 'Consulter des guides pratiques et des tutoriels.',
         icon: 'book-outline',
+        href: '/ressources',
       },
       {
         id: 'annuaire',
@@ -86,6 +100,13 @@ export const SERVICE_GROUPS: { title: string; modules: AavieModule[] }[] = [
         description: 'Trouver les coordonnées du bon organisme.',
         icon: 'business-outline',
         href: '/annuaire',
+      },
+      {
+        id: 'manuel-utilisateur',
+        title: 'Manuel utilisateur',
+        description: 'Apprendre à utiliser AAVIE étape par étape.',
+        icon: 'school-outline',
+        href: '/manuel-utilisateur',
       },
     ],
   },

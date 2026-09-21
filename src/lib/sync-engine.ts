@@ -35,7 +35,7 @@ export async function synchronize(
       failures.push(error);
     }
   }
-  for (const entity of ['profile', 'reminder', 'progress'] as const) {
+  for (const entity of ['profile', 'reminder', 'progress', 'budget'] as const) {
     assertActive();
     try {
       const rows = await remote.pull(userId, entity, signal);
