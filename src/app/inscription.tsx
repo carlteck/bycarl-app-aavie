@@ -19,9 +19,12 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useAuth, type AccountType } from '@/context/auth-context';
 import { DEFAULT_LOCALE, LOCALES } from '@/constants/locales';
+import { REGISTRATION_CONSENT_LINKS } from '@/constants/legal';
 import { ApiError, NetworkError } from '@/lib/api';
+import { openExternalLink } from '@/lib/open-link';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function InscriptionScreen() {
   const { register } = useAuth();
@@ -49,6 +52,7 @@ export default function InscriptionScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmationRequired, setConfirmationRequired] = useState(false);
+  const [legalAccepted, setLegalAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -61,6 +65,13 @@ export default function InscriptionScreen() {
       password === ''
     ) {
       setError('Tous les champs sont requis.');
+      return;
+    }
+
+    if (!legalAccepted) {
+      setError(
+        'Vous devez accepter la politique de confidentialité et les conditions d’utilisation pour créer un compte.',
+      );
       return;
     }
 
@@ -90,6 +101,7 @@ export default function InscriptionScreen() {
         accountType,
         locale,
         company: accountType === 'company' ? company : undefined,
+        legalAcceptedAt: new Date().toISOString(),
       });
       setConfirmationRequired(result.confirmationRequired);
       setIsSubmitting(false);
@@ -370,8 +382,62 @@ export default function InscriptionScreen() {
               onSubmitEditing={handleSubmit}
             />
 
+            <Pressable
+              onPress={() => setLegalAccepted((current) => !current)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: legalAccepted }}
+              accessibilityLabel="J’accepte la politique de confidentialité et les conditions d’utilisation"
+              style={styles.consentRow}
+            >
+              <View
+                style={[
+                  styles.checkbox,
+                  {
+                    borderColor: legalAccepted
+                      ? theme.primary
+                      : theme.cardBorder,
+                    backgroundColor: legalAccepted
+                      ? theme.primary
+                      : theme.background,
+                  },
+                ]}
+              >
+                {legalAccepted && (
+                  <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                )}
+              </View>
+              <ThemedText themeColor="textSecondary" style={styles.consentText}>
+                J’ai lu et j’accepte la{' '}
+                <ThemedText
+                  themeColor="primary"
+                  onPress={() =>
+                    void openExternalLink(REGISTRATION_CONSENT_LINKS[0].url)
+                  }
+                  accessibilityRole="link"
+                >
+                  politique de confidentialité
+                </ThemedText>{' '}
+                et les{' '}
+                <ThemedText
+                  themeColor="primary"
+                  onPress={() =>
+                    void openExternalLink(REGISTRATION_CONSENT_LINKS[1].url)
+                  }
+                  accessibilityRole="link"
+                >
+                  conditions d’utilisation
+                </ThemedText>
+                .
+              </ThemedText>
+            </Pressable>
+
             {error && (
-              <ThemedText type="label" themeColor="accent">
+              <ThemedText
+                type="label"
+                themeColor="accent"
+                accessibilityRole="alert"
+                accessibilityLiveRegion="assertive"
+              >
                 {error}
               </ThemedText>
             )}
@@ -476,6 +542,27 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     borderWidth: 1,
     borderRadius: Spacing.four,
+  },
+  consentRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.two,
+    minHeight: 44,
+    paddingVertical: Spacing.one,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    marginTop: 2,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  consentText: {
+    flex: 1,
+    lineHeight: 20,
   },
   notice: {
     flexDirection: 'row',

@@ -9,6 +9,8 @@ import { ThemedView } from '@/components/themed-view';
 import { useSync } from '@/context/sync-context';
 import { useAuth } from '@/context/auth-context';
 import { AAVIE_SECTIONS } from '@/constants/modules';
+import { LEGAL_LINKS } from '@/constants/legal';
+import { openExternalLink } from '@/lib/open-link';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
@@ -144,6 +146,39 @@ export default function ProfilScreen() {
               danger
               onPress={signOut}
             />
+          </ThemedView>
+
+          <ThemedText type="sectionTitle" accessibilityRole="header">
+            Vie privée et mentions légales
+          </ThemedText>
+          <ThemedView
+            type="pageBackground"
+            style={[styles.listCard, { borderColor: theme.cardBorder }]}
+          >
+            {(
+              [
+                LEGAL_LINKS.privacy,
+                LEGAL_LINKS.terms,
+                LEGAL_LINKS.sales,
+                LEGAL_LINKS.notice,
+              ] as const
+            ).map((link, index) => (
+              <View key={link.url}>
+                {index > 0 && (
+                  <View
+                    style={[
+                      styles.divider,
+                      { backgroundColor: theme.cardBorder },
+                    ]}
+                  />
+                )}
+                <ListRow
+                  icon="document-text-outline"
+                  label={link.label}
+                  onPress={() => void openExternalLink(link.url)}
+                />
+              </View>
+            ))}
           </ThemedView>
         </View>
       }
