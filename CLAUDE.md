@@ -413,6 +413,32 @@ Migrations `202609200002` à `202609200006`, tests pgTAP `supabase/tests/databas
 
 Tests : `pnpm test:modules` (logique pure, mapping de sync du budget, construction des requêtes, idempotence du support), en plus de `test:sync`, `test:router`, `test:lifecycle`. Les tests SQL exigent Docker : `supabase test db`.
 
+## Consentement RGPD et textes légaux — 10 octobre 2026
+
+Audit du 10 octobre 2026 (voir historique de conversation) : l'inscription mobile ne liait aucun
+des quatre textes légaux du site et ne traçait aucun consentement, alors que le site l'exige
+depuis l'inscription. Corrigé (`src/constants/legal.ts`, `inscription.tsx`, `auth-context.tsx`) :
+
+- **Case obligatoire** avant la création du compte, avec lien tappable vers la politique de
+  confidentialité et les conditions d'utilisation (`https://aavieapp.com/confidentialite` et
+  `/conditions-utilisation`, pages publiques du site) — même périmètre que `register.php`, qui
+  n'exige pas les CGV (achat non encore possible depuis l'application).
+- **Preuve horodatée dans les métadonnées Supabase Auth** (`legal_consent_accepted_at`,
+  `legal_consent_documents`), pas un simple booléen : c'est la seule trace possible côté mobile,
+  qui n'appelle jamais l'API PHP du site et ne peut donc pas écrire dans `user_consents`
+  (MySQL). ⚠️ Elle ne porte **pas** de numéro de version : le mobile ne peut pas savoir laquelle
+  des versions successives (`legal_documents`) était active au moment de l'inscription sans
+  appeler l'API du site, ce que l'architecture interdit. Une preuve honnête (date + documents
+  cités) a été préférée à un numéro de version inventé.
+- **Les quatre textes restent accessibles après l'inscription** : section « Vie privée et
+  mentions légales » dans Mon compte (`profil/index.tsx`), quatre liens ouverts dans le
+  navigateur via `openExternalLink`.
+
+⚠️ Reste hors périmètre de ce correctif (voir l'audit complet) : aucun service IA, aucun
+coffre-fort, aucun forfait/crédit, aucun export ou suppression RGPD en self-service depuis
+l'application — ce sont des chantiers séparés, plus lourds, listés par ordre de priorité dans
+l'audit du 10 octobre.
+
 ### Correction des déclencheurs Supabase mobiles
 
 La migration `202609050001_fix_mobile_outbox_triggers.sql` corrige les trois fonctions
