@@ -66,7 +66,8 @@
     "test:sync": "node --test tests/sync.test.cjs",
     "test:modules": "node --test tests/modules.test.cjs",
     "test:router": "node --test tests/router-linking.test.cjs",
-    "test:lifecycle": "node --test tests/lifecycle.test.cjs"
+    "test:lifecycle": "node --test tests/lifecycle.test.cjs",
+    "test:site-auth": "node --test tests/site-auth.test.cjs"
   },
   "private": true
 }

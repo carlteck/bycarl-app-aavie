@@ -57,6 +57,12 @@ export interface RegisterInput {
   locale: string;
   /** Fourni uniquement pour un compte entreprise ; ignoré côté serveur sinon. */
   company?: CompanyInput;
+  /**
+   * Horodatage ISO de l'acceptation de la politique de confidentialité et des conditions
+   * d'utilisation (voir `REGISTRATION_CONSENT_LINKS`). La case est vérifiée dans `inscription.tsx`
+   * avant l'appel ; ce champ n'est que la preuve, horodatée, de ce moment-là.
+   */
+  legalAcceptedAt: string;
 }
 
 type AuthContextValue = {
@@ -192,6 +198,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           last_name: input.lastName,
           account_type: input.accountType,
           locale: input.locale,
+          // Preuve de consentement : horodatage et périmètre exact, jamais un simple booléen —
+          // sans la date, impossible de dire plus tard QUAND l'acceptation a eu lieu.
+          legal_consent_accepted_at: input.legalAcceptedAt,
+          legal_consent_documents: [
+            'confidentialite',
+            'conditions-utilisation',
+          ],
           ...(input.accountType === 'company'
             ? { company: input.company }
             : {}),
