@@ -380,6 +380,44 @@ copie qui sert aux envois automatiques. La supprimer vaut mieux que la ranger.
   - Pas encore livré côté serveur : la fonction de l’assistant IA, le stockage des fichiers du coffre-fort, l’alimentation des catalogues et des tickets par le site, et le multilingue.
   - Composants de démo du starter Expo (hint-row, collapsible, web-badge, external-link, l'export `AnimatedIcon` inutilisé) supprimés — plus aucune trace de l'app Expo par défaut dans `src/`.
 
+## Authentification unifiée avec le site — construite le 10 octobre 2026, PAS BRANCHÉE
+
+⚠️ **`src/lib/site-auth.ts` et `site-auth-storage.ts` existent, sont testés, et ne sont appelés
+par AUCUN écran.** `connexion.tsx`, `inscription.tsx` et `auth-context.tsx` continuent d'utiliser
+`supabase.auth.signInWithPassword`/`signUp` exactement comme avant. Rien ne change pour un compte
+existant tant que ce fichier n'est pas importé ailleurs.
+
+**Ce que ça prépare** : au lieu d'un compte Supabase Auth avec son propre mot de passe (copié
+depuis le site à la création, puis maintenu en phase par une synchronisation à sens unique — voir
+« Mot de passe commun »), le mobile se connecterait directement auprès du site
+(`POST https://aavieapp.com/api/mobile-auth.php`), qui vérifie le mot de passe et signe un jeton
+que Supabase accepte comme s'il venait de son propre système d'identité. Un seul mot de passe,
+qui ne vit qu'au site. Détail complet côté serveur : `CLAUDE.md` du dépôt `site_aavie`,
+section « Authentification mobile unifiée ».
+
+- **`signInWithSite(email, password)`** : appelle `mobile-auth.php` (réutilise `apiFetch` de
+  `src/lib/api.ts`, déjà prévu pour ce jour — voir son commentaire), puis pose la paire reçue
+  dans la session Supabase via `supabase.auth.setSession()`.
+- **Calendrier de renouvellement indépendant de `supabase-js`** : le jeton de renouvellement
+  renvoyé par le site n'est pas un jeton GoTrue — l'`autoRefreshToken` de `supabase-js` ne peut
+  pas s'en servir et échouerait silencieusement à l'approche de l'expiration (1 h).
+  `refreshSiteSession()` est donc programmée à part (5 minutes avant expiration), suspendue
+  pendant que l'application est en arrière-plan (`watchSiteSessionLifecycle()`, même principe que
+  `SyncProvider`), et reprise au retour au premier plan.
+- **Panne réseau distinguée d'un rejet** : une coupure réseau garde la session (on réessaiera),
+  un jeton de renouvellement refusé (expiré, déjà utilisé, ou service désactivé côté site) la
+  referme — `signOutSite()` + `supabase.auth.signOut({scope: 'local'})`.
+- Testé (`pnpm test:site-auth`, 13 vérifications) avec `./api` et `./supabase` simulés — aucun
+  appel réseau réel, aucun compte Supabase ou site réel impliqué.
+
+### Pour activer (une fois le secret JWT renseigné côté site, voir son CLAUDE.md)
+
+1. Vérifier d'abord côté site avec un compte de test (étape 3 de son propre guide).
+2. Faire appeler `signInWithSite()` depuis `connexion.tsx` à la place de
+   `useAuth().signIn()` — c'est le seul geste d'activation côté mobile. L'inscription
+   (`inscription.tsx`) n'est délibérément pas concernée par ce premier passage : elle continue de
+   créer un compte Supabase Auth classique, avec sa propre vérification plus tard.
+
 ## Modules fonctionnels — 20 septembre 2026
 
 Le mobile parle **exclusivement à Supabase** (Auth + PostgREST + Edge Functions). Aucun appel à l'API PHP du site, aucune session PHP, aucune clé `service_role` ni clé d'IA dans le bundle. Flux : site → MySQL → synchronisation → Supabase → application.
