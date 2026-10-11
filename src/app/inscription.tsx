@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -21,6 +21,7 @@ import { useAuth, type AccountType } from '@/context/auth-context';
 import { DEFAULT_LOCALE, LOCALES } from '@/constants/locales';
 import { REGISTRATION_CONSENT_LINKS } from '@/constants/legal';
 import { ApiError, NetworkError } from '@/lib/api';
+import { fetchActiveConsentDocuments } from '@/lib/legal';
 import { openExternalLink } from '@/lib/open-link';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -53,8 +54,27 @@ export default function InscriptionScreen() {
   const [password, setPassword] = useState('');
   const [confirmationRequired, setConfirmationRequired] = useState(false);
   const [legalAccepted, setLegalAccepted] = useState(false);
+  const [consentDocuments, setConsentDocuments] = useState<{
+    privacyDocumentId: string | null;
+    termsDocumentId: string | null;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetchActiveConsentDocuments()
+      .then((documents) => {
+        if (active) setConsentDocuments(documents);
+      })
+      .catch(() => {
+        // Une case qui ne peut de toute façon pas être validée côté serveur : `handleSubmit`
+        // le signale au moment de la soumission plutôt que de bloquer l'affichage du formulaire.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   async function handleSubmit() {
     if (isSubmitting) return;
@@ -71,6 +91,16 @@ export default function InscriptionScreen() {
     if (!legalAccepted) {
       setError(
         'Vous devez accepter la politique de confidentialité et les conditions d’utilisation pour créer un compte.',
+      );
+      return;
+    }
+
+    if (
+      !consentDocuments?.privacyDocumentId ||
+      !consentDocuments.termsDocumentId
+    ) {
+      setError(
+        'Impossible de vérifier les conditions actuelles. Vérifiez votre connexion et réessayez.',
       );
       return;
     }
@@ -101,7 +131,8 @@ export default function InscriptionScreen() {
         accountType,
         locale,
         company: accountType === 'company' ? company : undefined,
-        legalAcceptedAt: new Date().toISOString(),
+        consentDocumentId: consentDocuments.privacyDocumentId,
+        termsDocumentId: consentDocuments.termsDocumentId,
       });
       setConfirmationRequired(result.confirmationRequired);
       setIsSubmitting(false);
@@ -127,6 +158,10 @@ export default function InscriptionScreen() {
           <ThemedText>
             Consultez votre messagerie et ouvrez le lien de confirmation pour
             activer votre compte.
+          </ThemedText>
+          <ThemedText themeColor="textSecondary">
+            Le lien s’ouvre dans votre navigateur. Une fois votre adresse
+            confirmée, revenez dans l’application pour vous connecter.
           </ThemedText>
           <PrimaryButton onPress={() => router.replace('/connexion')}>
             Aller à la connexion

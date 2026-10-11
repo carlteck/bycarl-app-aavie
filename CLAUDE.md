@@ -389,10 +389,19 @@ passe (formulaire classique et identifiants mémorisés par biométrie, les deux
 une session déjà ouverte et `watchSiteSessionLifecycle()` tient le calendrier de renouvellement en
 veille pendant que l'application est en arrière-plan.
 
-⚠️ **L'inscription (`inscription.tsx`) n'est PAS concernée** : elle crée toujours un compte
-Supabase Auth classique (`supabase.auth.signUp`). Un compte qui vient de s'inscrire se connecte
-donc à la connexion suivante par l'ancien mécanisme, jusqu'à ce que l'inscription soit, elle aussi,
-unifiée (chantier distinct, pas traité ici).
+✅ **L'inscription (`inscription.tsx`) est unifiée aussi, depuis le même jour.** `register()`
+appelle `mobile-register.php` (copie côté site de `register.php` pour un appelant sans session) :
+le compte créé est celui du site, jamais un compte Supabase Auth. Les identifiants des documents
+légaux ACTIFS sont lus sur `/legal.php` (`src/lib/legal.ts`, `fetchActiveConsentDocuments()`) au
+montage de l'écran ; la case de consentement reste la même, mais ce qui est transmis au serveur
+change : des identifiants de version, pas un simple horodatage — la vraie preuve vit dans
+`user_consents` côté site, pas dans des métadonnées Supabase.
+
+⚠️ **La confirmation d'e-mail ouvre un navigateur, pas l'application.** Le lien envoyé est celui
+du site (`EmailVerification`, déjà existant), pas l'ancien rebond Supabase PKCE
+(`public/app/auth/`) : rien ne ramène automatiquement dans l'application après confirmation,
+l'écran l'annonce (« Revenez dans l'application pour vous connecter »). Un vrai rebond équivalent
+reste à construire si cette limite se révèle gênante en usage réel — pas fait ici.
 
 **Ce que ça prépare** : au lieu d'un compte Supabase Auth avec son propre mot de passe (copié
 depuis le site à la création, puis maintenu en phase par une synchronisation à sens unique — voir
