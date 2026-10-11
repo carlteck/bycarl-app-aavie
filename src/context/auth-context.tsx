@@ -11,12 +11,8 @@ import {
 
 import type { User } from '@supabase/supabase-js';
 import { AppState, Platform } from 'react-native';
-import { ApiError } from '@/lib/api';
-import {
-  AUTH_EMAIL_REDIRECT,
-  isSupabaseConfigured,
-  supabase,
-} from '@/lib/supabase';
+import { apiFetch, ApiError } from '@/lib/api';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import {
   restoreSiteSession,
   signInWithSite,
@@ -64,11 +60,14 @@ export interface RegisterInput {
   /** Fourni uniquement pour un compte entreprise ; ignoré côté serveur sinon. */
   company?: CompanyInput;
   /**
-   * Horodatage ISO de l'acceptation de la politique de confidentialité et des conditions
-   * d'utilisation (voir `REGISTRATION_CONSENT_LINKS`). La case est vérifiée dans `inscription.tsx`
-   * avant l'appel ; ce champ n'est que la preuve, horodatée, de ce moment-là.
+   * Identifiants des versions ACTIVES de la politique de confidentialité et des conditions
+   * d'utilisation au moment de l'inscription (voir `fetchActiveConsentDocuments()`). La case est
+   * vérifiée dans `inscription.tsx` avant l'appel ; le serveur (`mobile-register.php`) revalide
+   * que ces identifiants correspondent bien aux versions actives — la vraie preuve de
+   * consentement vit dans `user_consents`, pas ici.
    */
-  legalAcceptedAt: string;
+  consentDocumentId: string | null;
+  termsDocumentId: string | null;
 }
 
 type AuthContextValue = {
@@ -127,14 +126,6 @@ function authError(error: { code?: string; message: string; status?: number }) {
       'Connexion au service impossible. Réessayez dans un instant.',
     error.status ?? 400,
   );
-}
-
-function requireSupabase() {
-  if (!isSupabaseConfigured)
-    throw new ApiError(
-      'La connexion n’est pas encore configurée dans cette application.',
-      503,
-    );
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -199,33 +190,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(async (input: RegisterInput) => {
-    requireSupabase();
-    const { data, error } = await supabase.auth.signUp({
-      email: input.email,
-      password: input.password,
-      options: {
-        emailRedirectTo: AUTH_EMAIL_REDIRECT,
-        data: {
-          first_name: input.firstName,
-          last_name: input.lastName,
-          account_type: input.accountType,
-          locale: input.locale,
-          // Preuve de consentement : horodatage et périmètre exact, jamais un simple booléen —
-          // sans la date, impossible de dire plus tard QUAND l'acceptation a eu lieu.
-          legal_consent_accepted_at: input.legalAcceptedAt,
-          legal_consent_documents: [
-            'confidentialite',
-            'conditions-utilisation',
-          ],
-          ...(input.accountType === 'company'
-            ? { company: input.company }
-            : {}),
-        },
-      },
+    // Authentification unifiée : crée le compte du SITE (`mobile-register.php`), pas un compte
+    // Supabase Auth séparé — exactement ce que `register.php` fait déjà pour le site web. Le
+    // compte se connectera ensuite par `signIn()` ci-dessus, qui le fait reconnaître par
+    // Supabase à ce moment-là (voir `MobileAuth::subjectIdFor()` côté site).
+    const company = input.company;
+    await apiFetch('/mobile-register.php', {
+      method: 'POST',
+      body: JSON.stringify({
+        first_name: input.firstName,
+        last_name: input.lastName,
+        email: input.email,
+        password: input.password,
+        account_type: input.accountType,
+        locale: input.locale,
+        consent_document_id: input.consentDocumentId ?? '',
+        terms_document_id: input.termsDocumentId ?? '',
+        ...(input.accountType === 'company' && company
+          ? {
+              legal_name: company.legalName,
+              legal_form: company.legalForm,
+              siret: company.siret,
+              vat_number: company.vatNumber,
+              address_line1: company.addressLine1,
+              address_line2: company.addressLine2,
+              postal_code: company.postalCode,
+              city: company.city,
+              contact_role: company.contactRole,
+            }
+          : {}),
+      }),
     });
-    if (error) throw authError(error);
-    if (data.session && data.user) setUser(toAppUser(data.user));
-    return { confirmationRequired: !data.session };
+    // Le compte créé n'a pas encore confirmé son adresse : jamais de session ouverte ici,
+    // contrairement à l'ancien mécanisme qui pouvait en ouvrir une immédiatement.
+    return { confirmationRequired: true };
   }, []);
 
   const refreshUser = useCallback(async () => {
