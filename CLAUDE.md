@@ -380,12 +380,19 @@ copie qui sert aux envois automatiques. La supprimer vaut mieux que la ranger.
   - Pas encore livré côté serveur : la fonction de l’assistant IA, le stockage des fichiers du coffre-fort, l’alimentation des catalogues et des tickets par le site, et le multilingue.
   - Composants de démo du starter Expo (hint-row, collapsible, web-badge, external-link, l'export `AnimatedIcon` inutilisé) supprimés — plus aucune trace de l'app Expo par défaut dans `src/`.
 
-## Authentification unifiée avec le site — construite le 10 octobre 2026, PAS BRANCHÉE
+## Authentification unifiée avec le site — branchée le 11 octobre 2026
 
-⚠️ **`src/lib/site-auth.ts` et `site-auth-storage.ts` existent, sont testés, et ne sont appelés
-par AUCUN écran.** `connexion.tsx`, `inscription.tsx` et `auth-context.tsx` continuent d'utiliser
-`supabase.auth.signInWithPassword`/`signUp` exactement comme avant. Rien ne change pour un compte
-existant tant que ce fichier n'est pas importé ailleurs.
+✅ **`auth-context.tsx` appelle désormais `signInWithSite()`** pour toute connexion par mot de
+passe (formulaire classique et identifiants mémorisés par biométrie, les deux passent par le même
+`signIn()` du contexte) — un seul point de bascule, pas deux écrans à maintenir en parallèle.
+`signOut()` efface aussi la session de ce mécanisme. Au démarrage, `restoreSiteSession()` reprend
+une session déjà ouverte et `watchSiteSessionLifecycle()` tient le calendrier de renouvellement en
+veille pendant que l'application est en arrière-plan.
+
+⚠️ **L'inscription (`inscription.tsx`) n'est PAS concernée** : elle crée toujours un compte
+Supabase Auth classique (`supabase.auth.signUp`). Un compte qui vient de s'inscrire se connecte
+donc à la connexion suivante par l'ancien mécanisme, jusqu'à ce que l'inscription soit, elle aussi,
+unifiée (chantier distinct, pas traité ici).
 
 **Ce que ça prépare** : au lieu d'un compte Supabase Auth avec son propre mot de passe (copié
 depuis le site à la création, puis maintenu en phase par une synchronisation à sens unique — voir
@@ -410,13 +417,15 @@ section « Authentification mobile unifiée ».
 - Testé (`pnpm test:site-auth`, 13 vérifications) avec `./api` et `./supabase` simulés — aucun
   appel réseau réel, aucun compte Supabase ou site réel impliqué.
 
-### Pour activer (une fois le secret JWT renseigné côté site, voir son CLAUDE.md)
+### Vérifié en production le 11 octobre 2026, avant la bascule
 
-1. Vérifier d'abord côté site avec un compte de test (étape 3 de son propre guide).
-2. Faire appeler `signInWithSite()` depuis `connexion.tsx` à la place de
-   `useAuth().signIn()` — c'est le seul geste d'activation côté mobile. L'inscription
-   (`inscription.tsx`) n'est délibérément pas concernée par ce premier passage : elle continue de
-   créer un compte Supabase Auth classique, avec sa propre vérification plus tard.
+Un compte GoTrue « coquille » (sans mot de passe, voir le CLAUDE.md du site, « provisionGoTrueUser »)
+est nécessaire pour que `supabase.auth.setSession()` accepte le jeton — `GET /auth/v1/user`, que
+`supabase-js` appelle lui-même à chaque connexion, refuse sinon un `sub` sans ligne `auth.users`
+(`403 user_not_found`). Avec le correctif : connexion simple, connexion répétée du même compte
+(même identifiant repris, pas de second compte créé), `/auth/v1/user` répond 200 après coup,
+aucun mot de passe utilisable chez Supabase pour ce compte. Comptes de test créés puis supprimés
+des deux côtés (site et Supabase) à chaque vérification.
 
 ## Modules fonctionnels — 20 septembre 2026
 

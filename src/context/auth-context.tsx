@@ -17,6 +17,12 @@ import {
   isSupabaseConfigured,
   supabase,
 } from '@/lib/supabase';
+import {
+  restoreSiteSession,
+  signInWithSite,
+  signOutSite,
+  watchSiteSessionLifecycle,
+} from '@/lib/site-auth';
 
 export type AccountType = 'individual' | 'company';
 
@@ -159,6 +165,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ? toAppUser(session.user) : null);
       setSessionChecked(true);
     });
+
+    // Authentification unifiée avec le site (voir `site-auth.ts`) : reprend une session émise
+    // par le site si une est stockée sur l'appareil — sans effet pour un compte encore sur
+    // l'ancien mécanisme (`supabase.auth.signInWithPassword`), pour qui rien n'est stocké ici.
+    // `setSession()` à l'intérieur déclenche `onAuthStateChange` ci-dessus, qui met `user` à jour.
+    void restoreSiteSession();
+    const stopWatchingSiteSession = watchSiteSessionLifecycle();
+
     const refresh = (state: string) => {
       if (state === 'active') supabase.auth.startAutoRefresh();
       else supabase.auth.stopAutoRefresh();
@@ -171,19 +185,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
       subscription.unsubscribe();
+      stopWatchingSiteSession();
       appState?.remove();
       if (Platform.OS !== 'web') supabase.auth.stopAutoRefresh();
     };
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    requireSupabase();
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) throw authError(error);
-    setUser(toAppUser(data.user));
+    // Authentification unifiée : le site vérifie le mot de passe et signe un jeton que
+    // Supabase accepte (voir `site-auth.ts`). `onAuthStateChange` met `user` à jour une fois
+    // la session posée ; pas de `setUser()` direct ici, contrairement à l'ancien mécanisme.
+    await signInWithSite(email, password);
   }, []);
 
   const register = useCallback(async (input: RegisterInput) => {
@@ -223,6 +235,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    // Efface aussi la session de l'authentification unifiée (voir `site-auth.ts`) : sans elle,
+    // un compte qui s'est connecté par ce chemin la retrouverait au prochain lancement. Le second
+    // appel à `signOut()` qui suit est sans effet pour un compte déjà déconnecté par le premier.
+    await signOutSite();
     const { error } = await supabase.auth.signOut({ scope: 'local' });
     if (error) throw authError(error);
     setUser(null);
