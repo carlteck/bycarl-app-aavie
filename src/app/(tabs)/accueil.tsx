@@ -20,7 +20,7 @@ import {
 import { ReminderRow } from '@/components/reminder-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, Palette } from '@/constants/theme';
+import { BottomTabInset, CardShadow, Palette } from '@/constants/theme';
 import { useAuth } from '@/context/auth-context';
 import { useReminders } from '@/context/reminders-context';
 import { useTheme } from '@/hooks/use-theme';
@@ -149,15 +149,16 @@ export default function AccueilScreen() {
           <View
             style={[
               styles.assistantCard,
-              { backgroundColor: theme.background, borderColor: theme.cardBorder },
+              CardShadow,
+              { backgroundColor: theme.background, borderColor: theme.primary },
             ]}
           >
             <View style={styles.assistantHeading}>
-              <View style={[styles.assistantIcon, { backgroundColor: theme.turquoiseTint }]}>
+              <View style={[styles.assistantIcon, { backgroundColor: theme.primary }]}>
                 <Ionicons
                   name="chatbubbles-outline"
                   size={24}
-                  color={theme.turquoiseTintText}
+                  color={Palette.white}
                 />
               </View>
               <View style={styles.flex}>
@@ -368,6 +369,7 @@ const styles = StyleSheet.create({
   assistantCard: {
     gap: 16,
     borderWidth: 1,
+    borderTopWidth: 4,
     borderRadius: 20,
     padding: 18,
   },
