@@ -155,7 +155,11 @@ test('signInWithSite : appelle mobile-auth.php et pose la session', async () => 
   await signInWithSite('a@b.fr', 'motdepasse');
   assert.equal(calls.length, 1);
   assert.equal(calls[0].urlPath, '/mobile-auth.php');
-  assert.deepEqual(calls[0].body, { email: 'a@b.fr', password: 'motdepasse' });
+  assert.deepEqual(calls[0].body, {
+    email: 'a@b.fr',
+    password: 'motdepasse',
+    supports_mfa: true,
+  });
 });
 
 test('refreshSiteSession : sans session stockée, ne fait rien et renvoie false', async () => {
@@ -245,4 +249,32 @@ test('signOutSite : efface la session stockée et ferme la session Supabase loca
     false,
     'plus rien à reprendre après la déconnexion',
   );
+});
+
+// --- compte administrateur : code par e-mail ------------------------------------------------
+test('signInWithSite : un compte admin renvoie le défi, sans poser de session', async () => {
+  resetMocks();
+  responses.push({ mfa_required: true, challenge: 'c'.repeat(64) });
+  const { signInWithSite } = freshSiteAuth();
+  const result = await signInWithSite('admin@b.fr', 'motdepasse');
+  assert.deepEqual(result, { mfaChallenge: 'c'.repeat(64) });
+  assert.equal(secureStore.has('aavie_site_auth_session'), false, 'aucune session avant le code');
+});
+
+test('verifySiteMfa : envoie le défi et le code, puis pose la session', async () => {
+  resetMocks();
+  const { verifySiteMfa } = freshSiteAuth();
+  await verifySiteMfa('c'.repeat(64), '123 456');
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].urlPath, '/mobile-auth-mfa.php');
+  assert.deepEqual(calls[0].body, { challenge: 'c'.repeat(64), code: '123456' });
+  assert.equal(secureStore.has('aavie_site_auth_session'), true);
+});
+
+test('verifySiteMfa : un code refusé lève l’erreur du serveur et ne pose rien', async () => {
+  resetMocks();
+  responses.push(new MockApiError('Code de sécurité incorrect.', 401));
+  const { verifySiteMfa } = freshSiteAuth();
+  await assert.rejects(() => verifySiteMfa('c'.repeat(64), '000000'), /incorrect/);
+  assert.equal(secureStore.has('aavie_site_auth_session'), false);
 });

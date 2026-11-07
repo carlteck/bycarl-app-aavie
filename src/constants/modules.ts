@@ -1,4 +1,5 @@
 import type { Ionicons } from '@expo/vector-icons';
+import { isAssistantEnabled } from './assistant';
 export type AavieModule = {
   id: string;
   title: string;
@@ -21,11 +22,10 @@ export const SERVICE_GROUPS: { title: string; modules: AavieModule[] }[] = [
     modules: [
       {
         id: 'assistant',
-        // ⚠️ À retirer quand l'Edge Function `assistant-chat` sera déployée et vérifiée : l'écran
-        // et le contrat de données sont prêts (voir `src/lib/assistant.ts`), pas le service.
-        comingSoon: true,
+        comingSoon: !isAssistantEnabled,
         title: 'Assistant administratif',
-        description: 'Bientôt sur mobile : préparer une démarche, pas à pas.',
+        description:
+          'Comprendre une démarche et préparer un courrier, pas à pas.',
         icon: 'chatbubbles-outline',
         // `/demarche` auparavant : la carte annonçait l'assistant et ouvrait la liste des
         // démarches. Un libellé qui ne tient pas sa promesse fait douter l'usager de lui-même.

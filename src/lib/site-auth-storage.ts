@@ -3,9 +3,8 @@ import { Platform } from 'react-native';
 
 /**
  * Paire de jetons de l'authentification unifiée (voir `site-auth.ts`), distincte du jeton de
- * `session-storage.ts` : celui-là sert à appeler l'API du site elle-même (`Authorization:
- * Bearer`), celle-ci sert à nourrir la session Supabase avec un jeton signé par le site. Les
- * confondre ferait lire le mauvais jeton au mauvais endroit.
+ * `session-storage.ts` (ancien jeton). Le jeton signé par le site sert à Supabase et aux routes
+ * de l'assistant AAVIE via `Authorization: Bearer`.
  */
 export type SiteAuthSession = {
   accessToken: string;

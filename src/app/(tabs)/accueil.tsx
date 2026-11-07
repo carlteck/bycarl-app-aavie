@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
@@ -25,6 +25,9 @@ import { useAuth } from '@/context/auth-context';
 import { useReminders } from '@/context/reminders-context';
 import { useTheme } from '@/hooks/use-theme';
 import { todayISO } from '@/lib/reminder-date';
+import { QUESTION_MAX } from '@/lib/assistant';
+import { setAssistantDraft } from '@/lib/assistant-draft';
+import { isAssistantEnabled } from '@/constants/assistant';
 
 const shortcuts = [
   { title: 'Planificateur', icon: 'calendar-outline', href: '/planificateur' },
@@ -45,15 +48,27 @@ export default function AccueilScreen() {
     .slice(0, 3);
   const overdue = reminders.filter((r) => r.dateISO < today).length;
 
-  // La question reste locale : l'assistant n'est pas branché, rien ne part nulle part.
   const [question, setQuestion] = useState('');
   const [answered, setAnswered] = useState(false);
   const [dictationError, setDictationError] = useState('');
+  const openingAssistant = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      openingAssistant.current = false;
+    }, []),
+  );
 
   const submitQuestion = () => {
-    if (!question.trim()) return;
+    if (!question.trim() || openingAssistant.current) return;
     Keyboard.dismiss();
-    setAnswered(true);
+    if (!isAssistantEnabled) {
+      setAnswered(true);
+      return;
+    }
+    openingAssistant.current = true;
+    setAssistantDraft(question.trim());
+    router.push('/assistant/nouvelle');
+    setQuestion('');
   };
 
   return (
@@ -127,7 +142,7 @@ export default function AccueilScreen() {
               </ThemedText>
               <View style={styles.heroBadge}>
                 <ThemedText type="caption" style={styles.heroBadgeText}>
-                  Bientôt
+                  {isAssistantEnabled ? 'Assistant' : 'Bientôt'}
                 </ThemedText>
               </View>
             </View>
@@ -139,10 +154,8 @@ export default function AccueilScreen() {
             <View style={styles.heroField}>
               <TextInput
                 value={question}
-                onChangeText={(text) => {
-                  setQuestion(text);
-                  if (answered) setAnswered(false);
-                }}
+                onChangeText={setQuestion}
+                maxLength={QUESTION_MAX}
                 onSubmitEditing={submitQuestion}
                 returnKeyType="send"
                 placeholder="Posez votre question…"
@@ -161,7 +174,8 @@ export default function AccueilScreen() {
               <Pressable
                 onPress={submitQuestion}
                 accessibilityRole="button"
-                accessibilityLabel="Envoyer la question"
+                accessibilityLabel="Envoyer la question à l’assistant"
+                disabled={!question.trim()}
                 style={({ pressed }) => [
                   styles.heroSend,
                   {
@@ -179,8 +193,6 @@ export default function AccueilScreen() {
               </Pressable>
             </View>
 
-            {/* Réponse rendue SUR PLACE : l'usager reste dans son écran, et personne ne lui
-                laisse croire que sa question est partie quelque part. */}
             {/* La dictée n'est pas locale partout : Android passe par le service de Google, iOS ne
                 reste sur l'appareil que si le modèle de la langue y est installé. Une question à
                 l'assistant contient des informations administratives — il faut le dire. */}
@@ -197,7 +209,7 @@ export default function AccueilScreen() {
               </ThemedText>
             )}
 
-            {answered && (
+            {(isAssistantEnabled || answered) && (
               <View style={styles.heroAnswer}>
                 <Ionicons
                   name="information-circle-outline"
@@ -206,8 +218,9 @@ export default function AccueilScreen() {
                 />
                 <View style={styles.flex}>
                   <ThemedText style={styles.heroAnswerText}>
-                    L’assistant n’est pas encore disponible dans l’application.
-                    Votre question n’a pas été envoyée.
+                    {isAssistantEnabled
+                      ? 'Retrouvez vos échanges avec l’assistant à tout moment.'
+                      : 'L’assistant n’est pas encore disponible dans l’application. Votre question n’a pas été envoyée.'}
                   </ThemedText>
                   <Pressable
                     onPress={() => router.push('/assistant')}
@@ -215,7 +228,9 @@ export default function AccueilScreen() {
                     style={styles.heroAnswerLink}
                   >
                     <ThemedText type="label" style={styles.heroAnswerLinkText}>
-                      Ce qu’il fera →
+                      {isAssistantEnabled
+                        ? 'Mes conversations →'
+                        : 'Ce qu’il fera →'}
                     </ThemedText>
                   </Pressable>
                 </View>

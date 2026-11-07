@@ -16,6 +16,7 @@ import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import {
   restoreSiteSession,
   signInWithSite,
+  verifySiteMfa,
   signOutSite,
   watchSiteSessionLifecycle,
 } from '@/lib/site-auth';
@@ -79,7 +80,12 @@ type AuthContextValue = {
   biometricReady: boolean;
   biometricLocked: boolean;
   biometricAvailable: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  /** `mfaChallenge` : compte administrateur, appeler ensuite `verifyMfa` avec le code reçu. */
+  signIn: (
+    email: string,
+    password: string,
+  ) => Promise<{ mfaChallenge: string } | null>;
+  verifyMfa: (challenge: string, code: string) => Promise<void>;
   register: (
     input: RegisterInput,
   ) => Promise<{ confirmationRequired: boolean }>;
@@ -186,7 +192,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Authentification unifiée : le site vérifie le mot de passe et signe un jeton que
     // Supabase accepte (voir `site-auth.ts`). `onAuthStateChange` met `user` à jour une fois
     // la session posée ; pas de `setUser()` direct ici, contrairement à l'ancien mécanisme.
-    await signInWithSite(email, password);
+    //
+    // Compatibilité de transition : une partie des comptes historiques peut encore n'exister
+    // que dans Supabase Auth. Dans ce cas (ou si l'endpoint mobile n'est pas disponible), on
+    // retombe sur `signInWithPassword` plutôt que de bloquer l'accès.
+    try {
+      // Un administrateur reçoit un code par e-mail : jamais de repli sur Supabase pour lui,
+      // ce serait entrer sans le second facteur.
+      return await signInWithSite(email, password);
+    } catch (error) {
+      const canFallbackToSupabase =
+        error instanceof ApiError && [401, 404, 503].includes(error.status);
+      if (!canFallbackToSupabase) throw error;
+
+      const { error: supabaseError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (!supabaseError) return null;
+
+      // Si les deux mécanismes refusent des identifiants invalides, on conserve le message du
+      // site, déjà rédigé côté métier.
+      if (
+        error instanceof ApiError &&
+        error.status === 401 &&
+        supabaseError.code === 'invalid_credentials'
+      ) {
+        throw error;
+      }
+
+      throw authError(supabaseError);
+    }
+  }, []);
+
+  const verifyMfa = useCallback(async (challenge: string, code: string) => {
+    await verifySiteMfa(challenge, code);
   }, []);
 
   const register = useCallback(async (input: RegisterInput) => {
@@ -252,6 +292,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       biometricReady,
       biometricLocked,
       signIn,
+      verifyMfa,
       register,
       refreshUser,
       toggleBiometrics,
@@ -266,6 +307,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       biometricReady,
       biometricLocked,
       signIn,
+      verifyMfa,
       register,
       refreshUser,
       toggleBiometrics,

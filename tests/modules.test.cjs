@@ -53,9 +53,24 @@ const fakeSupabase = {
 class FunctionsHttpError extends Error {}
 class FunctionsFetchError extends Error {}
 class FunctionsRelayError extends Error {}
+class ApiError extends Error {
+  constructor(message, status, code) {
+    super(message);
+    this.status = status;
+    this.code = code;
+  }
+}
+class NetworkError extends Error {}
+let apiRespond = async () => null;
 let counter = 0;
 const originalLoad = Module._load;
 Module._load = function (id, ...args) {
+  if (id === '@/lib/api')
+    return {
+      ApiError,
+      NetworkError,
+      apiFetch: (...args) => apiRespond(...args),
+    };
   if (id === '@/lib/supabase')
     return { supabase: fakeSupabase, isSupabaseConfigured: true };
   if (id === 'expo-crypto')
@@ -386,8 +401,8 @@ test('mappeurs : une ligne invalide est écartée, jamais affichée à moitié',
   assert.equal(mapVaultDocument({ ...doc, storage_provider: 'ftp' }), null);
   assert.equal(mapVaultDocument({ ...doc, size_bytes: -1 }), null);
 
-  assert.equal(mapCredits({ balance: 12, monthly_allowance: 200 }).balance, 12);
-  assert.equal(mapCredits({ balance: '12', monthly_allowance: 200 }), null);
+  assert.equal(mapCredits({ balance: 12, monthly_credits: 200 }).balance, 12);
+  assert.equal(mapCredits({ balance: '12', monthly_credits: 200 }), null);
   assert.equal(
     mapAssistantMessage({
       id: 7,
@@ -554,70 +569,132 @@ test('coffre-fort : tant que le stockage n’est pas choisi, tout refuse honnêt
   assert.equal(formatBytes(5 * 1024 * 1024), '5,0 Mo');
 });
 
-test('assistant : erreurs du serveur traduites sans lire le corps de la réponse', async () => {
+test('assistant : erreurs HTTP et réseau traduites', async () => {
   const assistant = lib('assistant.ts');
-  const failWith = (error) => {
-    fakeSupabase.functions.invoke = async () => ({ data: null, error });
-    return assistant.sendAssistantMessage({
-      conversationId: null,
-      message: 'x',
-      clientMessageId: UUID,
-      signal: new AbortController().signal,
-    });
+  const input = {
+    conversationId: null,
+    message: 'x',
+    clientMessageId: UUID,
+    signal: new AbortController().signal,
   };
-  const http = (status) =>
-    Object.assign(new FunctionsHttpError('x'), { context: { status } });
   for (const [status, kind] of [
     [401, 'auth'],
+    [419, 'auth'],
+    [403, 'account'],
     [402, 'credits'],
+    [409, 'pending'],
     [429, 'rate_limit'],
     [404, 'unavailable'],
     [503, 'unavailable'],
-    [400, 'unknown'],
-  ])
+    [422, 'unknown'],
+  ]) {
+    apiRespond = async () => {
+      throw new ApiError(
+        'x',
+        status,
+        status === 403 ? 'mobile_account_required' : undefined,
+      );
+    };
     await assert.rejects(
-      failWith(http(status)),
-      (e) => e.kind === kind,
-      `${status} → ${kind}`,
+      assistant.sendAssistantMessage(input),
+      (error) => error.kind === kind,
     );
+  }
+  apiRespond = async () => {
+    throw new NetworkError();
+  };
   await assert.rejects(
-    failWith(new FunctionsFetchError('x')),
-    (e) => e.kind === 'network',
+    assistant.sendAssistantMessage(input),
+    (error) => error.kind === 'network',
   );
-  await assert.rejects(
-    failWith(new FunctionsRelayError('x')),
-    (e) => e.kind === 'unavailable',
-  );
-  // Succès : seul l'identifiant de conversation, validé, est repris de la réponse.
-  fakeSupabase.functions.invoke = async (name, options) => {
-    assert.equal(name, 'assistant-chat');
-    assert.deepEqual(options.body, {
+  apiRespond = async (route, options) => {
+    assert.equal(route, '/ai/chat.php');
+    assert.equal(options.signal, input.signal);
+    assert.deepEqual(JSON.parse(options.body), {
       conversation_id: null,
-      message: 'x',
+      question: 'x',
       client_message_id: UUID,
     });
-    return { data: { conversation_id: UUID, reply: 'ignoré' }, error: null };
+    return { conversation_id: UUID };
   };
-  assert.deepEqual(
-    await assistant.sendAssistantMessage({
-      conversationId: null,
-      message: 'x',
-      clientMessageId: UUID,
-      signal: new AbortController().signal,
-    }),
-    { conversationId: UUID },
-  );
-  fakeSupabase.functions.invoke = async () => ({
-    data: { conversation_id: 'pas-un-uuid' },
-    error: null,
+  assert.deepEqual(await assistant.sendAssistantMessage(input), {
+    conversationId: UUID,
   });
+  apiRespond = async () => ({ conversation_id: 'invalide' });
   await assert.rejects(
-    assistant.sendAssistantMessage({
-      conversationId: null,
-      message: 'x',
-      clientMessageId: UUID,
-      signal: new AbortController().signal,
-    }),
-    (e) => e.kind === 'unknown',
+    assistant.sendAssistantMessage(input),
+    (error) => error.kind === 'unknown',
   );
+});
+
+test('assistant : historique et crédits du site, sans Supabase', async () => {
+  const assistant = lib('assistant.ts');
+  const signal = new AbortController().signal;
+  const conversation = {
+    id: UUID,
+    title: 'Mon courrier',
+    updated_at: '2026-11-05 12:30:00',
+  };
+  const message = {
+    id: '7',
+    role: 'assistant',
+    content: 'Bonjour',
+    created_at: '2026-11-05 12:30:00',
+  };
+  const routes = [];
+  apiRespond = async (route, options) => {
+    routes.push(route);
+    assert.equal(options.signal, signal);
+    if (route === '/ai/conversations.php')
+      return { conversations: [conversation] };
+    if (route.startsWith('/ai/conversation.php'))
+      return { conversation, messages: [message] };
+    if (route === '/credits.php')
+      return { balance: null, monthly_credits: 200, plan_name: 'Admin' };
+    throw new Error(route);
+  };
+  const result = await assistant.fetchConversationsPage(0, signal);
+  assert.equal(result.hasMore, false);
+  assert.equal(result.items[0].lastMessageAt, '2026-11-05T12:30:00-03:00');
+  assert.deepEqual(await assistant.fetchConversationsPage(1, signal), {
+    items: [],
+    hasMore: false,
+  });
+  assert.equal(
+    (await assistant.fetchThread(UUID, signal)).messages[0].content,
+    'Bonjour',
+  );
+  assert.equal((await assistant.fetchCredits(signal)).balance, null);
+  assert.equal(routes.length, 3);
+});
+
+test('assistant : renommer et supprimer utilisent le site', async () => {
+  const assistant = lib('assistant.ts');
+  const calls = [];
+  apiRespond = async (...args) => {
+    calls.push(args);
+    return { ok: true };
+  };
+  await assistant.renameConversation(UUID, ' Mon titre ');
+  await assistant.deleteConversation(UUID);
+  assert.equal(calls[0][0], `/ai/conversation.php?id=${UUID}`);
+  assert.equal(calls[0][1].method, 'PATCH');
+  assert.deepEqual(JSON.parse(calls[0][1].body), { title: 'Mon titre' });
+  assert.equal(calls[1][1].method, 'DELETE');
+});
+
+test('assistant : une proposition reste lisible sans afficher son enveloppe technique', () => {
+  const { assistantReply } = lib('assistant-reply.ts');
+  assert.deepEqual(assistantReply('Bonjour'), { text: 'Bonjour' });
+  const reply = assistantReply(
+    JSON.stringify({
+      kind: 'tool_action',
+      tool: 'create_deadline',
+      status: 'pending',
+      reply: 'Voici ma proposition.',
+    }),
+  );
+  assert.equal(reply.text, 'Voici ma proposition.');
+  assert.equal(reply.actionStatus, 'pending');
+  assert.equal(reply.actionLabel, 'Ajouter une échéance au planificateur');
 });

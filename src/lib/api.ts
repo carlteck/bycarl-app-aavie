@@ -1,20 +1,11 @@
 import { readSessionToken } from './session-storage';
+import { readSiteAuthSession } from './site-auth-storage';
+import { supabase } from './supabase';
 
 /**
- * Client HTTP de l'API AAVIE (PHP, dépôt site_aavie), pendant mobile de `src/lib/api.ts` côté
- * site. Les endpoints et leurs contrats sont identiques : c'est le même serveur.
- *
- * Deux mécanismes d'authentification cohabitent volontairement :
- *
- *  - `Authorization: Bearer <jeton>` dès qu'un jeton est stocké. C'est la cible : le cookie de
- *    session PHP a `lifetime => 0`, et sa survie au redémarrage de l'application n'est garantie
- *    par aucun contrat côté iOS ni Android. Un utilisateur reconnecté de force à chaque
- *    lancement serait inacceptable.
- *  - `credentials: 'include'` sinon, qui fait fonctionner la session par cookie sur natif tant
- *    que l'API n'émet pas encore de jeton (demande transmise à la session qui tient le site).
- *
- * Le jour où l'API retourne un jeton à la connexion, rien ne change ici : `login()` le stocke et
- * l'en-tête part tout seul.
+ * API PHP AAVIE. Le jeton de la session unifiée est prioritaire : il est accepté par les routes
+ * de l'assistant après vérification serveur. Le jeton historique et le cookie sont conservés
+ * pour les autres parcours existants.
  */
 /**
  * Domaine de production. `EXPO_PUBLIC_API_URL` le remplace en développement, par exemple
@@ -29,7 +20,11 @@ const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? 'https://aavieapp.com/api';
 export class ApiError extends Error {
   status: number;
 
-  constructor(message: string, status: number) {
+  constructor(
+    message: string,
+    status: number,
+    readonly code?: string,
+  ) {
     super(message);
     this.status = status;
   }
@@ -48,7 +43,22 @@ export async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const token = await readSessionToken();
+  const siteSession = await readSiteAuthSession();
+  let token = siteSession?.accessToken ?? (await readSessionToken());
+  const assistantRequest =
+    /^\/(?:ai\/(?:chat|conversation|conversations)\.php|credits\.php)(?:\?|$)/.test(
+      path,
+    );
+  if (assistantRequest && !siteSession) {
+    const { data } = await supabase.auth.getSession();
+    token = data.session?.access_token ?? token;
+  }
+  if (assistantRequest && !token) {
+    throw new ApiError(
+      'Connectez-vous à votre compte AAVIE pour utiliser l’assistant.',
+      401,
+    );
+  }
 
   let response: Response;
   try {
@@ -74,6 +84,9 @@ export async function apiFetch<T>(
     throw new ApiError(
       (data as { error?: string } | null)?.error ?? 'Une erreur est survenue.',
       response.status,
+      typeof (data as { code?: unknown } | null)?.code === 'string'
+        ? (data as { code: string }).code
+        : undefined,
     );
   }
 

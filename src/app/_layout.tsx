@@ -1,4 +1,11 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import {
+  DarkTheme,
+  DefaultTheme,
+  Stack,
+  ThemeProvider,
+  router,
+} from 'expo-router';
+import { useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme } from 'react-native';
 
@@ -10,6 +17,7 @@ import { AuthProvider, useAuth } from '@/context/auth-context';
 import { SyncProvider } from '@/context/sync-context';
 import { RemindersProvider } from '@/context/reminders-context';
 import { UserProfileProvider } from '@/context/user-profile-context';
+import { readAssistantDraft } from '@/lib/assistant-draft';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -19,11 +27,16 @@ SplashScreen.preventAutoHideAsync();
  * `Stack.Protected` ici (mécanisme officiel d'Expo Router, doc « Authentication »).
  *
  * `guard` est déclaratif : quand `isAuthenticated` bascule, Expo Router redirige de lui-même vers
- * la première route disponible du groupe devenu actif. Aucun `router.replace` manuel — ceux-ci
- * s'exécuteraient dans un effect, donc jamais au rendu serveur web, et laisseraient une page vide.
+ * la première route disponible du groupe devenu actif. La seule reprise explicite ci-dessous
+ * concerne une question déjà préparée avant une reconnexion à l'assistant.
  */
 function RootNavigator() {
   const { isAuthenticated } = useAuth();
+  useEffect(() => {
+    if (isAuthenticated && readAssistantDraft()) {
+      router.replace('/assistant/nouvelle');
+    }
+  }, [isAuthenticated]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
@@ -44,6 +57,7 @@ function RootNavigator() {
         <Stack.Screen name="assistant" />
         <Stack.Screen name="assistant/nouvelle" />
         <Stack.Screen name="assistant/[id]" />
+        <Stack.Screen name="assistant/renommer/[id]" />
         <Stack.Screen name="aide-redactionnelle" />
         <Stack.Screen name="budget" />
         <Stack.Screen name="coffre-fort" />

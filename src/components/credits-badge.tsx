@@ -22,7 +22,9 @@ export function CreditsBadge({
   const text = loading
     ? 'Solde de crédits en cours de chargement…'
     : credits
-      ? `${credits.balance} crédit${Math.abs(credits.balance) > 1 ? 's' : ''} restant${Math.abs(credits.balance) > 1 ? 's' : ''} sur ${credits.monthlyAllowance} ce mois-ci`
+      ? credits.balance === null
+        ? 'Votre compte est exonéré de crédits'
+        : `${credits.balance} crédit${Math.abs(credits.balance) > 1 ? 's' : ''} restant${Math.abs(credits.balance) > 1 ? 's' : ''} · ${credits.monthlyAllowance} crédits attribués par mois`
       : 'Solde de crédits indisponible pour le moment';
   return (
     <View

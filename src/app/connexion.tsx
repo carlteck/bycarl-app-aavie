@@ -33,7 +33,7 @@ import { Ionicons } from '@expo/vector-icons';
 type BiometricName = 'Face ID' | 'Touch ID' | 'empreinte' | 'biométrie';
 
 export default function ConnexionScreen() {
-  const { signIn } = useAuth();
+  const { signIn, verifyMfa } = useAuth();
   const theme = useTheme();
   const safeAreaInsets = useSafeAreaInsets();
 
@@ -46,6 +46,11 @@ export default function ConnexionScreen() {
     useState<BiometricName>('biométrie');
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [savedBiometricLogin, setSavedBiometricLogin] = useState(false);
+  // Compte administrateur : le mot de passe est bon, le code envoyé par e-mail reste à saisir.
+  // La mémorisation du compte attend la fin de la connexion.
+  const [mfaChallenge, setMfaChallenge] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
+  const pendingSave = useRef<(() => Promise<void>) | null>(null);
   const active = useRef(true);
 
   useEffect(() => {
@@ -105,14 +110,23 @@ export default function ConnexionScreen() {
       // `Stack.Protected` bascule seul vers la zone protégée dès que la session s'ouvre :
       // aucune navigation manuelle après la connexion.
       const normalizedEmail = email.trim().toLowerCase();
-      await signIn(normalizedEmail, password);
-      if (rememberMe)
-        await saveLogin(
-          normalizedEmail,
-          password,
-          Platform.OS !== 'web' && biometricAvailable,
-        );
-      else await clearSavedLogin();
+      const result = await signIn(normalizedEmail, password);
+      const remember = rememberMe
+        ? () =>
+            saveLogin(
+              normalizedEmail,
+              password,
+              Platform.OS !== 'web' && biometricAvailable,
+            )
+        : () => clearSavedLogin();
+      if (result) {
+        pendingSave.current = remember;
+        setMfaCode('');
+        setMfaChallenge(result.mfaChallenge);
+        setIsSubmitting(false);
+        return;
+      }
+      await remember();
     } catch (e) {
       setError(
         e instanceof ApiError || e instanceof NetworkError
@@ -121,6 +135,35 @@ export default function ConnexionScreen() {
       );
       setIsSubmitting(false);
     }
+  }
+
+  async function handleMfaSubmit() {
+    if (isSubmitting || !mfaChallenge) return;
+    if (!/^\d{6}$/.test(mfaCode.replace(/\s/g, ''))) {
+      setError('Saisissez le code à 6 chiffres reçu par e-mail.');
+      return;
+    }
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await verifyMfa(mfaChallenge, mfaCode);
+      await pendingSave.current?.();
+      pendingSave.current = null;
+    } catch (e) {
+      setError(
+        e instanceof ApiError || e instanceof NetworkError
+          ? e.message
+          : 'Code non vérifié. Réessayez dans un instant.',
+      );
+      setIsSubmitting(false);
+    }
+  }
+
+  function cancelMfa() {
+    setMfaChallenge(null);
+    setMfaCode('');
+    setError(null);
+    pendingSave.current = null;
   }
 
   async function handleBiometricLogin() {
@@ -137,7 +180,12 @@ export default function ConnexionScreen() {
         return;
       }
       setEmail(credentials.email);
-      await signIn(credentials.email, credentials.password);
+      const result = await signIn(credentials.email, credentials.password);
+      if (result) {
+        pendingSave.current = null;
+        setMfaCode('');
+        setMfaChallenge(result.mfaChallenge);
+      }
     } catch (e) {
       setError(
         e instanceof ApiError || e instanceof NetworkError
@@ -191,75 +239,116 @@ export default function ConnexionScreen() {
               </ThemedText>
             </View>
 
-            <TextField
-              label="Adresse e-mail"
-              value={email}
-              onChangeText={setEmail}
-              placeholder="prenom.nom@exemple.fr"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-              textContentType="emailAddress"
-              autoCorrect={false}
-              returnKeyType="next"
-            />
-
-            <TextField
-              label="Mot de passe"
-              value={password}
-              onChangeText={setPassword}
-              placeholder="••••••••"
-              secure
-              autoCapitalize="none"
-              autoComplete="current-password"
-              textContentType="password"
-              returnKeyType="done"
-              onSubmitEditing={handleSubmit}
-            />
-
-            <Pressable
-              onPress={() => setRememberMe((value) => !value)}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: rememberMe }}
-              accessibilityLabel="Se souvenir de mon compte sur cet appareil"
-              style={styles.rememberRow}
-            >
-              <Ionicons
-                name={rememberMe ? 'checkbox' : 'square-outline'}
-                size={24}
-                color={rememberMe ? theme.primary : theme.textSecondary}
-              />
-              <View style={styles.rememberText}>
-                <ThemedText type="label">Se souvenir de mon compte</ThemedText>
-                <ThemedText type="caption" themeColor="textSecondary">
-                  {Platform.OS !== 'web' && biometricAvailable
-                    ? `Le mot de passe sera protégé par ${biometricName}.`
-                    : 'Seule votre adresse e-mail sera mémorisée.'}
+            {mfaChallenge ? (
+              <>
+                <ThemedText themeColor="textSecondary">
+                  Compte administrateur : un code de sécurité vient d’être
+                  envoyé à votre adresse e-mail. Il n’est demandé qu’à la
+                  connexion, l’application reste ensuite connectée.
                 </ThemedText>
-              </View>
-            </Pressable>
+                <TextField
+                  label="Code de sécurité"
+                  value={mfaCode}
+                  onChangeText={setMfaCode}
+                  placeholder="123456"
+                  keyboardType="number-pad"
+                  autoComplete="one-time-code"
+                  textContentType="oneTimeCode"
+                  maxLength={6}
+                  returnKeyType="done"
+                  onSubmitEditing={handleMfaSubmit}
+                />
+                {error && (
+                  <ThemedText type="label" themeColor="accent">
+                    {error}
+                  </ThemedText>
+                )}
+                <PrimaryButton
+                  onPress={handleMfaSubmit}
+                  icon="shield-checkmark-outline"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Vérification…' : 'Valider le code'}
+                </PrimaryButton>
+                <OutlineButton onPress={cancelMfa} icon="arrow-back-outline">
+                  Revenir à la connexion
+                </OutlineButton>
+              </>
+            ) : (
+              <>
+                <TextField
+                  label="Adresse e-mail"
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="prenom.nom@exemple.fr"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  textContentType="emailAddress"
+                  autoCorrect={false}
+                  returnKeyType="next"
+                />
 
-            {error && (
-              <ThemedText type="label" themeColor="accent">
-                {error}
-              </ThemedText>
-            )}
+                <TextField
+                  label="Mot de passe"
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="••••••••"
+                  secure
+                  autoCapitalize="none"
+                  autoComplete="current-password"
+                  textContentType="password"
+                  returnKeyType="done"
+                  onSubmitEditing={handleSubmit}
+                />
 
-            <PrimaryButton
-              onPress={handleSubmit}
-              icon="log-in-outline"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Connexion…' : 'Se connecter'}
-            </PrimaryButton>
+                <Pressable
+                  onPress={() => setRememberMe((value) => !value)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: rememberMe }}
+                  accessibilityLabel="Se souvenir de mon compte sur cet appareil"
+                  style={styles.rememberRow}
+                >
+                  <Ionicons
+                    name={rememberMe ? 'checkbox' : 'square-outline'}
+                    size={24}
+                    color={rememberMe ? theme.primary : theme.textSecondary}
+                  />
+                  <View style={styles.rememberText}>
+                    <ThemedText type="label">
+                      Se souvenir de mon compte
+                    </ThemedText>
+                    <ThemedText type="caption" themeColor="textSecondary">
+                      {Platform.OS !== 'web' && biometricAvailable
+                        ? `Le mot de passe sera protégé par ${biometricName}.`
+                        : 'Seule votre adresse e-mail sera mémorisée.'}
+                    </ThemedText>
+                  </View>
+                </Pressable>
 
-            {savedBiometricLogin && (
-              <OutlineButton
-                onPress={() => void handleBiometricLogin()}
-                icon="finger-print-outline"
-              >
-                Se connecter avec {biometricName}
-              </OutlineButton>
+                {error && (
+                  <ThemedText type="label" themeColor="accent">
+                    {error}
+                  </ThemedText>
+                )}
+
+                <PrimaryButton
+                  onPress={handleSubmit}
+                  icon="log-in-outline"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Connexion…' : 'Se connecter'}
+                </PrimaryButton>
+
+                {savedBiometricLogin && (
+                  <OutlineButton
+                    onPress={() => void handleBiometricLogin()}
+                    icon="finger-print-outline"
+                  >
+                    Se connecter avec {biometricName}
+                  </OutlineButton>
+                )}
+              </>
             )}
 
             <View style={styles.alternative}>
