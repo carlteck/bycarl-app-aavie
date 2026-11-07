@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useRemoteList } from '@/hooks/use-remote-list';
+import { useRemoteResource } from '@/hooks/use-remote-resource';
 import {
+  fetchCloudState,
   fetchVaultPage,
   vaultStorage,
   type TransferState,
@@ -18,6 +20,10 @@ export function useVaultDocuments(category: VaultFilter, term: string) {
     [category, term],
   );
   return useRemoteList(fetchPage, vaultKey);
+}
+
+export function useVaultCloud() {
+  return useRemoteResource(fetchCloudState);
 }
 
 /**

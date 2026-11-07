@@ -1,5 +1,4 @@
 import type { Ionicons } from '@expo/vector-icons';
-import { isAssistantEnabled } from './assistant';
 export type AavieModule = {
   id: string;
   title: string;
@@ -22,7 +21,6 @@ export const SERVICE_GROUPS: { title: string; modules: AavieModule[] }[] = [
     modules: [
       {
         id: 'assistant',
-        comingSoon: !isAssistantEnabled,
         title: 'Assistant administratif',
         description:
           'Comprendre une démarche et préparer un courrier, pas à pas.',
@@ -37,17 +35,6 @@ export const SERVICE_GROUPS: { title: string; modules: AavieModule[] }[] = [
         description: 'Obtenir de l’aide lorsque vous êtes bloqué.',
         icon: 'help-buoy-outline',
         href: '/support',
-      },
-      // ⚠️ Décision de placement : l'aide rédactionnelle ne fait pas partie de la liste minimale
-      // (Assistant → Support). Elle est conservée, mais EN DERNIER du groupe, pour ne pas
-      // s'intercaler dans l'ordre demandé. Sur le site elle a fusionné avec l'assistant : elle
-      // pourra disparaître d'ici quand le mobile suivra.
-      {
-        id: 'redaction',
-        title: 'Aide rédactionnelle',
-        description: 'Préparer vos courriers administratifs.',
-        icon: 'create-outline',
-        href: '/aide-redactionnelle',
       },
     ],
   },

@@ -1,15 +1,14 @@
-import * as Crypto from 'expo-crypto';
-
 import type { PageResult } from '@/hooks/use-remote-list';
+import { apiFetch } from '@/lib/api';
 import {
+  asEntityId,
   asId,
   asInstant,
   asOneOf,
   asRecord,
   asText,
 } from '@/lib/remote-values';
-import { pageRange, toPage } from '@/lib/paging';
-import { supabase } from '@/lib/supabase';
+import { PAGE_SIZE } from '@/lib/paging';
 
 export const TICKET_STATUSES = [
   'open',
@@ -79,7 +78,7 @@ export function mapTicket(row: unknown): SupportTicket | null {
   const id = asId(value.id);
   const status = asOneOf(value.status, TICKET_STATUSES);
   const subject = asText(value.subject);
-  const lastMessageAt = asInstant(value.last_message_at);
+  const lastMessageAt = asInstant(value.updated_at ?? value.created_at);
   if (!id || !status || !subject || !lastMessageAt) return null;
   return {
     id,
@@ -93,112 +92,74 @@ export function mapTicket(row: unknown): SupportTicket | null {
 export function mapMessage(row: unknown): SupportMessage | null {
   const value = asRecord(row);
   if (!value) return null;
-  const id = asId(value.id);
-  const author = asOneOf(value.author_role, ['user', 'staff'] as const);
+  const id = asEntityId(value.id);
+  const role = asOneOf(value.author_role, ['client', 'admin', 'user', 'staff'] as const);
+  const author = role === 'client' || role === 'user' ? 'user' : role ? 'staff' : null;
   const body = asText(value.body);
   const createdAt = asInstant(value.created_at);
   if (!id || !author || !body || !createdAt) return null;
   return { id, author, body, createdAt };
 }
 
-const TICKET_COLUMNS = 'id, subject, category, status, last_message_at';
-
 export async function fetchTickets(
   page: number,
   filter: StatusFilter,
   signal: AbortSignal,
 ): Promise<PageResult<SupportTicket>> {
-  let query = supabase
-    .from('mobile_support_tickets')
-    .select(TICKET_COLUMNS)
-    .order('last_message_at', { ascending: false })
-    .order('id')
-    .range(...pageRange(page));
-  if (filter !== 'all') query = query.eq('status', filter);
-  const { data, error } = await query.abortSignal(signal);
-  if (error) throw error;
-  return toPage(data, mapTicket);
+  const payload = await apiFetch<unknown>('/support-tickets.php', { signal });
+  const rows = asRecord(payload)?.tickets;
+  const items = (Array.isArray(rows) ? rows : [])
+    .map(mapTicket)
+    .filter((item): item is SupportTicket => item !== null)
+    .filter((item) => filter === 'all' || item.status === filter);
+  const start = page * PAGE_SIZE;
+  return { items: items.slice(start, start + PAGE_SIZE), hasMore: items.length > start + PAGE_SIZE };
 }
 
 export async function fetchThread(
   id: string,
   signal: AbortSignal,
 ): Promise<SupportThread | null> {
-  const [ticketResult, messagesResult] = await Promise.all([
-    supabase
-      .from('mobile_support_tickets')
-      .select(TICKET_COLUMNS)
-      .eq('id', id)
-      .abortSignal(signal)
-      .maybeSingle(),
-    supabase
-      .from('mobile_support_messages')
-      .select('id, author_role, body, created_at')
-      .eq('ticket_id', id)
-      .order('created_at')
-      .order('id')
-      .limit(THREAD_LIMIT)
-      .abortSignal(signal),
-  ]);
-  if (ticketResult.error) throw ticketResult.error;
-  if (messagesResult.error) throw messagesResult.error;
-  const ticket = mapTicket(ticketResult.data);
+  const payload = await apiFetch<unknown>(`/support-ticket.php?id=${encodeURIComponent(id)}`, { signal });
+  const value = asRecord(payload);
+  const ticket = mapTicket(value?.ticket);
   if (!ticket) return null;
+  const rows = value?.messages;
   return {
     ticket,
-    messages: ((messagesResult.data ?? []) as unknown[])
+    messages: (Array.isArray(rows) ? rows : []).slice(0, THREAD_LIMIT)
       .map(mapMessage)
       .filter((item): item is SupportMessage => item !== null),
   };
 }
 
-const UNIQUE_VIOLATION = '23505';
-
-/**
- * Identifiants choisis par l'appelant AVANT l'envoi : rejouer la même demande après une coupure
- * réseau retombe sur les mêmes lignes (violation d'unicité ignorée) au lieu de créer un doublon.
- */
 export type NewTicketIds = { ticketId: string; messageId: string };
 export function newTicketIds(): NewTicketIds {
-  return { ticketId: Crypto.randomUUID(), messageId: Crypto.randomUUID() };
+  return { ticketId: '', messageId: '' };
 }
 
 export async function createTicket(
-  userId: string,
+  _userId: string,
   input: { subject: string; category: TicketCategory; body: string },
-  ids: NewTicketIds,
+  _ids: NewTicketIds,
 ): Promise<string> {
-  const ticket = await supabase.from('mobile_support_tickets').insert({
-    id: ids.ticketId,
-    user_id: userId,
-    subject: input.subject.trim(),
-    category: input.category,
+  const payload = await apiFetch<unknown>('/support-tickets.php', {
+    method: 'POST',
+    body: JSON.stringify({ subject: input.subject.trim(), message: input.body.trim() }),
   });
-  if (ticket.error && ticket.error.code !== UNIQUE_VIOLATION)
-    throw ticket.error;
-  await sendMessage(userId, ids.ticketId, input.body, ids.messageId);
-  return ids.ticketId;
+  const id = asId(asRecord(asRecord(payload)?.ticket)?.id);
+  if (!id) throw new Error('Réponse inattendue du serveur.');
+  return id;
 }
 
 export async function sendMessage(
-  userId: string,
+  _userId: string,
   ticketId: string,
   body: string,
-  messageId: string = Crypto.randomUUID(),
+  _messageId?: string,
 ): Promise<void> {
-  const { error } = await supabase.from('mobile_support_messages').insert({
-    id: messageId,
-    ticket_id: ticketId,
-    user_id: userId,
-    body: body.trim(),
+  await apiFetch(`/support-ticket.php?id=${encodeURIComponent(ticketId)}`, {
+    method: 'POST',
+    body: JSON.stringify({ message: body.trim() }),
   });
-  if (error && error.code !== UNIQUE_VIOLATION) throw error;
-}
-
-export async function closeTicket(ticketId: string): Promise<void> {
-  const { error } = await supabase
-    .from('mobile_support_tickets')
-    .update({ status: 'closed' })
-    .eq('id', ticketId);
-  if (error) throw error;
 }

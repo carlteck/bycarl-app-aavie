@@ -1,7 +1,7 @@
 import type { AnnuaireEntry } from '@/constants/annuaire';
+import { apiFetch } from '@/lib/api';
 import { safeExternalUrl, safePhoneNumber } from '@/lib/external-url';
 import { asId, asOptionalText, asRecord, asText } from '@/lib/remote-values';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 
 /**
  * Ligne de `directory_contacts` → entrée d'annuaire, ou `null` si elle est inexploitable.
@@ -30,37 +30,12 @@ export function mapRemoteContact(row: unknown): AnnuaireEntry | null {
   };
 }
 
-const COLUMNS =
-  'id, name, category, description, phone, website, address, hours';
-const CHUNK = 500;
-/** Garde-fou : un annuaire ne dépasse pas quelques milliers de fiches. */
-const MAX_ROWS = 5000;
-
-/**
- * Annuaire publié, en entier (il se filtre ensuite sur l'appareil). LÈVE en cas d'erreur : c'est à
- * l'écran de décider s'il montre la liste intégrée et de l'ANNONCER — cette fonction ne se replie
- * jamais en silence sur des données de démonstration.
- */
 export async function fetchAnnuaire(
   signal: AbortSignal,
 ): Promise<AnnuaireEntry[]> {
-  if (!isSupabaseConfigured) throw new Error('Supabase non configuré.');
-  const entries: AnnuaireEntry[] = [];
-  for (let from = 0; from < MAX_ROWS; from += CHUNK) {
-    const { data, error } = await supabase
-      .from('directory_contacts')
-      .select(COLUMNS)
-      .order('name')
-      .order('id')
-      .range(from, from + CHUNK - 1)
-      .abortSignal(signal);
-    if (error) throw error;
-    const rows = (data ?? []) as unknown[];
-    for (const row of rows) {
-      const entry = mapRemoteContact(row);
-      if (entry) entries.push(entry);
-    }
-    if (rows.length < CHUNK) break;
-  }
-  return entries;
+  const payload = await apiFetch<unknown>('/contacts.php', { signal });
+  const rows = asRecord(payload)?.contacts;
+  return (Array.isArray(rows) ? rows : [])
+    .map(mapRemoteContact)
+    .filter((item): item is AnnuaireEntry => item !== null);
 }

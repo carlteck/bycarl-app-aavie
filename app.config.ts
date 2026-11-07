@@ -79,6 +79,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-status-bar',
     'expo-web-browser',
     'expo-secure-store',
+    'expo-sharing',
     [
       'expo-local-authentication',
       {

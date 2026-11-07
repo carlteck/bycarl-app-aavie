@@ -69,6 +69,8 @@ Module._load = function (id, ...args) {
     return {
       ApiError,
       NetworkError,
+      API_BASE: 'https://example.test/api',
+      apiAuthorizationHeaders: async () => ({ Authorization: 'Bearer test' }),
       apiFetch: (...args) => apiRespond(...args),
     };
   if (id === '@/lib/supabase')
@@ -78,6 +80,20 @@ Module._load = function (id, ...args) {
       randomUUID: () =>
         `00000000-0000-4000-8000-${String(++counter).padStart(12, '0')}`,
     };
+  if (id === 'expo-file-system')
+    return {
+      File: class File {
+        static createDownloadTask() {
+          return { downloadAsync: async () => ({ uri: 'file://test' }) };
+        }
+        constructor(uri) { this.uri = uri; this.exists = false; }
+        upload = async () => ({ status: 201, body: '{}', headers: {} });
+      },
+      Paths: { cache: 'file://cache' },
+      UploadType: { MULTIPART: 1 },
+    };
+  if (id === 'expo-sharing')
+    return { isAvailableAsync: async () => false, shareAsync: async () => {} };
   if (id === '@supabase/supabase-js')
     return { FunctionsHttpError, FunctionsFetchError, FunctionsRelayError };
   return originalLoad.call(this, id, ...args);
@@ -297,7 +313,7 @@ test('mappeurs : une ligne invalide est écartée, jamais affichée à moitié',
       subject: 'Aide',
       category: 'zzz',
       status: 'open',
-      last_message_at: at,
+      updated_at: at,
     }).category,
     'autre',
   );
@@ -306,7 +322,7 @@ test('mappeurs : une ligne invalide est écartée, jamais affichée à moitié',
       id: UUID,
       subject: 'Aide',
       status: 'inconnu',
-      last_message_at: at,
+      updated_at: at,
     }),
     null,
   );
@@ -315,13 +331,13 @@ test('mappeurs : une ligne invalide est écartée, jamais affichée à moitié',
       id: 'pas-un-uuid',
       subject: 'Aide',
       status: 'open',
-      last_message_at: at,
+      updated_at: at,
     }),
     null,
   );
   assert.equal(
-    mapMessage({ id: UUID, author_role: 'admin', body: 'x', created_at: at }),
-    null,
+    mapMessage({ id: 7, author_role: 'admin', body: 'x', created_at: at }).author,
+    'staff',
   );
 
   const news = mapNews({
@@ -389,17 +405,17 @@ test('mappeurs : une ligne invalide est écartée, jamais affichée à moitié',
 
   const doc = {
     id: UUID,
-    title: 'Passeport',
+    name: 'Passeport',
     category: 'identite',
     mime_type: 'application/pdf',
-    size_bytes: 10,
-    storage_provider: 'external',
-    transfer_status: 'pending',
+    file_size: 10,
+    cloud_provider: 'google_drive',
+    accessible: true,
     created_at: at,
   };
   assert.equal(mapVaultDocument(doc).category, 'identite');
-  assert.equal(mapVaultDocument({ ...doc, storage_provider: 'ftp' }), null);
-  assert.equal(mapVaultDocument({ ...doc, size_bytes: -1 }), null);
+  assert.equal(mapVaultDocument({ ...doc, accessible: false }).transferStatus, 'failed');
+  assert.equal(mapVaultDocument({ ...doc, file_size: -1 }), null);
 
   assert.equal(mapCredits({ balance: 12, monthly_credits: 200 }).balance, 12);
   assert.equal(mapCredits({ balance: '12', monthly_credits: 200 }), null);
@@ -458,27 +474,15 @@ test('manuel : recherche sans accents ni casse, tous les mots', () => {
 });
 
 // --- Requêtes ---------------------------------------------------------------------------------
-test('veille : pagination, filtre et recherche assainie', async () => {
+test('veille : lit, filtre et pagine la réponse du site', async () => {
   const { fetchNewsPage } = lib('regulatory-news.ts');
-  calls.length = 0;
-  await fetchNewsPage(
-    2,
-    'Guyane',
-    'a,b) or (id.eq.1',
-    new AbortController().signal,
-  );
-  const q = calls[0];
-  assert.equal(q.table, 'regulatory_news');
-  assert.deepEqual(step(q, 'range')[1], [40, 60]);
-  assert.deepEqual(step(q, 'eq')[1], ['tag', 'Guyane']);
-  assert.equal(
-    step(q, 'or')[1][0],
-    'title.ilike.%a b or id eq 1%,description.ilike.%a b or id eq 1%',
-  );
-  calls.length = 0;
-  await fetchNewsPage(0, 'all', 'x', new AbortController().signal);
-  assert.equal(step(calls[0], 'eq'), undefined);
-  assert.equal(step(calls[0], 'or'), undefined);
+  apiRespond = async (route) => {
+    assert.equal(route, '/news.php');
+    return { news: [{ id: UUID, title: 'CAF Guyane', description: 'Aide', tag: 'Guyane', published_date: '2026-11-01' }] };
+  };
+  const result = await fetchNewsPage(0, 'Guyane', 'caf', new AbortController().signal);
+  assert.equal(result.items.length, 1);
+  assert.equal(result.hasMore, false);
 });
 
 test('pagination : la ligne témoin dit qu’il en reste, sans être affichée', async () => {
@@ -488,82 +492,43 @@ test('pagination : la ligne témoin dit qu’il en reste, sans être affichée',
     subject: 'Demande',
     status: 'open',
     category: 'autre',
-    last_message_at: '2026-09-20T10:00:00Z',
+    updated_at: '2026-09-20T10:00:00Z',
   });
-  respond = () => ({
-    data: Array.from({ length: 21 }, (_, i) => row(i)),
-    error: null,
-  });
+  apiRespond = async () => ({ tickets: Array.from({ length: 21 }, (_, i) => row(i)) });
   const page = await fetchTickets(0, 'all', new AbortController().signal);
   assert.equal(page.items.length, 20);
   assert.equal(page.hasMore, true);
-  respond = () => ({
-    data: Array.from({ length: 20 }, (_, i) => row(i)),
-    error: null,
-  });
+  apiRespond = async () => ({ tickets: Array.from({ length: 20 }, (_, i) => row(i)) });
   assert.equal(
     (await fetchTickets(0, 'all', new AbortController().signal)).hasMore,
     false,
   );
-  respond = () => ({ data: null, error: { code: '42501' } });
-  await assert.rejects(fetchTickets(0, 'all', new AbortController().signal));
-  respond = () => ({ data: [], error: null });
 });
 
-test('support : un renvoi après coupure ne crée ni doublon ni erreur', async () => {
+test('support : création et réponse passent par les routes du site', async () => {
   const { createTicket, newTicketIds } = lib('support.ts');
   const ids = newTicketIds();
-  calls.length = 0;
-  // Premier essai : la demande est déjà en base (violation d'unicité) → on continue au message.
-  respond = (record) =>
-    record.table === 'mobile_support_tickets'
-      ? { data: null, error: { code: '23505' } }
-      : { data: null, error: null };
+  const requests = [];
+  apiRespond = async (...args) => {
+    requests.push(args);
+    return { ticket: { id: UUID } };
+  };
   const id = await createTicket(
     'u1',
     { subject: '  Besoin  ', category: 'compte', body: ' Bonjour ' },
     ids,
   );
-  assert.equal(id, ids.ticketId);
-  const [ticketCall, messageCall] = calls;
-  assert.deepEqual(step(ticketCall, 'insert')[1][0], {
-    id: ids.ticketId,
-    user_id: 'u1',
-    subject: 'Besoin',
-    category: 'compte',
-  });
-  assert.deepEqual(step(messageCall, 'insert')[1][0], {
-    id: ids.messageId,
-    ticket_id: ids.ticketId,
-    user_id: 'u1',
-    body: 'Bonjour',
-  });
-  // Toute autre erreur remonte.
-  respond = () => ({ data: null, error: { code: '42501' } });
-  await assert.rejects(
-    createTicket(
-      'u1',
-      { subject: 'Besoin', category: 'compte', body: 'x' },
-      newTicketIds(),
-    ),
-  );
-  respond = () => ({ data: [], error: null });
+  assert.equal(id, UUID);
+  assert.equal(requests[0][0], '/support-tickets.php');
+  assert.deepEqual(JSON.parse(requests[0][1].body), { subject: 'Besoin', message: 'Bonjour' });
 });
 
-test('coffre-fort : tant que le stockage n’est pas choisi, tout refuse honnêtement', async () => {
-  const { vaultStorage, VaultUnavailableError, formatBytes } = lib('vault.ts');
+test('coffre-fort : le stockage du site permet les transferts', async () => {
+  const { vaultStorage, formatBytes } = lib('vault.ts');
   assert.deepEqual(vaultStorage.capabilities, {
-    upload: false,
-    download: false,
+    upload: true,
+    download: true,
   });
-  await assert.rejects(
-    vaultStorage.upload({}, new AbortController().signal),
-    VaultUnavailableError,
-  );
-  await assert.rejects(
-    vaultStorage.download({}, new AbortController().signal),
-    VaultUnavailableError,
-  );
   assert.equal(formatBytes(900), '900 o');
   assert.equal(formatBytes(1536), '1,5 Ko');
   assert.equal(formatBytes(5 * 1024 * 1024), '5,0 Mo');

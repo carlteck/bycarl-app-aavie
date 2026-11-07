@@ -24,6 +24,14 @@ export function asId(value: unknown): string | null {
   return UUID.test(text) ? text.toLowerCase() : null;
 }
 
+/** Identifiant d'entité PHP : UUID ou entier SQL positif, toujours normalisé en chaîne. */
+export function asEntityId(value: unknown): string | null {
+  if (typeof value === 'number' && Number.isInteger(value) && value >= 0)
+    return String(value);
+  const text = asText(value);
+  return UUID.test(text) || /^\d+$/.test(text) ? text.toLowerCase() : null;
+}
+
 /** Date `YYYY-MM-DD` (colonne `date`) ou horodatage ISO ; retourne la date calendaire. */
 export function asDay(value: unknown): string | null {
   const text = asText(value);

@@ -15,7 +15,8 @@ import { supabase } from './supabase';
  * build, pas une simple mise à jour du bundle. D'où le domaine définitif et jamais une URL
  * technique d'hébergeur, qui n'a pas vocation à survivre à un déménagement.
  */
-const API_BASE = process.env.EXPO_PUBLIC_API_URL ?? 'https://aavieapp.com/api';
+export const API_BASE =
+  process.env.EXPO_PUBLIC_API_URL ?? 'https://aavieapp.com/api';
 
 export class ApiError extends Error {
   status: number;
@@ -39,26 +40,27 @@ export class NetworkError extends Error {
   }
 }
 
+export async function apiAuthorizationHeaders(): Promise<
+  Record<string, string>
+> {
+  const siteSession = await readSiteAuthSession();
+  let token = siteSession?.accessToken ?? (await readSessionToken());
+  if (!siteSession) {
+    const { data } = await supabase.auth.getSession();
+    token = data.session?.access_token ?? token;
+  }
+  if (!token)
+    throw new ApiError('Connectez-vous à votre compte AAVIE.', 401);
+  return { Authorization: `Bearer ${token}` };
+}
+
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const siteSession = await readSiteAuthSession();
-  let token = siteSession?.accessToken ?? (await readSessionToken());
-  const assistantRequest =
-    /^\/(?:ai\/(?:chat|conversation|conversations)\.php|credits\.php)(?:\?|$)/.test(
-      path,
-    );
-  if (assistantRequest && !siteSession) {
-    const { data } = await supabase.auth.getSession();
-    token = data.session?.access_token ?? token;
-  }
-  if (assistantRequest && !token) {
-    throw new ApiError(
-      'Connectez-vous à votre compte AAVIE pour utiliser l’assistant.',
-      401,
-    );
-  }
+  const siteRequest =
+    /^\/(?:ai\/(?:chat|conversation|conversations|quota|tool-confirm)|credits|news|resources|contacts|procedures|support-tickets|support-ticket|documents|document|document-folders|document-folder|cloud)\.php(?:\?|$)/.test(path);
+  const authorization = siteRequest ? await apiAuthorizationHeaders() : {};
 
   let response: Response;
   try {
@@ -66,9 +68,11 @@ export async function apiFetch<T>(
       ...options,
       credentials: 'include',
       headers: {
-        'Content-Type': 'application/json',
+        ...(options.body instanceof FormData
+          ? {}
+          : { 'Content-Type': 'application/json' }),
         Accept: 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...authorization,
         ...options.headers,
       },
     });

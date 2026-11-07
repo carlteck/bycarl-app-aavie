@@ -1,5 +1,8 @@
 import type { PageResult } from '@/hooks/use-remote-list';
-import { pageRange, toPage } from '@/lib/paging';
+import { File, Paths, UploadType } from 'expo-file-system';
+
+import { API_BASE, ApiError, apiAuthorizationHeaders, apiFetch } from '@/lib/api';
+import { PAGE_SIZE } from '@/lib/paging';
 import {
   asDay,
   asId,
@@ -9,8 +12,6 @@ import {
   asRecord,
   asText,
 } from '@/lib/remote-values';
-import { toIlikePattern } from '@/lib/search-term';
-import { supabase } from '@/lib/supabase';
 
 export const VAULT_CATEGORIES = [
   { value: 'identite', label: 'Identité' },
@@ -25,7 +26,7 @@ export type VaultCategory = (typeof VAULT_CATEGORIES)[number]['value'];
 export type VaultFilter = VaultCategory | 'all';
 const CATEGORY_VALUES = VAULT_CATEGORIES.map((item) => item.value);
 
-export const STORAGE_PROVIDERS = ['supabase_storage', 'external'] as const;
+export const STORAGE_PROVIDERS = ['external'] as const;
 export type StorageProvider = (typeof STORAGE_PROVIDERS)[number];
 export const TRANSFER_STATUSES = ['pending', 'available', 'failed'] as const;
 export type TransferStatus = (typeof TRANSFER_STATUSES)[number];
@@ -85,35 +86,61 @@ export interface VaultStorage {
   remove(document: VaultDocument, signal: AbortSignal): Promise<void>;
 }
 
-export class VaultUnavailableError extends Error {
-  constructor() {
-    super('Le stockage des documents n’est pas encore activé.');
-    this.name = 'VaultUnavailableError';
-  }
-}
-
-const unavailable = (): Promise<never> =>
-  Promise.reject(new VaultUnavailableError());
-
-/** Implémentation par défaut tant qu'aucun stockage n'est choisi : tout refuse, honnêtement. */
 export const vaultStorage: VaultStorage = {
-  provider: 'none',
-  capabilities: { upload: false, download: false },
-  upload: unavailable,
-  download: unavailable,
-  remove: unavailable,
+  provider: 'external',
+  capabilities: { upload: true, download: true },
+  async upload() {
+    throw new Error('Utilisez uploadVaultDocument avec les métadonnées du document.');
+  },
+  async download(document, signal, onProgress) {
+    const headers = await apiAuthorizationHeaders();
+    const safeName = document.title.replace(/[^a-z0-9._-]+/gi, '-');
+    const destination = new File(Paths.cache, `${document.id}-${safeName}`);
+    if (destination.exists) destination.delete();
+    const task = File.createDownloadTask(
+      `${API_BASE}/document.php?id=${encodeURIComponent(document.id)}`,
+      destination,
+      {
+        headers,
+        signal,
+        onProgress: ({ bytesWritten, totalBytes }) => {
+          if (totalBytes > 0) onProgress?.(bytesWritten / totalBytes);
+        },
+      },
+    );
+    const file = await task.downloadAsync();
+    if (!file) throw new Error('Le téléchargement a été interrompu.');
+    try {
+      const Sharing = await import('expo-sharing');
+      if (await Sharing.isAvailableAsync())
+        await Sharing.shareAsync(file.uri, { mimeType: document.mimeType });
+    } catch (error) {
+      void error;
+      throw new Error(
+        'Le document est téléchargé, mais son ouverture nécessite une version plus récente de l’application.',
+      );
+    }
+    return { localUri: file.uri };
+  },
+  async remove(document, signal) {
+    await apiFetch(`/document.php?id=${encodeURIComponent(document.id)}`, {
+      method: 'DELETE',
+      signal,
+    });
+  },
 };
 
 export function mapVaultDocument(row: unknown): VaultDocument | null {
   const value = asRecord(row);
   if (!value) return null;
   const id = asId(value.id);
-  const title = asText(value.title);
+  const title = asText(value.name);
   const category = asOneOf(value.category, CATEGORY_VALUES) ?? 'autre';
-  const storageProvider = asOneOf(value.storage_provider, STORAGE_PROVIDERS);
-  const transferStatus = asOneOf(value.transfer_status, TRANSFER_STATUSES);
+  const accessible = value.accessible !== false;
+  const storageProvider: StorageProvider = 'external';
+  const transferStatus: TransferStatus = accessible ? 'available' : 'failed';
   const createdAt = asInstant(value.created_at);
-  const size = value.size_bytes;
+  const size = value.file_size;
   if (
     !id ||
     !title ||
@@ -134,13 +161,10 @@ export function mapVaultDocument(row: unknown): VaultDocument | null {
     createdAt,
     sizeBytes: size,
     mimeType: asText(value.mime_type) || 'application/octet-stream',
-    remoteRef: asOptionalText(value.remote_ref),
-    expiresOn: asDay(value.expires_on) ?? undefined,
+    remoteRef: asOptionalText(value.cloud_provider),
+    expiresOn: asDay(value.expiry_date) ?? undefined,
   };
 }
-
-const COLUMNS =
-  'id, title, category, mime_type, size_bytes, storage_provider, remote_ref, transfer_status, expires_on, created_at';
 
 export async function fetchVaultPage(
   page: number,
@@ -148,19 +172,119 @@ export async function fetchVaultPage(
   term: string,
   signal: AbortSignal,
 ): Promise<PageResult<VaultDocument>> {
-  let query = supabase
-    .from('mobile_vault_documents')
-    .select(COLUMNS)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false })
-    .order('id')
-    .range(...pageRange(page));
-  if (category !== 'all') query = query.eq('category', category);
-  const pattern = toIlikePattern(term);
-  if (pattern) query = query.ilike('title', pattern);
-  const { data, error } = await query.abortSignal(signal);
-  if (error) throw error;
-  return toPage(data, mapVaultDocument);
+  const cloud = await fetchCloudState(signal);
+  if (!cloud.connected) return { items: [], hasMore: false };
+  const payload = await apiFetch<unknown>('/documents.php', { signal });
+  const rows = asRecord(payload)?.documents;
+  const query = term.trim().toLocaleLowerCase('fr');
+  const items = (Array.isArray(rows) ? rows : [])
+    .map(mapVaultDocument)
+    .filter((item): item is VaultDocument => item !== null)
+    .filter((item) => category === 'all' || item.category === category)
+    .filter((item) => !query || item.title.toLocaleLowerCase('fr').includes(query));
+  const start = page * PAGE_SIZE;
+  return { items: items.slice(start, start + PAGE_SIZE), hasMore: items.length > start + PAGE_SIZE };
+}
+
+export type CloudState = {
+  connected: boolean;
+  providerLabel?: string;
+  accountEmail?: string;
+};
+
+export async function fetchCloudState(signal: AbortSignal): Promise<CloudState> {
+  const payload = asRecord(await apiFetch<unknown>('/cloud.php', { signal }));
+  const connection = asRecord(payload?.connection);
+  return {
+    connected: connection !== null,
+    providerLabel: asOptionalText(connection?.provider),
+    accountEmail: asOptionalText(connection?.account_email),
+  };
+}
+
+export type VaultFolder = { id: string; name: string; parentId?: string };
+
+export function mapVaultFolder(row: unknown): VaultFolder | null {
+  const value = asRecord(row);
+  const id = asId(value?.id);
+  const name = asText(value?.name);
+  if (!id || !name) return null;
+  return { id, name, parentId: asId(value?.parent_id) ?? undefined };
+}
+
+export async function fetchVaultFolders(signal: AbortSignal): Promise<VaultFolder[]> {
+  const payload = asRecord(await apiFetch<unknown>('/document-folders.php', { signal }));
+  const rows = payload?.folders;
+  return (Array.isArray(rows) ? rows : []).map(mapVaultFolder).filter((item): item is VaultFolder => item !== null);
+}
+
+export async function createVaultFolder(name: string, parentId?: string): Promise<VaultFolder> {
+  const payload = asRecord(await apiFetch<unknown>('/document-folders.php', {
+    method: 'POST',
+    body: JSON.stringify({ name: name.trim(), parent_id: parentId ?? null }),
+  }));
+  const folder = mapVaultFolder(payload?.folder);
+  if (!folder) throw new Error('Réponse inattendue du serveur.');
+  return folder;
+}
+
+export async function renameVaultFolder(id: string, name: string): Promise<void> {
+  await apiFetch(`/document-folder.php?id=${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ name: name.trim() }),
+  });
+}
+
+export async function deleteVaultFolder(id: string): Promise<void> {
+  await apiFetch(`/document-folder.php?id=${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function moveVaultDocument(documentId: string, folderId: string | null): Promise<void> {
+  await apiFetch(`/document.php?id=${encodeURIComponent(documentId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ folder_id: folderId }),
+  });
+}
+
+export async function uploadVaultDocument(input: {
+  name: string;
+  category: VaultCategory;
+  file: { uri: string; name: string; mimeType: string };
+  expiryDate?: string;
+  folderId?: string;
+  addToPlanner?: boolean;
+}): Promise<void> {
+  const headers = await apiAuthorizationHeaders();
+  const result = await new File(input.file.uri).upload(
+    `${API_BASE}/documents.php`,
+    {
+      httpMethod: 'POST',
+      uploadType: UploadType.MULTIPART,
+      fieldName: 'file',
+      mimeType: input.file.mimeType,
+      headers,
+      parameters: {
+        name: input.name.trim(),
+        category: input.category,
+        expiry_date: input.expiryDate ?? '',
+        folder_id: input.folderId ?? '',
+        add_to_planner: input.addToPlanner ? '1' : '0',
+      },
+    },
+  );
+  if (result.status < 200 || result.status >= 300) {
+    let message = 'Le document n’a pas pu être envoyé.';
+    try {
+      const payload = JSON.parse(result.body) as { error?: unknown };
+      if (typeof payload.error === 'string') message = payload.error;
+    } catch (error) {
+      void error;
+      // Le message générique reste volontairement affiché pour une réponse non JSON.
+    }
+    throw new ApiError(message, result.status);
+  }
 }
 
 /** 1 536 → « 1,5 Ko ». Unités françaises (octet, Ko, Mo, Go). */
