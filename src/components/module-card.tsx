@@ -50,7 +50,7 @@ export function ModuleCard({
   ];
   return href ? (
     <Pressable
-      onPress={() => router.push(href as never)}
+      onPress={() => router.navigate(href as never)}
       accessibilityRole="button"
       accessibilityLabel={`${title}. ${description}`}
       style={({ pressed }) => [cardStyle, { opacity: pressed ? 0.7 : 1 }]}

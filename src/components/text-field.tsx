@@ -12,6 +12,7 @@ import { ThemedText } from './themed-text';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useLocale } from '@/context/locale-context';
 
 type TextFieldProps = TextInputProps & {
   label: string;
@@ -20,16 +21,19 @@ type TextFieldProps = TextInputProps & {
 };
 
 /** Champ de saisie étiqueté, utilisé par la connexion et l'inscription. */
-export function TextField({ label, secure, style, ...rest }: TextFieldProps) {
+export function TextField({ label, secure, style, placeholder, ...rest }: TextFieldProps) {
   const theme = useTheme();
+  const { translateText } = useLocale();
   const [revealed, setRevealed] = useState(false);
+  const translatedLabel = translateText(label);
 
   return (
     <View style={styles.field}>
-      <ThemedText type="label">{label}</ThemedText>
+      <ThemedText type="label">{translatedLabel}</ThemedText>
       <View style={styles.inputRow}>
         <TextInput
-          accessibilityLabel={label}
+          accessibilityLabel={translatedLabel}
+          placeholder={placeholder ? translateText(placeholder) : undefined}
           placeholderTextColor={theme.textSecondary}
           secureTextEntry={secure && !revealed}
           style={[
@@ -49,7 +53,7 @@ export function TextField({ label, secure, style, ...rest }: TextFieldProps) {
             onPress={() => setRevealed((value) => !value)}
             accessibilityRole="button"
             accessibilityLabel={
-              revealed ? 'Masquer le mot de passe' : 'Afficher le mot de passe'
+              translateText(revealed ? 'Masquer le mot de passe' : 'Afficher le mot de passe')
             }
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             style={styles.action}

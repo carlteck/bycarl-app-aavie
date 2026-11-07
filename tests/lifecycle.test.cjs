@@ -57,6 +57,7 @@ function harness(file, dependencies) {
   const modules = {
     ...dependencies,
     react,
+    '@/i18n/runtime': { getSpeechLocale: () => 'fr-FR' },
     'react/jsx-runtime': {
       jsx: (type, props) => ({ type, props }),
       jsxs: (type, props) => ({ type, props }),
@@ -207,7 +208,7 @@ test('biométrie: confirmation unique et désactivation authentifiée', async ()
   assert.equal(h.view().biometricLocked, false);
   h.unmount();
 });
-function dictation(permission) {
+function dictation(permission, available = true) {
   const events = {};
   const errors = [];
   const transcripts = [];
@@ -215,6 +216,7 @@ function dictation(permission) {
     requests = 0;
   const listeners = new Set();
   const module = {
+    isRecognitionAvailable: () => available,
     requestPermissionsAsync: () => {
       requests++;
       return permission();
@@ -229,6 +231,7 @@ function dictation(permission) {
     '@expo/vector-icons': { Ionicons: 'Icon' },
     'react-native': {
       Pressable: 'Button',
+      Platform: { OS: 'ios' },
       AppState: {
         addEventListener: (_e, fn) => {
           listeners.add(fn);
@@ -323,6 +326,15 @@ test('dictée: refus de permission sans démarrage', async () => {
   await tick();
   assert.equal(h.starts(), 0);
   assert.equal(h.errors.length, 1);
+  h.unmount();
+});
+test('dictée: service indisponible expliqué avant de demander les permissions', async () => {
+  const h = dictation(async () => ({ granted: true }), false);
+  h.view().props.onPress();
+  await tick();
+  assert.equal(h.requests(), 0);
+  assert.equal(h.starts(), 0);
+  assert.match(h.errors[0], /Siri et Dictée/);
   h.unmount();
 });
 test('dictée: le bouton Arrêter conserve le dernier résultat final', async () => {

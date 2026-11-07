@@ -53,9 +53,26 @@ const fakeSupabase = {
 class FunctionsHttpError extends Error {}
 class FunctionsFetchError extends Error {}
 class FunctionsRelayError extends Error {}
+class ApiError extends Error {
+  constructor(message, status, code) {
+    super(message);
+    this.status = status;
+    this.code = code;
+  }
+}
+class NetworkError extends Error {}
+let apiRespond = async () => null;
 let counter = 0;
 const originalLoad = Module._load;
 Module._load = function (id, ...args) {
+  if (id === '@/lib/api')
+    return {
+      ApiError,
+      NetworkError,
+      API_BASE: 'https://example.test/api',
+      apiAuthorizationHeaders: async () => ({ Authorization: 'Bearer test' }),
+      apiFetch: (...args) => apiRespond(...args),
+    };
   if (id === '@/lib/supabase')
     return { supabase: fakeSupabase, isSupabaseConfigured: true };
   if (id === 'expo-crypto')
@@ -63,6 +80,20 @@ Module._load = function (id, ...args) {
       randomUUID: () =>
         `00000000-0000-4000-8000-${String(++counter).padStart(12, '0')}`,
     };
+  if (id === 'expo-file-system')
+    return {
+      File: class File {
+        static createDownloadTask() {
+          return { downloadAsync: async () => ({ uri: 'file://test' }) };
+        }
+        constructor(uri) { this.uri = uri; this.exists = false; }
+        upload = async () => ({ status: 201, body: '{}', headers: {} });
+      },
+      Paths: { cache: 'file://cache' },
+      UploadType: { MULTIPART: 1 },
+    };
+  if (id === 'expo-sharing')
+    return { isAvailableAsync: async () => false, shareAsync: async () => {} };
   if (id === '@supabase/supabase-js')
     return { FunctionsHttpError, FunctionsFetchError, FunctionsRelayError };
   return originalLoad.call(this, id, ...args);
@@ -71,6 +102,27 @@ const lib = (name) => require(path.join(src, 'lib', name));
 const step = (record, name) => record.steps.find(([n]) => n === name);
 
 const UUID = 'a1b2c3d4-0000-4000-8000-000000000001';
+
+test('documents juridiques : la version active est validée avant affichage natif', async () => {
+  const legal = lib('legal.ts');
+  apiRespond = async () => ({
+    documents: [
+      { id: UUID, document_type: 'privacy_policy', version: '2.1', title: 'Confidentialité', content: '# Texte', published_at: '2026-10-01T12:00:00Z' },
+      { id: 'bad', document_type: 'unknown', version: '1', title: 'Invalide', content: 'Non' },
+    ],
+  });
+  const document = await legal.fetchLegalDocument('privacy_policy', new AbortController().signal);
+  assert.deepEqual(document, {
+    id: UUID,
+    type: 'privacy_policy',
+    version: '2.1',
+    title: 'Confidentialité',
+    content: '# Texte',
+    publishedAt: '2026-10-01T12:00:00Z',
+  });
+  assert.equal(legal.isLegalDocumentType('legal_notice'), true);
+  assert.equal(legal.isLegalDocumentType('unknown'), false);
+});
 
 // --- Budget -----------------------------------------------------------------------------------
 test('budget : montants saisis → centimes entiers, sans flottant', () => {
@@ -282,7 +334,7 @@ test('mappeurs : une ligne invalide est écartée, jamais affichée à moitié',
       subject: 'Aide',
       category: 'zzz',
       status: 'open',
-      last_message_at: at,
+      updated_at: at,
     }).category,
     'autre',
   );
@@ -291,7 +343,7 @@ test('mappeurs : une ligne invalide est écartée, jamais affichée à moitié',
       id: UUID,
       subject: 'Aide',
       status: 'inconnu',
-      last_message_at: at,
+      updated_at: at,
     }),
     null,
   );
@@ -300,13 +352,13 @@ test('mappeurs : une ligne invalide est écartée, jamais affichée à moitié',
       id: 'pas-un-uuid',
       subject: 'Aide',
       status: 'open',
-      last_message_at: at,
+      updated_at: at,
     }),
     null,
   );
   assert.equal(
-    mapMessage({ id: UUID, author_role: 'admin', body: 'x', created_at: at }),
-    null,
+    mapMessage({ id: 7, author_role: 'admin', body: 'x', created_at: at }).author,
+    'staff',
   );
 
   const news = mapNews({
@@ -374,20 +426,20 @@ test('mappeurs : une ligne invalide est écartée, jamais affichée à moitié',
 
   const doc = {
     id: UUID,
-    title: 'Passeport',
+    name: 'Passeport',
     category: 'identite',
     mime_type: 'application/pdf',
-    size_bytes: 10,
-    storage_provider: 'external',
-    transfer_status: 'pending',
+    file_size: 10,
+    cloud_provider: 'google_drive',
+    accessible: true,
     created_at: at,
   };
   assert.equal(mapVaultDocument(doc).category, 'identite');
-  assert.equal(mapVaultDocument({ ...doc, storage_provider: 'ftp' }), null);
-  assert.equal(mapVaultDocument({ ...doc, size_bytes: -1 }), null);
+  assert.equal(mapVaultDocument({ ...doc, accessible: false }).transferStatus, 'failed');
+  assert.equal(mapVaultDocument({ ...doc, file_size: -1 }), null);
 
-  assert.equal(mapCredits({ balance: 12, monthly_allowance: 200 }).balance, 12);
-  assert.equal(mapCredits({ balance: '12', monthly_allowance: 200 }), null);
+  assert.equal(mapCredits({ balance: 12, monthly_credits: 200 }).balance, 12);
+  assert.equal(mapCredits({ balance: '12', monthly_credits: 200 }), null);
   assert.equal(
     mapAssistantMessage({
       id: 7,
@@ -443,27 +495,15 @@ test('manuel : recherche sans accents ni casse, tous les mots', () => {
 });
 
 // --- Requêtes ---------------------------------------------------------------------------------
-test('veille : pagination, filtre et recherche assainie', async () => {
+test('veille : lit, filtre et pagine la réponse du site', async () => {
   const { fetchNewsPage } = lib('regulatory-news.ts');
-  calls.length = 0;
-  await fetchNewsPage(
-    2,
-    'Guyane',
-    'a,b) or (id.eq.1',
-    new AbortController().signal,
-  );
-  const q = calls[0];
-  assert.equal(q.table, 'regulatory_news');
-  assert.deepEqual(step(q, 'range')[1], [40, 60]);
-  assert.deepEqual(step(q, 'eq')[1], ['tag', 'Guyane']);
-  assert.equal(
-    step(q, 'or')[1][0],
-    'title.ilike.%a b or id eq 1%,description.ilike.%a b or id eq 1%',
-  );
-  calls.length = 0;
-  await fetchNewsPage(0, 'all', 'x', new AbortController().signal);
-  assert.equal(step(calls[0], 'eq'), undefined);
-  assert.equal(step(calls[0], 'or'), undefined);
+  apiRespond = async (route) => {
+    assert.equal(route, '/news.php');
+    return { news: [{ id: UUID, title: 'CAF Guyane', description: 'Aide', tag: 'Guyane', published_date: '2026-11-01' }] };
+  };
+  const result = await fetchNewsPage(0, 'Guyane', 'caf', new AbortController().signal);
+  assert.equal(result.items.length, 1);
+  assert.equal(result.hasMore, false);
 });
 
 test('pagination : la ligne témoin dit qu’il en reste, sans être affichée', async () => {
@@ -473,151 +513,202 @@ test('pagination : la ligne témoin dit qu’il en reste, sans être affichée',
     subject: 'Demande',
     status: 'open',
     category: 'autre',
-    last_message_at: '2026-09-20T10:00:00Z',
+    updated_at: '2026-09-20T10:00:00Z',
   });
-  respond = () => ({
-    data: Array.from({ length: 21 }, (_, i) => row(i)),
-    error: null,
-  });
+  apiRespond = async () => ({ tickets: Array.from({ length: 21 }, (_, i) => row(i)) });
   const page = await fetchTickets(0, 'all', new AbortController().signal);
   assert.equal(page.items.length, 20);
   assert.equal(page.hasMore, true);
-  respond = () => ({
-    data: Array.from({ length: 20 }, (_, i) => row(i)),
-    error: null,
-  });
+  apiRespond = async () => ({ tickets: Array.from({ length: 20 }, (_, i) => row(i)) });
   assert.equal(
     (await fetchTickets(0, 'all', new AbortController().signal)).hasMore,
     false,
   );
-  respond = () => ({ data: null, error: { code: '42501' } });
-  await assert.rejects(fetchTickets(0, 'all', new AbortController().signal));
-  respond = () => ({ data: [], error: null });
 });
 
-test('support : un renvoi après coupure ne crée ni doublon ni erreur', async () => {
+test('support : création et réponse passent par les routes du site', async () => {
   const { createTicket, newTicketIds } = lib('support.ts');
   const ids = newTicketIds();
-  calls.length = 0;
-  // Premier essai : la demande est déjà en base (violation d'unicité) → on continue au message.
-  respond = (record) =>
-    record.table === 'mobile_support_tickets'
-      ? { data: null, error: { code: '23505' } }
-      : { data: null, error: null };
+  const requests = [];
+  apiRespond = async (...args) => {
+    requests.push(args);
+    return { ticket: { id: UUID } };
+  };
   const id = await createTicket(
     'u1',
     { subject: '  Besoin  ', category: 'compte', body: ' Bonjour ' },
     ids,
   );
-  assert.equal(id, ids.ticketId);
-  const [ticketCall, messageCall] = calls;
-  assert.deepEqual(step(ticketCall, 'insert')[1][0], {
-    id: ids.ticketId,
-    user_id: 'u1',
-    subject: 'Besoin',
-    category: 'compte',
-  });
-  assert.deepEqual(step(messageCall, 'insert')[1][0], {
-    id: ids.messageId,
-    ticket_id: ids.ticketId,
-    user_id: 'u1',
-    body: 'Bonjour',
-  });
-  // Toute autre erreur remonte.
-  respond = () => ({ data: null, error: { code: '42501' } });
-  await assert.rejects(
-    createTicket(
-      'u1',
-      { subject: 'Besoin', category: 'compte', body: 'x' },
-      newTicketIds(),
-    ),
-  );
-  respond = () => ({ data: [], error: null });
+  assert.equal(id, UUID);
+  assert.equal(requests[0][0], '/support-tickets.php');
+  assert.deepEqual(JSON.parse(requests[0][1].body), { subject: 'Besoin', message: 'Bonjour' });
 });
 
-test('coffre-fort : tant que le stockage n’est pas choisi, tout refuse honnêtement', async () => {
-  const { vaultStorage, VaultUnavailableError, formatBytes } = lib('vault.ts');
+test('coffre-fort : le stockage du site permet les transferts', async () => {
+  const { vaultStorage, formatBytes } = lib('vault.ts');
   assert.deepEqual(vaultStorage.capabilities, {
-    upload: false,
-    download: false,
+    upload: true,
+    download: true,
   });
-  await assert.rejects(
-    vaultStorage.upload({}, new AbortController().signal),
-    VaultUnavailableError,
-  );
-  await assert.rejects(
-    vaultStorage.download({}, new AbortController().signal),
-    VaultUnavailableError,
-  );
   assert.equal(formatBytes(900), '900 o');
   assert.equal(formatBytes(1536), '1,5 Ko');
   assert.equal(formatBytes(5 * 1024 * 1024), '5,0 Mo');
 });
 
-test('assistant : erreurs du serveur traduites sans lire le corps de la réponse', async () => {
+test('assistant : erreurs HTTP et réseau traduites', async () => {
   const assistant = lib('assistant.ts');
-  const failWith = (error) => {
-    fakeSupabase.functions.invoke = async () => ({ data: null, error });
-    return assistant.sendAssistantMessage({
-      conversationId: null,
-      message: 'x',
-      clientMessageId: UUID,
-      signal: new AbortController().signal,
-    });
+  const input = {
+    conversationId: null,
+    message: 'x',
+    clientMessageId: UUID,
+    signal: new AbortController().signal,
   };
-  const http = (status) =>
-    Object.assign(new FunctionsHttpError('x'), { context: { status } });
   for (const [status, kind] of [
     [401, 'auth'],
+    [419, 'auth'],
+    [403, 'account'],
     [402, 'credits'],
+    [409, 'pending'],
     [429, 'rate_limit'],
     [404, 'unavailable'],
     [503, 'unavailable'],
-    [400, 'unknown'],
-  ])
+    [422, 'unknown'],
+  ]) {
+    apiRespond = async () => {
+      throw new ApiError(
+        'x',
+        status,
+        status === 403 ? 'mobile_account_required' : undefined,
+      );
+    };
     await assert.rejects(
-      failWith(http(status)),
-      (e) => e.kind === kind,
-      `${status} → ${kind}`,
+      assistant.sendAssistantMessage(input),
+      (error) => error.kind === kind,
     );
+  }
+  apiRespond = async () => {
+    throw new NetworkError();
+  };
   await assert.rejects(
-    failWith(new FunctionsFetchError('x')),
-    (e) => e.kind === 'network',
+    assistant.sendAssistantMessage(input),
+    (error) => error.kind === 'network',
   );
-  await assert.rejects(
-    failWith(new FunctionsRelayError('x')),
-    (e) => e.kind === 'unavailable',
-  );
-  // Succès : seul l'identifiant de conversation, validé, est repris de la réponse.
-  fakeSupabase.functions.invoke = async (name, options) => {
-    assert.equal(name, 'assistant-chat');
-    assert.deepEqual(options.body, {
+  apiRespond = async (route, options) => {
+    assert.equal(route, '/ai/chat.php');
+    assert.equal(options.signal, input.signal);
+    assert.deepEqual(JSON.parse(options.body), {
       conversation_id: null,
-      message: 'x',
+      question: 'x',
       client_message_id: UUID,
     });
-    return { data: { conversation_id: UUID, reply: 'ignoré' }, error: null };
+    return { conversation_id: UUID };
   };
-  assert.deepEqual(
-    await assistant.sendAssistantMessage({
-      conversationId: null,
-      message: 'x',
-      clientMessageId: UUID,
-      signal: new AbortController().signal,
-    }),
-    { conversationId: UUID },
-  );
-  fakeSupabase.functions.invoke = async () => ({
-    data: { conversation_id: 'pas-un-uuid' },
-    error: null,
+  assert.deepEqual(await assistant.sendAssistantMessage(input), {
+    conversationId: UUID,
   });
+  apiRespond = async () => ({ conversation_id: 'invalide' });
   await assert.rejects(
-    assistant.sendAssistantMessage({
-      conversationId: null,
-      message: 'x',
-      clientMessageId: UUID,
-      signal: new AbortController().signal,
-    }),
-    (e) => e.kind === 'unknown',
+    assistant.sendAssistantMessage(input),
+    (error) => error.kind === 'unknown',
   );
+});
+
+test('assistant : historique et crédits du site, sans Supabase', async () => {
+  const assistant = lib('assistant.ts');
+  const signal = new AbortController().signal;
+  const conversation = {
+    id: UUID,
+    title: 'Mon courrier',
+    updated_at: '2026-11-05 12:30:00',
+  };
+  const message = {
+    id: '7',
+    role: 'assistant',
+    content: 'Bonjour',
+    created_at: '2026-11-05 12:30:00',
+  };
+  const routes = [];
+  apiRespond = async (route, options) => {
+    routes.push(route);
+    assert.equal(options.signal, signal);
+    if (route === '/ai/conversations.php')
+      return { conversations: [conversation] };
+    if (route.startsWith('/ai/conversation.php'))
+      return { conversation, messages: [message] };
+    if (route === '/credits.php')
+      return { balance: null, monthly_credits: 200, plan_name: 'Admin' };
+    throw new Error(route);
+  };
+  const result = await assistant.fetchConversationsPage(0, signal);
+  assert.equal(result.hasMore, false);
+  assert.equal(result.items[0].lastMessageAt, '2026-11-05T12:30:00-03:00');
+  assert.deepEqual(await assistant.fetchConversationsPage(1, signal), {
+    items: [],
+    hasMore: false,
+  });
+  assert.equal(
+    (await assistant.fetchThread(UUID, signal)).messages[0].content,
+    'Bonjour',
+  );
+  assert.equal((await assistant.fetchCredits(signal)).balance, null);
+  assert.equal(routes.length, 3);
+});
+
+test('assistant : renommer et supprimer utilisent le site', async () => {
+  const assistant = lib('assistant.ts');
+  const calls = [];
+  apiRespond = async (...args) => {
+    calls.push(args);
+    return { ok: true };
+  };
+  await assistant.renameConversation(UUID, ' Mon titre ');
+  await assistant.deleteConversation(UUID);
+  assert.equal(calls[0][0], `/ai/conversation.php?id=${UUID}`);
+  assert.equal(calls[0][1].method, 'PATCH');
+  assert.deepEqual(JSON.parse(calls[0][1].body), { title: 'Mon titre' });
+  assert.equal(calls[1][1].method, 'DELETE');
+});
+
+test('assistant : une proposition reste lisible sans afficher son enveloppe technique', () => {
+  const { assistantReply } = lib('assistant-reply.ts');
+  assert.deepEqual(assistantReply('Bonjour'), { text: 'Bonjour' });
+  const reply = assistantReply(
+    JSON.stringify({
+      kind: 'tool_action',
+      tool: 'create_deadline',
+      status: 'pending',
+      reply: 'Voici ma proposition.',
+    }),
+  );
+  assert.equal(reply.text, 'Voici ma proposition.');
+  assert.equal(reply.actionStatus, 'pending');
+  assert.equal(reply.actionLabel, 'Ajouter une échéance au planificateur');
+});
+
+test('assistant : quota, troncature et confirmation utilisent le contrat du site', async () => {
+  const assistant = lib('assistant.ts');
+  const quota = assistant.mapAssistantQuota({
+    balance: 12,
+    cost: 2,
+    document_cost: 3,
+    remaining_questions: 6,
+    cloud_connected: true,
+  });
+  assert.equal(quota.remainingQuestions, 6);
+  const message = assistant.mapAssistantMessage({
+    id: 9,
+    role: 'assistant',
+    content: 'Suite…',
+    created_at: '2026-11-05 12:30:00',
+    truncated: true,
+  });
+  assert.equal(message.truncated, true);
+  const requests = [];
+  apiRespond = async (...args) => {
+    requests.push(args);
+    return { status: 'confirmed' };
+  };
+  await assistant.resolveAssistantAction('9', 'confirm');
+  assert.equal(requests[0][0], '/ai/tool-confirm.php');
+  assert.deepEqual(JSON.parse(requests[0][1].body), { message_id: 9, action: 'confirm' });
 });

@@ -1,22 +1,30 @@
-/**
- * Textes légaux publiés par le site (`site_aavie`), accessibles sans compte
- * (`/confidentialite`, `/conditions-utilisation`, `/conditions-vente`, `/mentions-legales`).
- * L'application mobile ne les héberge pas elle-même : elle ouvre le navigateur sur ces pages,
- * comme elle le fait déjà pour un site web d'organisme dans l'annuaire.
- */
-const SITE_URL = 'https://aavieapp.com';
+export type LegalDocumentType =
+  | 'privacy_policy'
+  | 'terms'
+  | 'terms_of_sale'
+  | 'legal_notice';
 
 export const LEGAL_LINKS = {
   privacy: {
     label: 'Politique de confidentialité',
-    url: `${SITE_URL}/confidentialite`,
+    type: 'privacy_policy',
+    route: '/legal/privacy_policy',
   },
   terms: {
     label: 'Conditions d’utilisation',
-    url: `${SITE_URL}/conditions-utilisation`,
+    type: 'terms',
+    route: '/legal/terms',
   },
-  sales: { label: 'Conditions de vente', url: `${SITE_URL}/conditions-vente` },
-  notice: { label: 'Mentions légales', url: `${SITE_URL}/mentions-legales` },
+  sales: {
+    label: 'Conditions de vente',
+    type: 'terms_of_sale',
+    route: '/legal/terms_of_sale',
+  },
+  notice: {
+    label: 'Mentions légales',
+    type: 'legal_notice',
+    route: '/legal/legal_notice',
+  },
 } as const;
 
 /**

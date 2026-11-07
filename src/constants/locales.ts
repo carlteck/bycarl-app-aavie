@@ -5,25 +5,31 @@
  * `Locales::SUPPORTED` : les trois doivent rester alignées, sinon un choix accepté ici serait
  * silencieusement ramené au français par l'API.
  *
- * L'interface de l'application n'est pas encore traduite : ce choix est enregistré sur le compte
- * et suit l'utilisateur sur le site, mais les écrans mobiles restent en français pour l'instant.
- * Le kréyòl gwiyannen vient juste après le français — c'est la langue du public prioritaire
- * d'AAVIE, pas une langue étrangère de plus.
+ * Le français définit toutes les clés. Chaque autre dictionnaire doit conserver la même parité.
+ * `ht` désigne le kreyòl ayisyen, comme sur le site ; l'ancien code `gcr` est normalisé vers `ht`.
  */
 export type AavieLocale = {
   code: string;
   label: string;
   flag: string;
-  /** Vrai seulement pour la langue de référence ; les autres ne couvrent que la coquille. */
   complete: boolean;
 };
 
-export const LOCALES: AavieLocale[] = [
+export const LOCALES = [
   { code: 'fr', label: 'Français', flag: '🇫🇷', complete: true },
-  { code: 'gcr', label: 'Kréyòl', flag: '🇬🇫', complete: false },
-  { code: 'en', label: 'English', flag: '🇬🇧', complete: false },
-  { code: 'es', label: 'Español', flag: '🇪🇸', complete: false },
-  { code: 'pt', label: 'Português', flag: '🇵🇹', complete: false },
-];
+  { code: 'en', label: 'English', flag: '🇬🇧', complete: true },
+  { code: 'es', label: 'Español', flag: '🇪🇸', complete: true },
+  { code: 'pt', label: 'Português', flag: '🇵🇹', complete: true },
+  { code: 'ht', label: 'Kreyòl ayisyen', flag: '🇭🇹', complete: true },
+] as const satisfies readonly AavieLocale[];
 
 export const DEFAULT_LOCALE = LOCALES[0];
+
+export type LocaleCode = (typeof LOCALES)[number]['code'];
+
+export function normalizeLocale(code: string | null | undefined): LocaleCode {
+  const normalized = code === 'gcr' ? 'ht' : code;
+  return LOCALES.some((locale) => locale.code === normalized)
+    ? (normalized as LocaleCode)
+    : DEFAULT_LOCALE.code;
+}

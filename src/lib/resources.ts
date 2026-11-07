@@ -1,9 +1,8 @@
 import type { PageResult } from '@/hooks/use-remote-list';
+import { apiFetch } from '@/lib/api';
 import { safeExternalUrl } from '@/lib/external-url';
-import { pageRange, toPage } from '@/lib/paging';
+import { PAGE_SIZE } from '@/lib/paging';
 import { asId, asOptionalText, asRecord, asText } from '@/lib/remote-values';
-import { toIlikePattern } from '@/lib/search-term';
-import { supabase } from '@/lib/supabase';
 
 export type Resource = {
   id: string;
@@ -34,55 +33,40 @@ export function mapResource(row: unknown): Resource | null {
   };
 }
 
-const COLUMNS =
-  'id, title, category, description, content, url, duration_label';
-
 export async function fetchResourcesPage(
   page: number,
   category: string | null,
   term: string,
   signal: AbortSignal,
 ): Promise<PageResult<Resource>> {
-  let query = supabase
-    .from('resources')
-    .select(COLUMNS)
-    .order('title')
-    .order('id')
-    .range(...pageRange(page));
-  if (category) query = query.eq('category', category);
-  const pattern = toIlikePattern(term);
-  if (pattern)
-    query = query.or(`title.ilike.${pattern},description.ilike.${pattern}`);
-  const { data, error } = await query.abortSignal(signal);
-  if (error) throw error;
-  return toPage(data, mapResource);
+  const payload = await apiFetch<unknown>('/resources.php', { signal });
+  const rows = asRecord(payload)?.resources;
+  const query = term.trim().toLocaleLowerCase('fr');
+  const items = (Array.isArray(rows) ? rows : [])
+    .map(mapResource)
+    .filter((item): item is Resource => item !== null)
+    .filter((item) => !category || item.category === category)
+    .filter((item) => query ? `${item.title} ${item.description}`.toLocaleLowerCase('fr').includes(query) : true);
+  const start = page * PAGE_SIZE;
+  return { items: items.slice(start, start + PAGE_SIZE), hasMore: items.length > start + PAGE_SIZE };
 }
 
 export async function fetchResource(
   id: string,
   signal: AbortSignal,
 ): Promise<Resource | null> {
-  const { data, error } = await supabase
-    .from('resources')
-    .select(COLUMNS)
-    .eq('id', id)
-    .abortSignal(signal)
-    .maybeSingle();
-  if (error) throw error;
-  return mapResource(data);
+  const payload = await apiFetch<unknown>('/resources.php', { signal });
+  const rows = asRecord(payload)?.resources;
+  return (Array.isArray(rows) ? rows : []).map(mapResource).find((item) => item?.id === id) ?? null;
 }
 
 /** Catégories distinctes : le catalogue est petit, une lecture des seules catégories suffit. */
 export async function fetchResourceCategories(
   signal: AbortSignal,
 ): Promise<string[]> {
-  const { data, error } = await supabase
-    .from('resources')
-    .select('category')
-    .limit(1000)
-    .abortSignal(signal);
-  if (error) throw error;
-  const names = ((data ?? []) as unknown[])
+  const payload = await apiFetch<unknown>('/resources.php', { signal });
+  const rows = asRecord(payload)?.resources;
+  const names = (Array.isArray(rows) ? rows : [])
     .map((row) => asText(asRecord(row)?.category))
     .filter(Boolean);
   return [...new Set(names)].sort((a, b) => a.localeCompare(b, 'fr'));

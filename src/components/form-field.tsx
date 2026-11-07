@@ -7,6 +7,7 @@ import { ThemedView } from './themed-view';
 import type { ProcedureField } from '@/constants/procedures';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useLocale } from '@/context/locale-context';
 
 type FormFieldProps = {
   field: ProcedureField;
@@ -31,6 +32,7 @@ export function FormField({
   prefilled,
 }: FormFieldProps) {
   const theme = useTheme();
+  const { translateText } = useLocale();
 
   return (
     <View style={styles.container}>
@@ -91,11 +93,11 @@ export function FormField({
         <TextInput
           value={value}
           onChangeText={onChange}
-          placeholder={field.placeholder ?? field.label}
+          placeholder={translateText(field.placeholder ?? field.label)}
           placeholderTextColor={theme.textSecondary}
           keyboardType={KEYBOARD_TYPE[field.type] ?? 'default'}
           autoCapitalize={field.type === 'email' ? 'none' : 'sentences'}
-          accessibilityLabel={field.label}
+          accessibilityLabel={translateText(field.label)}
           style={[
             styles.input,
             {

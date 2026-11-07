@@ -1,5 +1,6 @@
 import { asId, asOptionalText, asRecord, asText } from '@/lib/remote-values';
-import { supabase } from '@/lib/supabase';
+import type { LocaleCode } from '@/constants/locales';
+import { siteManual } from '@/i18n/site-manual.generated';
 
 export type ManualArticleSummary = {
   id: string;
@@ -69,43 +70,35 @@ export function mapArticle(row: unknown): ManualArticle | null {
   };
 }
 
-/**
- * Tout le manuel en une requête (sections + titres d'articles) : quelques dizaines de lignes,
- * sommaire et recherche se font ensuite sans réseau. Les chapitres sans article publié sont
- * masqués — un chapitre vide donnerait l'impression d'une page cassée.
- */
+/** Le site reste la source éditoriale : le générateur embarque ses neuf fiches et traductions. */
 export async function fetchManual(
+  locale: LocaleCode,
   signal: AbortSignal,
 ): Promise<ManualSection[]> {
-  const { data, error } = await supabase
-    .from('mobile_manual_sections')
-    .select(
-      'id, title, summary, icon, position, mobile_manual_articles(id, title, summary, position)',
-    )
-    .order('position')
-    .order('title')
-    .order('position', { referencedTable: 'mobile_manual_articles' })
-    .limit(200)
-    .abortSignal(signal);
-  if (error) throw error;
-  return ((data ?? []) as unknown[])
-    .map(mapSection)
-    .filter((section): section is ManualSection => section !== null)
-    .filter((section) => section.articles.length > 0);
+  if (signal.aborted) return [];
+  return siteManual[locale].map((section) => ({
+    id: section.id,
+    title: section.title,
+    icon: section.icon,
+    articles: section.articles.map((article) => ({
+      id: article.id,
+      title: article.title,
+      summary: article.summary,
+    })),
+  }));
 }
 
 export async function fetchManualArticle(
   id: string,
+  locale: LocaleCode,
   signal: AbortSignal,
 ): Promise<ManualArticle | null> {
-  const { data, error } = await supabase
-    .from('mobile_manual_articles')
-    .select('id, title, summary, body, mobile_manual_sections(title)')
-    .eq('id', id)
-    .abortSignal(signal)
-    .maybeSingle();
-  if (error) throw error;
-  return mapArticle(data);
+  if (signal.aborted) return null;
+  for (const section of siteManual[locale]) {
+    const article = section.articles.find((item) => item.id === id);
+    if (article) return { ...article, sectionTitle: section.title };
+  }
+  return null;
 }
 
 /** Articles dont le titre ou le résumé contient tous les mots saisis (sans accents ni casse). */

@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 
+import { useLocale } from '@/context/locale-context';
 import { useRemoteList } from '@/hooks/use-remote-list';
 import { useRemoteResource } from '@/hooks/use-remote-resource';
 import { fetchAnnuaire } from '@/lib/annuaire-remote';
@@ -63,13 +64,19 @@ export function useAnnuaire() {
 }
 
 export function useManual() {
-  return useRemoteResource(fetchManual);
+  const { locale } = useLocale();
+  const load = useCallback(
+    (signal: AbortSignal) => fetchManual(locale, signal),
+    [locale],
+  );
+  return useRemoteResource(load);
 }
 
 export function useManualArticle(id: string) {
+  const { locale } = useLocale();
   const load = useCallback(
-    (signal: AbortSignal) => fetchManualArticle(id, signal),
-    [id],
+    (signal: AbortSignal) => fetchManualArticle(id, locale, signal),
+    [id, locale],
   );
   return useRemoteResource(load);
 }

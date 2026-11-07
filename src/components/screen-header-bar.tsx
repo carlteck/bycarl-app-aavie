@@ -7,6 +7,7 @@ import { ThemedView } from './themed-view';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useLocale } from '@/context/locale-context';
 
 type ScreenHeaderBarProps = {
   title: string;
@@ -25,6 +26,7 @@ export function ScreenHeaderBar({
   backLabel = 'Retour',
 }: ScreenHeaderBarProps) {
   const theme = useTheme();
+  const { translateText } = useLocale();
   const insets = useSafeAreaInsets();
 
   return (
@@ -42,7 +44,7 @@ export function ScreenHeaderBar({
       <Pressable
         onPress={onBack}
         accessibilityRole="button"
-        accessibilityLabel={backLabel}
+        accessibilityLabel={translateText(backLabel)}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         style={styles.backButton}
       >

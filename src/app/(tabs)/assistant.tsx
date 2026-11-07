@@ -13,6 +13,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 import { CreditsBadge } from '@/components/credits-badge';
+import { AssistantPromptCard } from '@/components/assistant-prompt-card';
+import { isAssistantEnabled } from '@/constants/assistant';
 import { PrimaryButton } from '@/components/primary-button';
 import {
   EmptyState,
@@ -20,7 +22,9 @@ import {
   InlineError,
   LoadingState,
 } from '@/components/screen-state';
-import { StackScreen, useListInsets } from '@/components/stack-screen';
+import { PageHeader } from '@/components/page-header';
+import { useTabListInsets } from '@/components/stack-screen';
+import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { CardShadow, Spacing } from '@/constants/theme';
 import { useAssistantConversations, useCredits } from '@/hooks/use-assistant';
@@ -33,9 +37,11 @@ import { formatInstant } from '@/lib/remote-values';
 
 function ConversationRow({
   conversation,
+  onRename,
   onDelete,
 }: {
   conversation: AssistantConversation;
+  onRename: () => void;
   onDelete: () => void;
 }) {
   const theme = useTheme();
@@ -64,22 +70,44 @@ function ConversationRow({
           {formatInstant(conversation.lastMessageAt)}
         </ThemedText>
       </Pressable>
-      <Pressable
-        onPress={onDelete}
-        accessibilityRole="button"
-        accessibilityLabel={`Supprimer la conversation ${conversation.title}`}
-        style={styles.trash}
-      >
-        <Ionicons name="trash-outline" size={20} color={theme.accent} />
-      </Pressable>
+      <View style={styles.rowActions}>
+        <Pressable
+          onPress={onRename}
+          accessibilityRole="button"
+          accessibilityLabel={`Renommer la conversation ${conversation.title}`}
+          style={styles.action}
+        >
+          <Ionicons name="pencil-outline" size={19} color={theme.primary} />
+        </Pressable>
+        <Pressable
+          onPress={onDelete}
+          accessibilityRole="button"
+          accessibilityLabel={`Supprimer la conversation ${conversation.title}`}
+          style={styles.action}
+        >
+          <Ionicons name="trash-outline" size={20} color={theme.accent} />
+        </Pressable>
+      </View>
     </View>
   );
 }
 
 export default function AssistantScreen() {
+  if (!isAssistantEnabled) {
+    return (
+      <ThemedView type="pageBackground" style={styles.screen}>
+        <PageHeader title="Assistant administratif" />
+        <AssistantPromptCard />
+      </ThemedView>
+    );
+  }
+  return <AssistantConversationsScreen />;
+}
+
+function AssistantConversationsScreen() {
   const list = useAssistantConversations();
   const credits = useCredits();
-  const insets = useListInsets();
+  const insets = useTabListInsets();
 
   // Au retour d'une conversation (créée, supprimée), la liste et le solde sont relus.
   const latest = useRef({ list: list.refresh, credits: credits.reload });
@@ -123,13 +151,15 @@ export default function AssistantScreen() {
   };
 
   return (
-    <StackScreen title="Assistant administratif">
+    <ThemedView type="pageBackground" style={styles.screen}>
+      <PageHeader title="Assistant administratif" />
       <FlatList
         data={list.items}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <ConversationRow
             conversation={item}
+            onRename={() => router.push(`/assistant/renommer/${item.id}`)}
             onDelete={() => confirmDelete(item)}
           />
         )}
@@ -185,11 +215,12 @@ export default function AssistantScreen() {
           ) : null
         }
       />
-    </StackScreen>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
   header: { gap: Spacing.three },
   row: {
     flexDirection: 'row',
@@ -199,8 +230,12 @@ const styles = StyleSheet.create({
     minHeight: 64,
   },
   rowMain: { flex: 1, gap: Spacing.half, padding: Spacing.three },
-  trash: {
-    width: 56,
+  rowActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  action: {
+    width: 52,
     minHeight: 56,
     alignItems: 'center',
     justifyContent: 'center',

@@ -11,6 +11,7 @@ import { SERVICE_GROUPS, type AavieModule } from '@/constants/modules';
 import { Palette, Spacing } from '@/constants/theme';
 import { useAuth } from '@/context/auth-context';
 import { useTabletLayout } from '@/hooks/use-tablet-layout';
+import { useLocale } from '@/context/locale-context';
 
 type NavItem = Pick<AavieModule, 'title' | 'icon'> & { href: string };
 
@@ -65,6 +66,7 @@ export function AdaptiveNavigationShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const { isAuthenticated, user, signOut } = useAuth();
+  const { translateText } = useLocale();
 
   if (!isTablet || !isAuthenticated) return children;
 
@@ -100,7 +102,7 @@ export function AdaptiveNavigationShell({ children }: { children: ReactNode }) {
           {SERVICE_GROUPS.map((group) => (
             <View key={group.title} style={styles.group}>
               <ThemedText type="caption" style={styles.groupTitle}>
-                {group.title.toUpperCase()}
+                {translateText(group.title).toUpperCase()}
               </ThemedText>
               {group.modules.map((module) => {
                 const href = hrefFor(module);

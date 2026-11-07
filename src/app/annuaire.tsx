@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { router } from 'expo-router';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { AnnuaireEntryCard } from '@/components/annuaire-entry-card';
@@ -11,7 +12,6 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import {
   ANNUAIRE_CATEGORIES,
-  ANNUAIRE_ENTRIES,
   type AnnuaireEntry,
 } from '@/constants/annuaire';
 import { Spacing } from '@/constants/theme';
@@ -19,8 +19,10 @@ import { useAnnuaire } from '@/hooks/use-catalogs';
 import { usePullToRefresh } from '@/hooks/use-pull-to-refresh';
 import { useTheme } from '@/hooks/use-theme';
 import { normalize } from '@/lib/manual';
+import { useLocale } from '@/context/locale-context';
 
 const ALL = '__all__';
+const EMPTY_ENTRIES: AnnuaireEntry[] = [];
 
 /** Catégories connues d'abord (ordre du produit), puis les autres par ordre alphabétique. */
 function categoriesOf(entries: readonly AnnuaireEntry[]): string[] {
@@ -34,19 +36,15 @@ function categoriesOf(entries: readonly AnnuaireEntry[]): string[] {
 
 export default function AnnuaireScreen() {
   const theme = useTheme();
+  const { intlLocale, translateText } = useLocale();
+  const number = useMemo(() => new Intl.NumberFormat(intlLocale), [intlLocale]);
   const insets = useTabListInsets();
   const directory = useAnnuaire();
   const { refreshing, onRefresh } = usePullToRefresh(directory.reload);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState(ALL);
 
-  // Source affichée. Jamais de repli SILENCIEUX : la liste intégrée ne remplace l'annuaire publié
-  // que s'il est vide ou injoignable, et l'écran le dit. Justification : cette liste (préfecture,
-  // CAF, CPAM…) est réelle et déjà utile hors ligne ; une page vide serait pire pour un public
-  // peu connecté.
-  const published = directory.data ?? [];
-  const usesEmbedded = published.length === 0;
-  const entries = usesEmbedded ? ANNUAIRE_ENTRIES : published;
+  const entries = directory.data ?? EMPTY_ENTRIES;
   const loading = directory.status === 'loading';
 
   const chips = useMemo(
@@ -80,6 +78,7 @@ export default function AnnuaireScreen() {
         icon="business-outline"
         title="Les bons contacts."
         intro="Trouvez le bon interlocuteur pour avancer."
+        onBack={() => router.back()}
       />
       <FlatList
         style={{ backgroundColor: theme.background }}
@@ -97,25 +96,13 @@ export default function AnnuaireScreen() {
         }
         ListHeaderComponent={
           <View style={styles.header}>
-            {directory.status === 'error' && usesEmbedded ? (
+            {directory.status === 'error' ? (
               <Notice
                 icon="cloud-offline-outline"
                 action={{ label: 'Réessayer', onPress: directory.retry }}
               >
-                L’annuaire à jour n’a pas pu être chargé. La liste de référence
-                intégrée à l’application est affichée en attendant.
-              </Notice>
-            ) : directory.status === 'ready' && usesEmbedded ? (
-              <Notice icon="information-circle-outline">
-                L’annuaire à jour n’est pas encore publié. La liste de référence
-                intégrée à l’application est affichée en attendant.
-              </Notice>
-            ) : directory.status === 'error' ? (
-              <Notice
-                icon="cloud-offline-outline"
-                action={{ label: 'Réessayer', onPress: directory.retry }}
-              >
-                La mise à jour a échoué : cette liste peut ne pas être à jour.
+                L’annuaire n’a pas pu être chargé. Vérifiez votre connexion puis
+                réessayez.
               </Notice>
             ) : null}
             <SearchField
@@ -136,7 +123,8 @@ export default function AnnuaireScreen() {
                 themeColor="textSecondary"
                 accessibilityLiveRegion="polite"
               >
-                {results.length} organisme{results.length > 1 ? 's' : ''}
+                {number.format(results.length)}{' '}
+                {translateText(results.length > 1 ? 'organismes' : 'organisme')}
               </ThemedText>
             ) : null}
           </View>

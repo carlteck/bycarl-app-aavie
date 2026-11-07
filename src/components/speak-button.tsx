@@ -6,6 +6,7 @@ import { ThemedText } from './themed-text';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { getSpeechLocale } from '@/i18n/runtime';
 
 /**
  * ⚠️ Chargement protégé, et non `import * as Speech from 'expo-speech'`.
@@ -67,7 +68,7 @@ export function SpeakButton({
     setFailed(false);
     setSpeaking(true);
     speech.speak(text, {
-      language: 'fr-FR',
+      language: getSpeechLocale(),
       onDone: () => setSpeaking(false),
       onStopped: () => setSpeaking(false),
       // Un appareil sans moteur de synthèse installé échoue ici. Le dire vaut mieux qu'un

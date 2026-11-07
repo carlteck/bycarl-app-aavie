@@ -21,11 +21,9 @@ export const SERVICE_GROUPS: { title: string; modules: AavieModule[] }[] = [
     modules: [
       {
         id: 'assistant',
-        // ⚠️ À retirer quand l'Edge Function `assistant-chat` sera déployée et vérifiée : l'écran
-        // et le contrat de données sont prêts (voir `src/lib/assistant.ts`), pas le service.
-        comingSoon: true,
         title: 'Assistant administratif',
-        description: 'Bientôt sur mobile : préparer une démarche, pas à pas.',
+        description:
+          'Comprendre une démarche et préparer un courrier, pas à pas.',
         icon: 'chatbubbles-outline',
         // `/demarche` auparavant : la carte annonçait l'assistant et ouvrait la liste des
         // démarches. Un libellé qui ne tient pas sa promesse fait douter l'usager de lui-même.
@@ -37,17 +35,6 @@ export const SERVICE_GROUPS: { title: string; modules: AavieModule[] }[] = [
         description: 'Obtenir de l’aide lorsque vous êtes bloqué.',
         icon: 'help-buoy-outline',
         href: '/support',
-      },
-      // ⚠️ Décision de placement : l'aide rédactionnelle ne fait pas partie de la liste minimale
-      // (Assistant → Support). Elle est conservée, mais EN DERNIER du groupe, pour ne pas
-      // s'intercaler dans l'ordre demandé. Sur le site elle a fusionné avec l'assistant : elle
-      // pourra disparaître d'ici quand le mobile suivra.
-      {
-        id: 'redaction',
-        title: 'Aide rédactionnelle',
-        description: 'Préparer vos courriers administratifs.',
-        icon: 'create-outline',
-        href: '/aide-redactionnelle',
       },
     ],
   },

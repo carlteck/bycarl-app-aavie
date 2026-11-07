@@ -1,6 +1,7 @@
 import type { PageResult } from '@/hooks/use-remote-list';
+import { apiFetch } from '@/lib/api';
 import { safeExternalUrl } from '@/lib/external-url';
-import { pageRange, toPage } from '@/lib/paging';
+import { PAGE_SIZE } from '@/lib/paging';
 import { markdownToPlainText } from '@/lib/simple-markdown';
 import {
   asDay,
@@ -10,8 +11,6 @@ import {
   asRecord,
   asText,
 } from '@/lib/remote-values';
-import { toIlikePattern } from '@/lib/search-term';
-import { supabase } from '@/lib/supabase';
 
 export const NEWS_TAGS = [
   'Guyane',
@@ -56,40 +55,30 @@ export function mapNews(row: unknown): RegulatoryNews | null {
   };
 }
 
-const COLUMNS =
-  'id, title, description, tag, published_date, source_name, source_url';
-
 export async function fetchNewsPage(
   page: number,
   tag: NewsFilter,
   term: string,
   signal: AbortSignal,
 ): Promise<PageResult<RegulatoryNews>> {
-  let query = supabase
-    .from('regulatory_news')
-    .select(COLUMNS)
-    .order('published_date', { ascending: false })
-    .order('id')
-    .range(...pageRange(page));
-  if (tag !== 'all') query = query.eq('tag', tag);
-  const pattern = toIlikePattern(term);
-  if (pattern)
-    query = query.or(`title.ilike.${pattern},description.ilike.${pattern}`);
-  const { data, error } = await query.abortSignal(signal);
-  if (error) throw error;
-  return toPage(data, mapNews);
+  const payload = await apiFetch<unknown>('/news.php', { signal });
+  const rows = asRecord(payload)?.news;
+  const query = term.trim().toLocaleLowerCase('fr');
+  const items = (Array.isArray(rows) ? rows : [])
+    .map(mapNews)
+    .filter((item): item is RegulatoryNews => item !== null)
+    .filter((item) => tag === 'all' || item.tag === tag)
+    .filter((item) =>
+      query ? `${item.title} ${item.description}`.toLocaleLowerCase('fr').includes(query) : true,
+    );
+  const start = page * PAGE_SIZE;
+  return { items: items.slice(start, start + PAGE_SIZE), hasMore: items.length > start + PAGE_SIZE };
 }
 
 export async function fetchNews(
   id: string,
   signal: AbortSignal,
 ): Promise<RegulatoryNews | null> {
-  const { data, error } = await supabase
-    .from('regulatory_news')
-    .select(COLUMNS)
-    .eq('id', id)
-    .abortSignal(signal)
-    .maybeSingle();
-  if (error) throw error;
-  return mapNews(data);
+  const first = await fetchNewsPage(0, 'all', '', signal);
+  return first.items.find((item) => item.id === id) ?? null;
 }

@@ -60,7 +60,7 @@ export default function NewSupportRequestScreen() {
         { subject, category, body },
         ids.current,
       );
-      router.replace(`/support/${id}`);
+      router.replace(`/support/${id}?created=1`);
     } catch (failure) {
       setError(remoteErrorMessage(classifyRemoteError(failure)));
       setSending(false);

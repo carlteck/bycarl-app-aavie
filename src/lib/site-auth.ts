@@ -41,6 +41,16 @@ function isRawTokenResponse(value: unknown): value is RawTokenResponse {
   );
 }
 
+/** `mfaChallenge` : compte administrateur, le code envoyé par e-mail doit être saisi. */
+export type SiteSignInResult = { mfaChallenge: string } | null;
+
+function isMfaChallenge(
+  value: unknown,
+): value is { mfa_required: true; challenge: string } {
+  const v = value as { mfa_required?: unknown; challenge?: unknown } | null;
+  return v?.mfa_required === true && typeof v.challenge === 'string';
+}
+
 function toSession(response: RawTokenResponse): SiteAuthSession {
   return {
     accessToken: response.access_token,
@@ -100,10 +110,30 @@ async function applySession(session: SiteAuthSession): Promise<void> {
 export async function signInWithSite(
   email: string,
   password: string,
-): Promise<void> {
+): Promise<SiteSignInResult> {
   const data = await apiFetch<unknown>('/mobile-auth.php', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    // `supports_mfa` : cette version sait demander le code d'un compte administrateur.
+    body: JSON.stringify({ email, password, supports_mfa: true }),
+  });
+  if (isMfaChallenge(data)) return { mfaChallenge: data.challenge };
+  if (!isRawTokenResponse(data))
+    throw new ApiError('Réponse inattendue du serveur.', 502);
+  await applySession(toSession(data));
+  return null;
+}
+
+/**
+ * Second facteur d'un compte administrateur : le code reçu par e-mail, une seule fois. Le jeton
+ * de renouvellement garde ensuite l'application connectée, comme pour un compte client.
+ */
+export async function verifySiteMfa(
+  challenge: string,
+  code: string,
+): Promise<void> {
+  const data = await apiFetch<unknown>('/mobile-auth-mfa.php', {
+    method: 'POST',
+    body: JSON.stringify({ challenge, code: code.replace(/\s/g, '') }),
   });
   if (!isRawTokenResponse(data))
     throw new ApiError('Réponse inattendue du serveur.', 502);

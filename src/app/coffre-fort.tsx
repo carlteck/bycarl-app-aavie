@@ -3,6 +3,7 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Linking,
   RefreshControl,
   StyleSheet,
   View,
@@ -24,7 +25,7 @@ import { ThemedView } from '@/components/themed-view';
 import { CardShadow, Spacing } from '@/constants/theme';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { useTheme } from '@/hooks/use-theme';
-import { useVaultDocuments, useVaultTransfers } from '@/hooks/use-vault';
+import { useVaultCloud, useVaultDocuments, useVaultTransfers } from '@/hooks/use-vault';
 import { daysUntil, formatISODateLong } from '@/lib/reminder-date';
 import {
   formatBytes,
@@ -142,6 +143,7 @@ export default function CoffreFortScreen() {
   const [category, setCategory] = useState<VaultFilter>('all');
   const term = useDebouncedValue(query);
   const list = useVaultDocuments(category, term);
+  const cloud = useVaultCloud();
   const { transfers, download, capabilities } = useVaultTransfers();
   const insets = useListInsets();
   const filtered = category !== 'all' || term.trim().length >= 2;
@@ -175,11 +177,17 @@ export default function CoffreFortScreen() {
             <ThemedText themeColor="textSecondary">
               Retrouvez le bon justificatif au bon moment.
             </ThemedText>
-            {!capabilities.upload ? (
-              <Notice icon="lock-closed-outline">
-                L’ajout et le téléchargement de documents ne sont pas encore
-                activés. AAVIE ne demande donc aucune autorisation d’accès à vos
-                photos ou à vos fichiers pour le moment.
+            {cloud.status === 'ready' && !cloud.data?.connected ? (
+              <Notice
+                icon="cloud-outline"
+                action={{
+                  label: 'Connecter mon cloud',
+                  onPress: () =>
+                    void Linking.openURL('https://aavieapp.com/espace/coffre-fort'),
+                }}
+              >
+                Connectez Google Drive ou OneDrive sur le site AAVIE pour
+                protéger vos documents, puis revenez ici.
               </Notice>
             ) : null}
             <SearchField

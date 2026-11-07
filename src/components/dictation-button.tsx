@@ -5,6 +5,7 @@ import { Alert, AppState, Linking, Platform, Pressable } from 'react-native';
 
 import { requestDictationPermission } from '@/lib/dictation-permission';
 import { Palette } from '@/constants/theme';
+import { getSpeechLocale } from '@/i18n/runtime';
 
 /**
  * ⚠️ Chargement protégé, comme pour `expo-speech`.
@@ -24,8 +25,14 @@ try {
   recognition = null;
 }
 
-/** L'appelant en a besoin pour décider d'afficher, ou non, l'avertissement de confidentialité. */
-export const isDictationAvailable = recognition !== null;
+/** L'appelant en a besoin pour ne pas annoncer un service absent comme disponible. */
+export const isDictationAvailable = (() => {
+  try {
+    return recognition?.ExpoSpeechRecognitionModule.isRecognitionAvailable() ?? false;
+  } catch {
+    return false;
+  }
+})();
 
 type Props = {
   /** Reçoit le texte reconnu, à concaténer à la saisie en cours. */
@@ -102,7 +109,7 @@ function DictationButtonInner({ onTranscript, onError, color }: Props) {
     if (!lifecycle.current.active || !lifecycle.current.listening) return;
     lifecycle.current.listening = false;
     setListening(false);
-    onError(messageFor(event.error));
+    onError(messageFor(event.error, event.message));
   });
 
   const toggle = useCallback(() => {
@@ -124,6 +131,14 @@ function DictationButtonInner({ onTranscript, onError, color }: Props) {
     const current = () => life.active && generation === life.generation;
     void (async () => {
       try {
+        if (!module.ExpoSpeechRecognitionModule.isRecognitionAvailable()) {
+          onError(
+            Platform.OS === 'ios'
+              ? 'La reconnaissance vocale est indisponible. Activez Siri et Dictée dans les réglages de l’iPhone, puis réessayez.'
+              : 'Aucun service de reconnaissance vocale actif n’est disponible sur cet appareil.',
+          );
+          return;
+        }
         const permission = await requestDictationPermission(
           module.ExpoSpeechRecognitionModule,
           current,
@@ -157,17 +172,15 @@ function DictationButtonInner({ onTranscript, onError, color }: Props) {
         life.listening = true;
         setListening(true);
         module.ExpoSpeechRecognitionModule.start({
-          lang: 'fr-FR',
+          lang: getSpeechLocale(),
           interimResults: false,
           continuous: false,
         });
-      } catch {
+      } catch (error) {
         if (current()) {
           life.listening = false;
           setListening(false);
-          onError(
-            'La dictée n’a pas fonctionné. Vous pouvez écrire votre question.',
-          );
+          onError(startFailureMessage(error));
         }
       } finally {
         life.busy = false;
@@ -197,14 +210,33 @@ function DictationButtonInner({ onTranscript, onError, color }: Props) {
 }
 
 /** Les codes bruts ne disent rien à l'usager ; chacun appelle une réponse différente. */
-function messageFor(code: string | undefined): string {
+function messageFor(code: string | undefined, detail?: string): string {
   if (code === 'not-allowed' || code === 'service-not-allowed')
     return 'Le micro n’est pas autorisé. Ouvrez les réglages de votre téléphone pour l’activer.';
   if (code === 'no-speech')
     return 'Aucune voix entendue. Réessayez en parlant plus près du micro.';
   if (code === 'network')
     return 'La reconnaissance vocale a besoin d’une connexion pour fonctionner.';
+  if (code === 'audio-capture')
+    return 'Le micro n’est pas disponible. Vérifiez qu’aucune autre application ne l’utilise.';
+  if (code === 'recognition-busy')
+    return 'La reconnaissance vocale est déjà utilisée. Attendez un instant puis réessayez.';
   if (code === 'language-not-supported')
     return 'La dictée n’est pas disponible dans cette langue sur cet appareil.';
+  if (detail?.toLowerCase().includes('simulator'))
+    return 'La dictée n’est pas disponible dans ce simulateur. Vérifiez-la sur un iPhone avec le micro autorisé.';
   return 'La dictée n’a pas fonctionné. Vous pouvez écrire votre question.';
+}
+
+function startFailureMessage(error: unknown): string {
+  const detail = error instanceof Error ? error.message.toLowerCase() : '';
+  if (
+    detail.includes('nsmicrophoneusagedescription') ||
+    detail.includes('nsspeechrecognitionusagedescription') ||
+    detail.includes('native module')
+  )
+    return 'La dictée nécessite une version plus récente de l’application.';
+  if (detail.includes('simulator'))
+    return 'La dictée n’est pas disponible dans ce simulateur. Vérifiez-la sur un iPhone avec le micro autorisé.';
+  return 'La dictée n’a pas fonctionné. Vérifiez les autorisations Micro et Reconnaissance vocale, puis réessayez.';
 }

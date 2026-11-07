@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { ThemedText } from './themed-text';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { PrimaryButton } from './primary-button';
 
 export function AssistantPromptCard() {
   const theme = useTheme();
@@ -23,22 +25,16 @@ export function AssistantPromptCard() {
       <ThemedText type="sectionTitle" accessibilityRole="header">
         Votre assistant administratif
       </ThemedText>
-      <ThemedText type="label" themeColor="turquoiseTintText">
-        Bientôt disponible sur mobile
-      </ThemedText>
       <ThemedText themeColor="textSecondary">
-        L’assistant vous aidera à comprendre vos démarches et à préparer vos
+        L’assistant vous aide à comprendre vos démarches et à préparer vos
         documents, étape par étape.
       </ThemedText>
-      <View
-        style={[styles.notice, { backgroundColor: theme.backgroundElement }]}
+      <PrimaryButton
+        icon="chatbubble-ellipses-outline"
+        onPress={() => router.push('/assistant')}
       >
-        <ThemedText themeColor="textSecondary">
-          La conversation n’est pas encore disponible dans l’application. Vous
-          pouvez déjà organiser vos échéances dans le planificateur et trouver
-          un organisme dans l’annuaire.
-        </ThemedText>
-      </View>
+        Demander à l’assistant
+      </PrimaryButton>
     </View>
   );
 }
@@ -58,5 +54,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  notice: { borderRadius: 10, padding: Spacing.three },
 });

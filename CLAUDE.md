@@ -24,18 +24,21 @@ nouveaux identifiants de signature côté EAS.
 
 ## Décisions utilisateur — 5 septembre 2026
 
-- **Périmètre : application mobile uniquement**, dans `bycarl-app-aavie`, et son projet Supabase. Ne pas consulter ni modifier le site, sa base ou son serveur sans accord explicite préalable. La cohérence graphique avec le site n'autorise aucune intervention sur celui-ci.
+- **Périmètre : application mobile uniquement**, dans `bycarl-app-aavie`. Le site peut être lu pour vérifier le contrat de son API mobile fermée, mais ne doit jamais être modifié depuis ce dépôt.
 - **Proposition A « L’essentiel » validée** pour l’accueil public. Référence : [directions-mobile.html](design/propositions/directions-mobile.html), variante A. L’utilisateur a refusé la simple recoloration et la longue liste de cartes uniformes : il veut une nouvelle composition moderne.
 - **Accueil public distinct de l’espace utilisateur** : `/` présente AAVIE à tous ; seuls `/a-propos`, `/connexion` et `/inscription` sont également publics. La route technique `/auth/callback` est également accessible pour terminer la confirmation d’e-mail. Les services restent derrière l’authentification. Ne pas placer de services utilisables ni de données personnelles sur l’accueil public.
 - **Composition A**, implémentée dans [src/app/index.tsx](src/app/index.tsx) : petit logo officiel et lien « À propos », illustration native de deux cartes décalées sur un disque turquoise doux, titre « Moins de papiers. Plus de sérénité. », description courte, mention Guyane. Un seul bouton plein « Créer mon compte » et un lien « Déjà un compte ? Se connecter ». Aucun catalogue de huit cartes sur cette page.
 - Le titre éditorial de cet accueil utilise une taille spécifique (33–38), distincte des titres fonctionnels des autres écrans. Conserver la police système, le thème sombre, les zones sûres, les cibles tactiles de 48 points minimum et le défilement sur petit écran/grands caractères. L’illustration est décorative, masquée aux lecteurs d’écran et retirée aux très grandes tailles de texte.
 - **Extension approuvée aux écrans connectés** : direction A conservée. L’accueil connecté présente désormais l’assistant dans l’encart bleu principal, avec saisie et dictée d’une question. Cette question reste locale : le service IA n’est pas branché. Les accès rapides et échéances réelles restent disponibles.
-- Le catalogue complet est dans `/services` (`src/app/(tabs)/services.tsx`), sous `Stack.Protected`, avec les trois groupes « Se faire aider », « M’organiser », « M’informer ». Sur téléphone, la navigation conserve Accueil / Services / Agenda / Compte ; Ressources et Annuaire restent des routes masquées de cette barre et s’ouvrent depuis Services. Sur tablette, la barre basse est remplacée par un sidebar persistant contenant tous les services.
+- Le catalogue complet est dans `/services` (`src/app/(tabs)/services.tsx`), sous `Stack.Protected`, avec les trois groupes « Se faire aider », « M’organiser », « M’informer ». Sur téléphone, la barre basse est **Accueil / Assistant / Services / Compte** (décision utilisateur du 6 novembre 2026), et l'application s'ouvre sur l'Accueil. Planificateur, Ressources et Annuaire vivent dans la pile protégée, hors des onglets natifs, et s’ouvrent depuis Services avec un retour explicite. ⚠️ Ne pas les déclarer comme `NativeTabs.Trigger hidden` : Expo Native Tabs ignore alors la navigation vers leurs cartes. Sur tablette, la barre basse est remplacée par un sidebar persistant contenant tous les services.
 - Le mode tablette est déterminé par le plus petit côté de l’écran (au moins 600 points), et non par la largeur seule, afin de ne pas traiter un téléphone en paysage comme une tablette.
 - Les écrans Ressources, Annuaire, Compte et Planificateur reprennent la composition aérée, les titres éditoriaux, les surfaces turquoise douces et les arrondis de la direction A. Le Planificateur affiche une synthèse des échéances à venir et en retard, puis des filtres À venir / En retard / Toutes ; son formulaire sert à l’ajout comme à la modification, avec confirmation avant suppression. Les échéances sont présentées en lignes avec un pavé date, via `reminder-row.tsx`, partagé avec les notifications. Les ressources indisponibles restent annoncées « En préparation » sans contenu fictif.
+- Les écrans connectés n'affichent qu'un titre principal. `PageHeader` ne porte plus de sur-titre en capitales ni d'icône décorative répétée ; connexion et inscription ne répètent pas le titre de leur barre dans le formulaire.
+- Un état vide ou d'erreur doit indiquer l'action suivante et la déclencher réellement. Sur l'accueil, une échéance passée prime sur le message d'absence de dates futures : ne jamais afficher deux conclusions contradictoires.
 - **Authentification mobile actuelle : Supabase Auth**, via `signInWithPassword`, `signUp` et `onAuthStateChange` dans [auth-context.tsx](src/context/auth-context.tsx). Les utilisateurs sont dans `auth.users`. Les secrets ne doivent jamais être consignés ici. Un nom d’adresse contenant « admin » ne confère aucun privilège ; seul `app_metadata.role` est lu pour le rôle applicatif.
 - **Confirmation d’e-mail** : flux PKCE configuré dans le client, cible `https://aavieapp.com/app/auth`, retour `aavie://auth/callback`, puis échange du code contre une session. La page de relais et la liste des redirections Supabase sont des dépendances externes à vérifier lors du déploiement ; elles ne sont pas vérifiées par les tests locaux.
-- Les crédits et forfaits ne sont pas encore raccordés aux comptes Supabase ; l’écran mobile l’indique et n’appelle plus `credits.php`. Les données locales sont isolées par identifiant Supabase ; les anciens enregistrements sans propriétaire ne sont pas automatiquement attribués au premier compte connecté.
+- **Inscription mobile** : trois étapes locales (accès, profil, consentement) dans un seul composant afin de conserver les valeurs au retour. La création ne part qu'à la dernière étape avec les identifiants des versions légales actives. Ne jamais remplacer ce contrôle par une simple case client sans identifiants serveur.
+- Les crédits et forfaits du compte unifié sont lus depuis `credits.php`. Les données locales synchronisées restent isolées par identifiant Supabase ; les anciens enregistrements sans propriétaire ne sont pas automatiquement attribués au premier compte connecté.
 
 ## Contexte et mission
 
@@ -67,7 +70,11 @@ nouveaux identifiants de signature côté EAS.
 
 ## Contraintes techniques
 
-- **Multilingue** : français, anglais, portugais créole, espagnol.
+- **Multilingue** : français (référence), anglais, espagnol, portugais et créole haïtien (`ht`,
+  drapeau 🇭🇹). `LocaleProvider` fusionne les phrases mobiles avec le sous-ensemble utilisé des
+  dictionnaires du site ; toute absence retombe sur le français. `tests/i18n.test.cjs` interdit une
+  différence de clés entre langues. Les contenus éditoriaux distants restent dans leur langue
+  d’origine. ⚠️ Le créole haïtien doit encore être relu par un locuteur natif.
 - **Sécurité** : chiffrement des données personnelles, authentification forte (biométrie).
 - **Multiplateforme** : mobile + web (cohérent avec la stack Expo actuelle, voir [AGENTS.md](AGENTS.md)).
 - **Personnalisation** : interface adaptable par utilisateur (fonctionnalités mises en avant selon ses besoins).
@@ -178,8 +185,8 @@ Un changement de compte annule le cycle ; toutes les requêtes filtrent `user_id
 Conflits entre appareils : la dernière écriture reçue par Supabase gagne pour un même
 élément, sans fusion champ par champ entre appareils. Un appareil hors ligne peut donc
 remplacer une version distante en envoyant sa modification ; ce choix est explicite.
-L'annuaire et le catalogue de démarches restent embarqués : aucun contenu du site n'est
-importé automatiquement. L'avancement personnel du formulaire, lui, est synchronisé.
+L'annuaire et les démarches suivies par l'équipe sont lus depuis l'API PHP. Le catalogue de
+formulaires guidés reste embarqué et son avancement personnel reste synchronisé.
 
 Validation locale : `pnpm test:sync` (Node >= 22.13, SQLite réel via `node:sqlite`, transport
 réseau simulé). Vérification du contrat distant :
@@ -187,7 +194,7 @@ réseau simulé). Vérification du contrat distant :
 
 - **Persistance** : comptes et sessions dans Supabase Auth ; données métier locales dans SQLite en natif, avec synchronisation bidirectionnelle des profils, rappels et avancements vers Supabase.
 - **Authentification** : Supabase Auth, stockage de session via `expo-secure-store` en natif et `localStorage` en web. Le renouvellement suit l’état actif de l’application. Les inscriptions demandent une confirmation par e-mail lorsque le projet Supabase l’exige.
-- **Ancienne couche PHP** : `src/lib/api.ts` subsiste mais ne pilote plus la connexion ni les crédits. Ne pas la réactiver sans décision explicite sur le raccordement des comptes.
+- **API PHP mobile** : `src/lib/api.ts` centralise le jeton Bearer du compte unifié et les routes explicitement ouvertes au mobile. Ne jamais appeler une autre route du site.
 - **Le jeton vit dans le Keychain / Keystore** ([src/lib/supabase.ts](src/lib/supabase.ts)), jamais dans un stockage en clair sur natif. Repli `localStorage` sur web, moins sûr, comme partout ailleurs.
 - **Quatre écrans publics, un callback technique public, services protégés** — décalque de la structure du site :
 
@@ -201,7 +208,9 @@ réseau simulé). Vérification du contrat distant :
 
 - **Le gardiennage passe par `Stack.Protected`** ([src/app/_layout.tsx](src/app/_layout.tsx)), mécanisme officiel d'Expo Router (doc « Authentication »). `guard={!isAuthenticated}` / `guard={isAuthenticated}` : quand la session bascule, Expo Router redirige seul. **Ne pas remplacer par un `router.replace` dans un effect** — les effects ne s'exécutent pas au rendu serveur web, la page ressortirait vide. Aucun écran de connexion ne navigue à la main après un succès.
 - ⚠️ **`/` appartient à la zone publique, l'accueil de l'app est `/accueil`** (`(tabs)/accueil.tsx`). Deux fichiers ne peuvent pas revendiquer `/`. Le trigger `NativeTabs` et la barre web ([app-tabs.tsx](src/components/app-tabs.tsx), [app-tabs.web.tsx](src/components/app-tabs.web.tsx)) pointent sur `accueil` — les trois doivent rester cohérents.
-- **Crédits et forfaits** : non raccordés aux comptes mobiles Supabase. L’écran `/credits` est explicatif ; aucun appel à `credits.php`, aucun solde réel et aucun achat intégré ne sont actuellement proposés.
+- **Crédits et forfaits** : `/credits` lit le solde, le forfait et l'historique de `credits.php`,
+  puis affiche l'estimation `remaining_questions` de `ai/quota.php`. Une panne de cette estimation
+  ne doit pas masquer le solde ni l'historique. Aucun achat intégré n'est proposé.
 - ⚠️ **Historique, à ne pas rétablir par erreur** : jusqu'au 2026-09-03 l'app fonctionnait en local pur, sans backend, avec un code PIN optionnel et la règle « ne verrouille JAMAIS au lancement » au nom de l'accessibilité du public en illectronisme (CDC §1-2). Olivier a tranché pour le compte obligatoire aligné sur le site. Le compromis d'accessibilité qui subsiste : `/` et `/a-propos` expliquent le service avant toute création de compte, et l'inscription est courte et annulable à tout moment. La biométrie est désormais un verrou local optionnel de l’espace connecté, distinct de l’identité Supabase.
 - **Session et affichage** : `AuthProvider` restaure la session Supabase. La zone publique reste rendue sans attendre une requête réseau. Sur natif, une session restaurée ne donne accès aux écrans privés qu’après lecture du réglage biométrique et, si celui-ci est activé, déverrouillage.
 
@@ -371,13 +380,13 @@ copie qui sert aux envois automatiques. La supprimer vaut mieux que la ranger.
 - État actuel du dépôt (2026-09-05) :
   - **Compte mobile Supabase** : inscription, connexion, restauration de session et déconnexion via Supabase Auth. Aucun compte partagé automatiquement avec le site.
   - **Zone publique routée** : `/` (accueil), `/a-propos`, `/connexion`, `/inscription`. La route technique `/auth/callback` reste publique ; les services sont derrière `Stack.Protected`.
-  - **Crédits** : écran explicatif ; les crédits et forfaits ne sont pas encore raccordés aux comptes mobiles Supabase.
-  - **Annuaire administratif** ([src/app/(tabs)/annuaire.tsx](<src/app/(tabs)/annuaire.tsx>)) : lit `directory_contacts` dans Supabase (voir « Modules fonctionnels »). La liste embarquée de [src/constants/annuaire.ts](src/constants/annuaire.ts) n'est plus qu'un repli **annoncé à l'écran**.
+  - **Crédits** : solde, forfait et historique réels depuis l'API PHP du site.
+  - **Annuaire administratif** ([src/app/(tabs)/annuaire.tsx](<src/app/(tabs)/annuaire.tsx>)) : lit `contacts.php`. Aucun repli embarqué ne remplace silencieusement les données publiées.
   - **Planificateur et Notifications** ([planificateur.tsx](src/app/planificateur.tsx), [notifications.tsx](src/app/notifications.tsx)) : écrans réels ; rappels persistés dans SQLite et synchronisés avec Supabase. ⚠️ **Aucune notification n'est réellement planifiée** : `expo-notifications` n'est pas installé, l'écran ne fait que lister.
   - **Assistant démarches** ([src/app/demarche/](src/app/demarche/)) : assistant pas-à-pas avec préremplissage, mais **sans IA** — 351 lignes de démarches en dur dans [src/constants/procedures.ts](src/constants/procedures.ts). Le vrai assistant IA (`ai/chat.php`, facturé en crédits) n'est pas branché.
   - **Profil civil** ([user-profile-context.tsx](src/context/user-profile-context.tsx)) : persisté dans SQLite et synchronisé avec `mobile_profiles` dans Supabase.
-  - Seule l’**aide rédactionnelle** reste une page de présentation. Support, budget, coffre-fort, veille, ressources, annuaire, manuel et assistant ont leurs écrans (voir « Modules fonctionnels »).
-  - Pas encore livré côté serveur : la fonction de l’assistant IA, le stockage des fichiers du coffre-fort, l’alimentation des catalogues et des tickets par le site, et le multilingue.
+  - L’aide rédactionnelle a fusionné avec l'assistant et a été retirée des services.
+  - L'assistant, le coffre-fort cloud, les catalogues, les démarches suivies et le support sont fournis par l'API PHP. L'interface mobile est localisée via `LocaleProvider` ; les contenus publiés par l'API ne sont pas traduits côté client.
   - Composants de démo du starter Expo (hint-row, collapsible, web-badge, external-link, l'export `AnimatedIcon` inutilisé) supprimés — plus aucune trace de l'app Expo par défaut dans `src/`.
 
 ## Authentification unifiée avec le site — branchée le 11 octobre 2026
@@ -436,36 +445,54 @@ est nécessaire pour que `supabase.auth.setSession()` accepte le jeton — `GET 
 aucun mot de passe utilisable chez Supabase pour ce compte. Comptes de test créés puis supprimés
 des deux côtés (site et Supabase) à chaque vérification.
 
-## Modules fonctionnels — 20 septembre 2026
+## Modules fonctionnels — raccordement API du 6 novembre 2026
 
-Le mobile parle **exclusivement à Supabase** (Auth + PostgREST + Edge Functions). Aucun appel à l'API PHP du site, aucune session PHP, aucune clé `service_role` ni clé d'IA dans le bundle. Flux : site → MySQL → synchronisation → Supabase → application.
+Le mobile utilise deux sources clairement séparées : Supabase + SQLite pour le profil, le budget,
+le planificateur et leur synchronisation ; l'API PHP du site pour l'assistant, les crédits, la
+veille, les ressources, l'annuaire, les démarches d'équipe, le support et le coffre-fort. Le jeton
+Bearer du compte unifié est ajouté par `apiFetch`. Aucune clé `service_role` ni clé d'IA n'entre
+dans le bundle.
+
+L'Assistant est le deuxième onglet connecté, après l'Accueil. ⚠️ C'est un onglet, pas un écran empilé : pas de bouton retour (un `router.back()` depuis un onglet n'a rien vers quoi revenir, erreur `GO_BACK`). La liste des conversations vit dans le groupe
+`(tabs)` ; les routes `/assistant/nouvelle` et `/assistant/[id]` ouvrent le même fil plein écran.
+Avant un envoi, `ai/quota.php` fournit le coût maximal et le nombre estimé de questions restantes.
+Les PDF et images sont choisis par le sélecteur système au moment de l'action, limités à 4 Mo et
+envoyés en base64 à `ai/chat.php`. Une action proposée n'est jamais exécutée à la lecture : seuls
+les boutons Confirmer/Annuler appellent `ai/tool-confirm.php`. Une réponse `truncated` propose une
+suite explicitement facturée comme une nouvelle question.
+
+Les retours d'interface partagés restent sobres : `LoadingState` affiche un squelette statique,
+les `PrimaryButton` produisent un retour de sélection via `expo-haptics`, et les transitions du
+routeur ainsi que l'animation de démarrage respectent la préférence système `reduceMotion`.
+`expo-haptics` est importé à la demande : un ancien development build qui ne l'embarque pas ne
+doit jamais empêcher l'action. La barre d'état suit le thème et les écrans conservent leurs zones
+sûres. Après création d'une demande de support, le détail affiche une confirmation non bloquante.
 
 Migrations `202609200002` à `202609200006`, tests pgTAP `supabase/tests/database/mobile_modules.test.sql`, jeu fictif local `supabase/seed.sql` (jamais envoyé au projet distant).
 
 | Module      | Route                                                  | Tables Supabase                                                                         | Écriture mobile                                                     | Hors ligne                                   |
 | ----------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | -------------------------------------------- |
 | Budget      | `/budget`                                              | `mobile_budget_entries`                                                                 | oui (RLS propriétaire)                                              | oui, via le moteur de sync (entité `budget`) |
-| Support     | `/support`, `/support/nouvelle`, `/support/[id]`       | `mobile_support_tickets`, `mobile_support_messages`                                     | ouvrir, répondre, clore                                             | non                                          |
-| Veille      | `/veille-reglementaire`, `…/[id]`                      | `regulatory_news`                                                                       | lecture seule                                                       | non                                          |
-| Ressources  | `/ressources` (onglet masqué), `/ressource/[id]`       | `resources`                                                                             | lecture seule                                                       | non                                          |
-| Annuaire    | `/annuaire` (onglet masqué)                            | `directory_contacts`                                                                    | lecture seule                                                       | repli embarqué annoncé                       |
-| Manuel      | `/manuel-utilisateur`, `…/[id]`                        | `mobile_manual_sections`, `mobile_manual_articles`                                      | lecture seule                                                       | non                                          |
-| Coffre-fort | `/coffre-fort`                                         | `mobile_vault_documents` (métadonnées)                                                  | aucune tant que le stockage n'est pas choisi                        | non                                          |
-| Assistant   | `/assistant`, `/assistant/nouvelle`, `/assistant/[id]` | `mobile_assistant_conversations`, `mobile_assistant_messages`, `mobile_credit_balances` | renommer/supprimer une conversation ; **jamais** insérer un message | non                                          |
+| Support     | `/support`, `/support/nouvelle`, `/support/[id]`       | API `support-tickets.php`, `support-ticket.php`                                          | ouvrir, répondre                                                    | non                                          |
+| Veille      | `/veille-reglementaire`, `…/[id]`                      | API `news.php`                                                                           | lecture seule                                                       | non                                          |
+| Ressources  | `/ressources`, `/ressource/[id]`                       | API `resources.php`                                                                      | lecture seule                                                       | non                                          |
+| Annuaire    | `/annuaire`                                            | API `contacts.php`                                                                       | lecture seule                                                       | non                                          |
+| Manuel      | `/manuel-utilisateur`, `…/[id]`                        | généré depuis `site_aavie/src/i18n/*` (`manual`)                                         | aucune ; contenu embarqué                                           | oui                                          |
+| Coffre-fort | `/coffre-fort`                                         | API documents/dossiers + cloud Google Drive/OneDrive                                    | dépôt, téléchargement, déplacement, suppression                     | non                                          |
+| Assistant   | `/assistant`, `/assistant/nouvelle`, `/assistant/[id]` | API `ai/*.php`                                                                           | questions et actions uniquement par les routes contrôlées           | non                                          |
 
 ⚠️ **`mobile_budget_entries` existait déjà en production** : le site l'a créée (schéma v2) sans qu'elle soit versionnée ici. La migration `…0002` en est la copie fidèle et idempotente. Elle doit rester alignée avec le registre du site (`SupabaseEntities`).
 
-⚠️ **Le site n'alimente PAS les catalogues ni les tickets aujourd'hui** : son architecture exclut « tickets » et « contenus publiés » de la synchronisation. Les tables `regulatory_news`, `resources`, `directory_contacts` restent vides tant qu'une décision et un développement côté site ne les remplissent ; les écrans traitent cet état comme un état vide normal. `directory_contacts.description` et `.website` n'existent pas dans MySQL (colonnes nullables ajoutées côté Supabase).
-
-⚠️ **L'assistant n'a pas de service.** La fonction `assistant-chat` (contrat dans `src/lib/assistant.ts`) n'est pas écrite ; sans elle l'envoi répond « indisponible », sans débit. C'est elle qui écrit les messages (`service_role`) : un client qui pourrait insérer ses propres messages fabriquerait de faux échanges passés. Retirer `comingSoon` dans `modules.ts` une fois la fonction déployée. Le solde (`mobile_credit_balances`) est une copie en lecture seule du grand livre du site — l'argent ne se modifie jamais depuis le mobile.
-
-⚠️ **Le coffre-fort ne stocke rien.** `VaultStorage` (`src/lib/vault.ts`) est le seul point d'accroche : l'implémentation par défaut refuse tout. Aucune permission Photos/Fichiers n'est demandée ; une implémentation les demandera au moment d'un import, jamais au lancement. Aucun bucket ni politique de stockage n'est créé.
+⚠️ **Contrat fermé** : seules les routes listées dans `MobileAuth::BEARER_ROUTES` acceptent le jeton
+mobile. Le coffre-fort exige un cloud connecté ; le `409` de `documents.php` sans connexion est un
+état normal. La connexion OAuth se fait dans le navigateur sur le site, jamais dans l'application.
 
 - **Données distantes validées à la lecture** (`remote-values.ts`, `mapXxx`) : une ligne invalide est écartée, jamais affichée à moitié. Les liens ne sont ouverts que s'ils sont en `https:` (`safeExternalUrl`) ; les numéros doivent être composables (`safePhoneNumber`). La recherche assainit le motif (`toIlikePattern`) : virgule et parenthèse d'un filtre `or(...)` PostgREST ne doivent pas venir de l'usager.
+- **Manuel** : `scripts/generate-mobile-i18n.cjs` lit les neuf fiches et les cinq langues du manuel du site, puis produit `site-manual.generated.ts`. Le site reste la source éditoriale ; relancer le générateur après toute modification de son manuel. Les tables Supabase historiques peuvent rester vides et ne sont plus lues par le mobile.
 - **Contenu Markdown** (ressources, manuel) : `simple-markdown.ts` + `RichText`, en composants natifs — jamais du HTML, donc rien à assainir. Aucune dépendance ajoutée.
 - **Socle commun** : `useRemoteList` (pagination par page + ligne témoin, tirer-pour-rafraîchir, délai maximal 15 s, annulation), `useRemoteResource`, `screen-state.tsx` (chargement / erreur / vide), `StackScreen`, `FilterChips`, `SearchField`. L'état « chargement » est **dérivé** du critère de requête (la règle React `set-state-in-effect` interdit de le réinitialiser dans un effet).
-- **Support** : identifiants générés côté client avant l'envoi, violation d'unicité ignorée — un renvoi après coupure ne crée pas de doublon. Privilèges **par colonne** : le mobile ne peut ni choisir un statut initial, ni écrire au nom de l'équipe, ni modifier un message envoyé.
-- **Navigation** : ordre Assistant → Support (→ Aide rédactionnelle, conservée mais en dernier) ; Planificateur → Budget → Coffre-fort ; Veille → Ressources → Annuaire → Manuel. Le sidebar tablette et l'écran Services dérivent tous deux de `SERVICE_GROUPS`.
+- **Support** : le serveur choisit l'identifiant, le statut et la priorité. Le mobile peut ouvrir une demande et répondre, mais ne peut pas la clore car cette méthode n'est pas ouverte au jeton mobile.
+- **Navigation** : ordre Assistant → Support ; Planificateur → Budget → Coffre-fort ; Veille → Ressources → Annuaire → Manuel. Le sidebar tablette et l'écran Services dérivent tous deux de `SERVICE_GROUPS`.
 
 Tests : `pnpm test:modules` (logique pure, mapping de sync du budget, construction des requêtes, idempotence du support), en plus de `test:sync`, `test:router`, `test:lifecycle`. Les tests SQL exigent Docker : `supabase test db`.
 
@@ -475,20 +502,20 @@ Audit du 10 octobre 2026 (voir historique de conversation) : l'inscription mobil
 des quatre textes légaux du site et ne traçait aucun consentement, alors que le site l'exige
 depuis l'inscription. Corrigé (`src/constants/legal.ts`, `inscription.tsx`, `auth-context.tsx`) :
 
-- **Case obligatoire** avant la création du compte, avec lien tappable vers la politique de
-  confidentialité et les conditions d'utilisation (`https://aavieapp.com/confidentialite` et
-  `/conditions-utilisation`, pages publiques du site) — même périmètre que `register.php`, qui
-  n'exige pas les CGV (achat non encore possible depuis l'application).
-- **Preuve horodatée dans les métadonnées Supabase Auth** (`legal_consent_accepted_at`,
-  `legal_consent_documents`), pas un simple booléen : c'est la seule trace possible côté mobile,
-  qui n'appelle jamais l'API PHP du site et ne peut donc pas écrire dans `user_consents`
-  (MySQL). ⚠️ Elle ne porte **pas** de numéro de version : le mobile ne peut pas savoir laquelle
-  des versions successives (`legal_documents`) était active au moment de l'inscription sans
-  appeler l'API du site, ce que l'architecture interdit. Une preuve honnête (date + documents
-  cités) a été préférée à un numéro de version inventé.
+- **Case obligatoire** avant la création du compte, avec liens vers les écrans natifs de la
+  politique de confidentialité et des conditions d'utilisation — même périmètre que
+  `register.php`, qui n'exige pas les CGV (achat non encore possible depuis l'application).
+  Ces écrans lisent les versions actives depuis `GET /legal.php` et rendent leur Markdown avec
+  `RichText`; le navigateur n'est plus ouvert.
+- **Preuve côté site** : l'inscription lit les identifiants actifs via `legal.php`, puis
+  `mobile-register.php` les revalide avant d'écrire le consentement dans MySQL. Le client ne peut
+  donc ni accepter une ancienne version ni inventer un identifiant de document.
 - **Les quatre textes restent accessibles après l'inscription** : section « Vie privée et
-  mentions légales » dans Mon compte (`profil/index.tsx`), quatre liens ouverts dans le
-  navigateur via `openExternalLink`.
+  mentions légales » dans Mon compte (`profil/index.tsx`), avec une route native distincte pour
+  chaque document (`/legal/[type]`). La version et la date d'entrée en vigueur sont affichées.
+- **Langue** : le profil montre une seule ligne de préférence avec la valeur active. Le choix des
+  cinq langues vit dans `/profil/langue`, sous forme de liste radio accessible ; il s'applique et
+  se persiste immédiatement comme auparavant.
 
 ⚠️ Reste hors périmètre de ce correctif (voir l'audit complet) : aucun service IA, aucun
 coffre-fort, aucun forfait/crédit, aucun export ou suppression RGPD en self-service depuis

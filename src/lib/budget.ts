@@ -1,4 +1,5 @@
 import type { BudgetEntry, BudgetKind } from './sync-types';
+import { getIntlLocale } from '@/i18n/runtime';
 
 export type { BudgetEntry, BudgetKind } from './sync-types';
 
@@ -44,11 +45,11 @@ export function parseAmountToCents(input: string): number | null {
 
 /** 123456 → « 1 234,56 € » (espaces insécables : le montant ne se coupe pas en fin de ligne). */
 export function formatCents(cents: number, sign?: '+' | '−'): string {
-  const whole = Math.floor(Math.abs(cents) / 100);
-  const fraction = String(Math.abs(cents) % 100).padStart(2, '0');
-  const grouped = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
   const prefix = cents < 0 ? '−' : (sign ?? '');
-  return `${prefix}${grouped},${fraction} €`;
+  const amount = new Intl.NumberFormat(getIntlLocale(), {
+    style: 'currency', currency: 'EUR', minimumFractionDigits: 2,
+  }).format(Math.abs(cents) / 100);
+  return `${prefix}${amount}`;
 }
 
 export type BudgetPeriod = 'month' | 'previous' | 'all';

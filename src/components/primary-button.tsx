@@ -5,6 +5,8 @@ import { ThemedText } from './themed-text';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { selectionHaptic } from '@/lib/haptics';
+import { useLocale } from '@/context/locale-context';
 
 type PrimaryButtonProps = {
   onPress: () => void;
@@ -21,14 +23,18 @@ export function PrimaryButton({
   disabled = false,
 }: PrimaryButtonProps) {
   const theme = useTheme();
+  const { translateText } = useLocale();
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        void selectionHaptic();
+        onPress();
+      }}
       disabled={disabled}
       accessibilityState={{ disabled }}
       accessibilityRole="button"
-      accessibilityLabel={children}
+      accessibilityLabel={translateText(children)}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
       {({ pressed }) => (

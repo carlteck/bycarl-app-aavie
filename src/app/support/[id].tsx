@@ -1,8 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import {
-  Alert,
-  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -10,13 +8,13 @@ import {
   View,
 } from 'react-native';
 
-import { OutlineButton } from '@/components/outline-button';
 import { PrimaryButton } from '@/components/primary-button';
 import {
   EmptyState,
   ErrorState,
   InlineError,
   LoadingState,
+  Notice,
 } from '@/components/screen-state';
 import { StackScreen, useListInsets } from '@/components/stack-screen';
 import { SupportStatusBadge } from '@/components/support-status-badge';
@@ -29,7 +27,6 @@ import { useTheme } from '@/hooks/use-theme';
 import { classifyRemoteError, remoteErrorMessage } from '@/lib/remote-error';
 import { asId, formatInstant } from '@/lib/remote-values';
 import {
-  closeTicket,
   MESSAGE_MAX,
   sendMessage,
   STATUS_META,
@@ -67,12 +64,12 @@ function MessageBubble({ message }: { message: SupportMessage }) {
 }
 
 export default function SupportTicketScreen() {
-  const params = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string; created?: string }>();
   const ticketId = asId(params.id);
   return (
     <StackScreen title="Ma demande" backLabel="Support">
       {ticketId ? (
-        <Thread ticketId={ticketId} />
+        <Thread ticketId={ticketId} created={params.created === '1'} />
       ) : (
         <EmptyState
           icon="alert-circle-outline"
@@ -84,7 +81,7 @@ export default function SupportTicketScreen() {
   );
 }
 
-function Thread({ ticketId }: { ticketId: string }) {
+function Thread({ ticketId, created }: { ticketId: string; created: boolean }) {
   const { user } = useAuth();
   const theme = useTheme();
   const insets = useListInsets();
@@ -133,27 +130,6 @@ function Thread({ ticketId }: { ticketId: string }) {
     });
   };
 
-  const confirmClose = () => {
-    const close = () => void run(() => closeTicket(ticket.id));
-    if (Platform.OS === 'web') {
-      if (
-        window.confirm(
-          'Fermer cette demande ? Vous ne pourrez plus y répondre.',
-        )
-      )
-        close();
-      return;
-    }
-    Alert.alert(
-      'Fermer cette demande ?',
-      'Vous ne pourrez plus y répondre. Vous pourrez toujours en ouvrir une nouvelle.',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        { text: 'Fermer', style: 'destructive', onPress: close },
-      ],
-    );
-  };
-
   return (
     <ScrollView
       contentContainerStyle={insets}
@@ -166,6 +142,11 @@ function Thread({ ticketId }: { ticketId: string }) {
         />
       }
     >
+      {created ? (
+        <Notice icon="checkmark-circle-outline">
+          Votre demande a bien été envoyée à l’équipe AAVIE.
+        </Notice>
+      ) : null}
       <View style={styles.summary}>
         <ThemedText type="sectionTitle" accessibilityRole="header">
           {ticket.subject}
@@ -221,9 +202,6 @@ function Thread({ ticketId }: { ticketId: string }) {
           >
             {busy ? 'Envoi en cours…' : 'Envoyer'}
           </PrimaryButton>
-          <OutlineButton icon="lock-closed-outline" onPress={confirmClose}>
-            Fermer la demande
-          </OutlineButton>
         </View>
       )}
     </ScrollView>

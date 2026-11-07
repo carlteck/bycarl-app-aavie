@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useLocale } from '@/context/locale-context';
 
 type Props = {
   value: string;
@@ -19,6 +20,7 @@ export function SearchField({
   label,
 }: Props) {
   const theme = useTheme();
+  const { translateText } = useLocale();
   return (
     <View
       style={[styles.bar, { backgroundColor: theme.backgroundElement }]}
@@ -28,19 +30,19 @@ export function SearchField({
       <TextInput
         value={value}
         onChangeText={onChangeText}
-        placeholder={placeholder}
+        placeholder={translateText(placeholder)}
         placeholderTextColor={theme.textSecondary}
         autoCapitalize="none"
         autoCorrect={false}
         returnKeyType="search"
-        accessibilityLabel={label}
+        accessibilityLabel={translateText(label)}
         style={[styles.input, { color: theme.text }]}
       />
       {value.length > 0 ? (
         <Pressable
           onPress={() => onChangeText('')}
           accessibilityRole="button"
-          accessibilityLabel="Effacer la recherche"
+          accessibilityLabel={translateText('Effacer la recherche')}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={styles.clear}
         >

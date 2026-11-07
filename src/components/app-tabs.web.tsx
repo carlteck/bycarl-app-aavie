@@ -25,14 +25,14 @@ const TABS: TabDef[] = [
     match: (p) => p === '/accueil' || p.startsWith('/demarche'),
   },
   {
+    href: '/assistant',
+    label: 'Assistant',
+    match: (p) => p.startsWith('/assistant'),
+  },
+  {
     href: '/services',
     label: 'Services',
     match: (p) => p.startsWith('/services'),
-  },
-  {
-    href: '/planificateur',
-    label: 'Agenda',
-    match: (p) => p.startsWith('/planificateur'),
   },
   { href: '/profil', label: 'Compte', match: (p) => p.startsWith('/profil') },
 ];

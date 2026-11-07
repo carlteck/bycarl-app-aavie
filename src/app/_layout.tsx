@@ -1,15 +1,26 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import {
+  DarkTheme,
+  DefaultTheme,
+  Stack,
+  ThemeProvider,
+  router,
+} from 'expo-router';
+import { useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { useReducedMotion } from 'react-native-reanimated';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AdaptiveNavigationShell } from '@/components/adaptive-navigation-shell';
 import { BiometricGate } from '@/components/biometric-gate';
 import { UpdateBanner } from '@/components/update-banner';
 import { AuthProvider, useAuth } from '@/context/auth-context';
+import { LocaleProvider } from '@/context/locale-context';
 import { SyncProvider } from '@/context/sync-context';
 import { RemindersProvider } from '@/context/reminders-context';
 import { UserProfileProvider } from '@/context/user-profile-context';
+import { readAssistantDraft } from '@/lib/assistant-draft';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -19,14 +30,20 @@ SplashScreen.preventAutoHideAsync();
  * `Stack.Protected` ici (mécanisme officiel d'Expo Router, doc « Authentication »).
  *
  * `guard` est déclaratif : quand `isAuthenticated` bascule, Expo Router redirige de lui-même vers
- * la première route disponible du groupe devenu actif. Aucun `router.replace` manuel — ceux-ci
- * s'exécuteraient dans un effect, donc jamais au rendu serveur web, et laisseraient une page vide.
+ * la première route disponible du groupe devenu actif. La seule reprise explicite ci-dessous
+ * concerne une question déjà préparée avant une reconnexion à l'assistant.
  */
 function RootNavigator() {
   const { isAuthenticated } = useAuth();
+  const reduceMotion = useReducedMotion();
+  useEffect(() => {
+    if (isAuthenticated && readAssistantDraft()) {
+      router.replace('/assistant/nouvelle');
+    }
+  }, [isAuthenticated]);
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{ headerShown: false, animation: reduceMotion ? 'none' : 'fade_from_bottom' }}>
       <Stack.Protected guard={!isAuthenticated}>
         <Stack.Screen name="index" />
         <Stack.Screen name="connexion" />
@@ -39,11 +56,14 @@ function RootNavigator() {
       <Stack.Protected guard={isAuthenticated}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="demarche" />
+        <Stack.Screen name="planificateur" />
+        <Stack.Screen name="ressources" />
+        <Stack.Screen name="annuaire" />
         <Stack.Screen name="notifications" />
         <Stack.Screen name="credits" />
-        <Stack.Screen name="assistant" />
         <Stack.Screen name="assistant/nouvelle" />
         <Stack.Screen name="assistant/[id]" />
+        <Stack.Screen name="assistant/renommer/[id]" />
         <Stack.Screen name="aide-redactionnelle" />
         <Stack.Screen name="budget" />
         <Stack.Screen name="coffre-fort" />
@@ -57,6 +77,7 @@ function RootNavigator() {
         <Stack.Screen name="manuel-utilisateur/[id]" />
       </Stack.Protected>
       <Stack.Screen name="a-propos" />
+      <Stack.Screen name="legal/[type]" />
       {/* Hors des deux gardes : au retour du lien de confirmation, l'usager n'est pas encore
           connecté, mais la session s'ouvre pendant que l'écran est affiché. Dans le groupe
           public il disparaîtrait à cet instant précis ; dans le groupe protégé il serait
@@ -70,20 +91,23 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <AuthProvider>
-        <SyncProvider>
-          <UserProfileProvider>
-            <RemindersProvider>
-              <AnimatedSplashOverlay />
-              <BiometricGate>
-                <AdaptiveNavigationShell>
-                  <RootNavigator />
-                  <UpdateBanner />
-                </AdaptiveNavigationShell>
-              </BiometricGate>
-            </RemindersProvider>
-          </UserProfileProvider>
-        </SyncProvider>
+        <LocaleProvider>
+          <SyncProvider>
+            <UserProfileProvider>
+              <RemindersProvider>
+                <AnimatedSplashOverlay />
+                <BiometricGate>
+                  <AdaptiveNavigationShell>
+                    <RootNavigator />
+                    <UpdateBanner />
+                  </AdaptiveNavigationShell>
+                </BiometricGate>
+              </RemindersProvider>
+            </UserProfileProvider>
+          </SyncProvider>
+        </LocaleProvider>
       </AuthProvider>
     </ThemeProvider>
   );
