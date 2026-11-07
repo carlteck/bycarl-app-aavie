@@ -30,6 +30,8 @@ import { isAssistantEnabled } from '@/constants/assistant';
 
 const shortcuts = [
   { title: 'Planificateur', icon: 'calendar-outline', href: '/planificateur' },
+  { title: 'Gestion du budget', icon: 'wallet-outline', href: '/budget' },
+  { title: 'Coffre-fort', icon: 'lock-closed-outline', href: '/coffre-fort' },
   { title: 'Annuaire', icon: 'business-outline', href: '/annuaire' },
   { title: 'Tous les services', icon: 'grid-outline', href: '/services' },
 ] as const;
