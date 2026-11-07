@@ -4,6 +4,7 @@ import { ScreenHeaderBar } from '@/components/screen-header-bar';
 import { EmptyState, ErrorState, LoadingState } from '@/components/screen-state';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useAssistantQuota } from '@/hooks/use-assistant';
 import { useRemoteResource } from '@/hooks/use-remote-resource';
 import { fetchCreditsOverview } from '@/lib/credits';
 import { formatInstant } from '@/lib/remote-values';
@@ -11,6 +12,7 @@ import { Spacing } from '@/constants/theme';
 
 export default function CreditsScreen() {
   const credits = useRemoteResource(fetchCreditsOverview);
+  const quota = useAssistantQuota();
   return (
     <ThemedView type="pageBackground" style={styles.screen}>
       <ScreenHeaderBar
@@ -31,6 +33,19 @@ export default function CreditsScreen() {
             {credits.data.planName ? `Forfait ${credits.data.planName} · ` : ''}
             {credits.data.monthlyCredits} crédits attribués chaque mois
           </ThemedText>
+          <View style={styles.estimate}>
+            <ThemedText type="label">Questions estimées restantes</ThemedText>
+            <ThemedText type="sectionTitle">
+              {quota.status === 'loading'
+                ? 'Calcul…'
+                : quota.data?.remainingQuestions === null
+                  ? 'Illimitées'
+                  : quota.data?.remainingQuestions ?? 'Indisponible'}
+            </ThemedText>
+            <ThemedText type="caption" themeColor="textSecondary">
+              Estimation selon le coût maximal actuel d’une question.
+            </ThemedText>
+          </View>
           <ThemedText type="sectionTitle">Historique</ThemedText>
           {credits.data.history.length === 0 ? (
             <EmptyState icon="receipt-outline" title="Aucun mouvement" message="Vos utilisations et attributions de crédits apparaîtront ici." />
@@ -51,6 +66,7 @@ export default function CreditsScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   content: { padding: Spacing.four, gap: Spacing.three },
+  estimate: { gap: Spacing.half },
   entry: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   entryText: { flex: 1, gap: Spacing.half },
 });

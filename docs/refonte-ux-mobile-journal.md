@@ -121,3 +121,19 @@
 - Capture sombre regardée : `/tmp/aavie-current.png`. Elle confirme le rendu complet après redémarrage, la zone sûre supérieure et la barre d’état cohérente avec le thème. Une première capture trop précoce (`/tmp/aavie-lot5-assistant-dark.png`) montrait seulement la surface native avant la fin du chargement du bundle ; les logs Android ne contiennent aucune exception associée.
 - Aucune demande réelle n’a été créée : la confirmation d’écriture n’a donc pas été déclenchée sur le compte de production.
 - Capture thème clair et police 1,3 regardée : `/tmp/aavie-lot5-light-large.png`. Le titre, le quota, le bouton principal, les cartes et la barre basse restent lisibles sans chevauchement ; la bulle « Tools » visible à droite appartient au development build Expo, pas à l’interface AAVIE.
+
+## Lot 6 — crédits lisibles
+
+### Ce qui change
+
+- « Mes crédits » conserve son solde, son forfait et l’historique réel de `credits.php`, et affiche désormais aussi le nombre estimé de questions restantes fourni par `ai/quota.php`.
+- Un compte exonéré est présenté comme « Illimitées ». Si l’estimation est temporairement indisponible, le reste de l’écran demeure accessible et l’état est indiqué honnêtement.
+- L’assistant affichait déjà cette même estimation depuis le lot 1 ; les deux écrans reposent donc sur la même validation `mapAssistantQuota`.
+
+### Contrôles et décisions
+
+- `pnpm exec tsc --noEmit` et `pnpm lint` : réussis, zéro avertissement.
+- `pnpm test:sync`, `test:modules`, `test:router`, `test:lifecycle`, `test:site-auth`, `test:assistant` : réussis.
+- Capture sombre regardée : `/tmp/aavie-lot6-credits-dark.png`. Elle confirme sur les données réelles le solde illimité, l’estimation illimitée, le forfait mensuel et l’historique sans écriture.
+- L’estimation est affichée séparément du solde, car elle dépend du coût maximal courant d’une question et ne constitue pas une promesse de consommation exacte.
+- Capture thème clair et police 1,3 regardée : `/tmp/aavie-lot6-credits-light-large.png`. Le solde, l’estimation, son explication et l’historique s’adaptent sans troncature ni chevauchement. La première prise du même fichier avait précédé la restauration de session et montrait l’accueil public ; elle a été remplacée après chargement, sans connexion manuelle.
