@@ -169,7 +169,15 @@ export default function AccueilScreen() {
               </View>
             </View>
 
-            <View style={[styles.assistantField, { backgroundColor: theme.backgroundElement }]}>
+            <View
+              style={[
+                styles.assistantField,
+                {
+                  backgroundColor: theme.backgroundElement,
+                  borderColor: theme.primary,
+                },
+              ]}
+            >
               <TextInput
                 value={question}
                 onChangeText={setQuestion}
@@ -389,6 +397,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    borderWidth: 1,
     borderRadius: 16,
     paddingLeft: 14,
     paddingRight: 7,
