@@ -502,20 +502,20 @@ Audit du 10 octobre 2026 (voir historique de conversation) : l'inscription mobil
 des quatre textes légaux du site et ne traçait aucun consentement, alors que le site l'exige
 depuis l'inscription. Corrigé (`src/constants/legal.ts`, `inscription.tsx`, `auth-context.tsx`) :
 
-- **Case obligatoire** avant la création du compte, avec lien tappable vers la politique de
-  confidentialité et les conditions d'utilisation (`https://aavieapp.com/confidentialite` et
-  `/conditions-utilisation`, pages publiques du site) — même périmètre que `register.php`, qui
-  n'exige pas les CGV (achat non encore possible depuis l'application).
-- **Preuve horodatée dans les métadonnées Supabase Auth** (`legal_consent_accepted_at`,
-  `legal_consent_documents`), pas un simple booléen : c'est la seule trace possible côté mobile,
-  qui n'appelle jamais l'API PHP du site et ne peut donc pas écrire dans `user_consents`
-  (MySQL). ⚠️ Elle ne porte **pas** de numéro de version : le mobile ne peut pas savoir laquelle
-  des versions successives (`legal_documents`) était active au moment de l'inscription sans
-  appeler l'API du site, ce que l'architecture interdit. Une preuve honnête (date + documents
-  cités) a été préférée à un numéro de version inventé.
+- **Case obligatoire** avant la création du compte, avec liens vers les écrans natifs de la
+  politique de confidentialité et des conditions d'utilisation — même périmètre que
+  `register.php`, qui n'exige pas les CGV (achat non encore possible depuis l'application).
+  Ces écrans lisent les versions actives depuis `GET /legal.php` et rendent leur Markdown avec
+  `RichText`; le navigateur n'est plus ouvert.
+- **Preuve côté site** : l'inscription lit les identifiants actifs via `legal.php`, puis
+  `mobile-register.php` les revalide avant d'écrire le consentement dans MySQL. Le client ne peut
+  donc ni accepter une ancienne version ni inventer un identifiant de document.
 - **Les quatre textes restent accessibles après l'inscription** : section « Vie privée et
-  mentions légales » dans Mon compte (`profil/index.tsx`), quatre liens ouverts dans le
-  navigateur via `openExternalLink`.
+  mentions légales » dans Mon compte (`profil/index.tsx`), avec une route native distincte pour
+  chaque document (`/legal/[type]`). La version et la date d'entrée en vigueur sont affichées.
+- **Langue** : le profil montre une seule ligne de préférence avec la valeur active. Le choix des
+  cinq langues vit dans `/profil/langue`, sous forme de liste radio accessible ; il s'applique et
+  se persiste immédiatement comme auparavant.
 
 ⚠️ Reste hors périmètre de ce correctif (voir l'audit complet) : aucun service IA, aucun
 coffre-fort, aucun forfait/crédit, aucun export ou suppression RGPD en self-service depuis

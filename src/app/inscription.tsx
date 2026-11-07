@@ -22,7 +22,6 @@ import { DEFAULT_LOCALE, LOCALES } from '@/constants/locales';
 import { REGISTRATION_CONSENT_LINKS } from '@/constants/legal';
 import { ApiError, NetworkError } from '@/lib/api';
 import { fetchActiveConsentDocuments } from '@/lib/legal';
-import { openExternalLink } from '@/lib/open-link';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -499,9 +498,7 @@ export default function InscriptionScreen() {
                 J’ai lu et j’accepte la{' '}
                 <ThemedText
                   themeColor="primary"
-                  onPress={() =>
-                    void openExternalLink(REGISTRATION_CONSENT_LINKS[0].url)
-                  }
+                  onPress={() => router.push(REGISTRATION_CONSENT_LINKS[0].route)}
                   accessibilityRole="link"
                 >
                   politique de confidentialité
@@ -509,9 +506,7 @@ export default function InscriptionScreen() {
                 et les{' '}
                 <ThemedText
                   themeColor="primary"
-                  onPress={() =>
-                    void openExternalLink(REGISTRATION_CONSENT_LINKS[1].url)
-                  }
+                  onPress={() => router.push(REGISTRATION_CONSENT_LINKS[1].route)}
                   accessibilityRole="link"
                 >
                   conditions d’utilisation

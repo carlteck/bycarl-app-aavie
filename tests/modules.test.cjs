@@ -103,6 +103,27 @@ const step = (record, name) => record.steps.find(([n]) => n === name);
 
 const UUID = 'a1b2c3d4-0000-4000-8000-000000000001';
 
+test('documents juridiques : la version active est validée avant affichage natif', async () => {
+  const legal = lib('legal.ts');
+  apiRespond = async () => ({
+    documents: [
+      { id: UUID, document_type: 'privacy_policy', version: '2.1', title: 'Confidentialité', content: '# Texte', published_at: '2026-10-01T12:00:00Z' },
+      { id: 'bad', document_type: 'unknown', version: '1', title: 'Invalide', content: 'Non' },
+    ],
+  });
+  const document = await legal.fetchLegalDocument('privacy_policy', new AbortController().signal);
+  assert.deepEqual(document, {
+    id: UUID,
+    type: 'privacy_policy',
+    version: '2.1',
+    title: 'Confidentialité',
+    content: '# Texte',
+    publishedAt: '2026-10-01T12:00:00Z',
+  });
+  assert.equal(legal.isLegalDocumentType('legal_notice'), true);
+  assert.equal(legal.isLegalDocumentType('unknown'), false);
+});
+
 // --- Budget -----------------------------------------------------------------------------------
 test('budget : montants saisis → centimes entiers, sans flottant', () => {
   const { parseAmountToCents } = lib('budget.ts');

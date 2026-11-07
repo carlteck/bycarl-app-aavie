@@ -77,6 +77,7 @@ function RootNavigator() {
         <Stack.Screen name="manuel-utilisateur/[id]" />
       </Stack.Protected>
       <Stack.Screen name="a-propos" />
+      <Stack.Screen name="legal/[type]" />
       {/* Hors des deux gardes : au retour du lien de confirmation, l'usager n'est pas encore
           connecté, mais la session s'ouvre pendant que l'écran est affiché. Dans le groupe
           public il disparaîtrait à cet instant précis ; dans le groupe protégé il serait

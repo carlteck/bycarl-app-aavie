@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
+import { Alert, StyleSheet, Switch, View } from 'react-native';
 
 import { ListRow } from '@/components/list-row';
 import { SectionScreen } from '@/components/section-screen';
@@ -10,7 +11,6 @@ import { useSync } from '@/context/sync-context';
 import { useAuth } from '@/context/auth-context';
 import { AAVIE_SECTIONS } from '@/constants/modules';
 import { LEGAL_LINKS } from '@/constants/legal';
-import { openExternalLink } from '@/lib/open-link';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { LOCALES } from '@/constants/locales';
@@ -25,7 +25,8 @@ export default function ProfilScreen() {
     signOut,
   } = useAuth();
   const theme = useTheme();
-  const { locale, setLocale } = useLocale();
+  const { locale } = useLocale();
+  const activeLocale = LOCALES.find((entry) => entry.code === locale) ?? LOCALES[0];
   const [changingBiometrics, setChangingBiometrics] = useState(false);
   const { status, retry } = useSync();
 
@@ -152,31 +153,26 @@ export default function ProfilScreen() {
           </ThemedView>
 
           <ThemedText type="sectionTitle" accessibilityRole="header">
-            Langue
+            Préférences
           </ThemedText>
-          <View style={styles.locales} accessibilityRole="radiogroup">
-            {LOCALES.map((entry) => {
-              const selected = entry.code === locale;
-              return (
-                <Pressable
-                  key={entry.code}
-                  onPress={() => void setLocale(entry.code)}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected }}
-                  accessibilityLabel={entry.label}
-                  style={[
-                    styles.locale,
-                    {
-                      borderColor: selected ? theme.primary : theme.cardBorder,
-                      backgroundColor: selected ? theme.turquoiseTint : theme.background,
-                    },
-                  ]}
-                >
-                  <ThemedText type="label">{entry.flag} {entry.label}</ThemedText>
-                </Pressable>
-              );
-            })}
-          </View>
+          <ThemedView
+            type="pageBackground"
+            style={[styles.listCard, { borderColor: theme.cardBorder }]}
+          >
+            <ListRow
+              icon="language-outline"
+              label="Langue de l’application"
+              trailing={
+                <View style={styles.languageValue}>
+                  <ThemedText type="caption" themeColor="textSecondary">
+                    {activeLocale.flag} {activeLocale.label}
+                  </ThemedText>
+                  <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
+                </View>
+              }
+              onPress={() => router.push('/profil/langue')}
+            />
+          </ThemedView>
 
           <ThemedText type="sectionTitle" accessibilityRole="header">
             Vie privée et mentions légales
@@ -193,7 +189,7 @@ export default function ProfilScreen() {
                 LEGAL_LINKS.notice,
               ] as const
             ).map((link, index) => (
-              <View key={link.url}>
+              <View key={link.type}>
                 {index > 0 && (
                   <View
                     style={[
@@ -205,7 +201,7 @@ export default function ProfilScreen() {
                 <ListRow
                   icon="document-text-outline"
                   label={link.label}
-                  onPress={() => void openExternalLink(link.url)}
+                  onPress={() => router.push(link.route)}
                 />
               </View>
             ))}
@@ -249,6 +245,5 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
   },
-  locales: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
-  locale: { minHeight: 48, justifyContent: 'center', paddingHorizontal: Spacing.three, borderWidth: 1, borderRadius: 16 },
+  languageValue: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
 });

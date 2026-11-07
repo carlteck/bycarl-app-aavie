@@ -1,6 +1,19 @@
 import type { LocaleCode } from '@/constants/locales';
 
 const rows = [
+  ['Préférences', 'Preferences', 'Preferencias', 'Preferências', 'Preferans'],
+  ['Langue de l’application', 'App language', 'Idioma de la aplicación', 'Idioma da aplicação', 'Lang aplikasyon an'],
+  ['Choisissez votre langue', 'Choose your language', 'Elija su idioma', 'Escolha o seu idioma', 'Chwazi lang ou'],
+  ['La navigation et les fonctions de l’application sont mises à jour immédiatement.', 'Navigation and app features update immediately.', 'La navegación y las funciones de la aplicación se actualizan inmediatamente.', 'A navegação e as funções da aplicação são atualizadas imediatamente.', 'Navigasyon ak fonksyon aplikasyon an mete ajou tousuit.'],
+  ['Les documents juridiques et certains contenus publiés peuvent rester dans leur langue d’origine.', 'Legal documents and some published content may remain in their original language.', 'Los documentos legales y algunos contenidos publicados pueden permanecer en su idioma original.', 'Os documentos jurídicos e alguns conteúdos publicados podem permanecer no idioma original.', 'Dokiman legal ak kèk kontni pibliye ka rete nan lang orijinal yo.'],
+  ['Informations légales', 'Legal information', 'Información legal', 'Informações legais', 'Enfòmasyon legal'],
+  ['Document introuvable', 'Document not found', 'Documento no encontrado', 'Documento não encontrado', 'Dokiman pa jwenn'],
+  ['Ce lien ne correspond à aucun document juridique.', 'This link does not match any legal document.', 'Este enlace no corresponde a ningún documento legal.', 'Esta ligação não corresponde a nenhum documento jurídico.', 'Lyen sa a pa koresponn ak okenn dokiman legal.'],
+  ['Chargement du document…', 'Loading document…', 'Cargando documento…', 'A carregar documento…', 'Ap chaje dokiman an…'],
+  ['Document non publié', 'Document not published', 'Documento no publicado', 'Documento não publicado', 'Dokiman pa pibliye'],
+  ['Aucune version active de ce document n’est disponible.', 'No active version of this document is available.', 'No hay ninguna versión activa de este documento disponible.', 'Não existe uma versão ativa deste documento disponível.', 'Pa gen okenn vèsyon aktif dokiman sa a ki disponib.'],
+  ['Version', 'Version', 'Versión', 'Versão', 'Vèsyon'],
+  ['En vigueur depuis le', 'Effective since', 'En vigor desde el', 'Em vigor desde', 'An vigè depi'],
   ['Que souhaitez-vous faire aujourd’hui ?', 'What would you like to do today?', '¿Qué desea hacer hoy?', 'O que gostaria de fazer hoje?', 'Kisa ou ta renmen fè jodi a?'],
   ['Votre priorité', 'Your priority', 'Su prioridad', 'A sua prioridade', 'Priyorite ou'],
   ['ASSISTANT AAVIE', 'AAVIE ASSISTANT', 'ASISTENTE AAVIE', 'ASSISTENTE AAVIE', 'ASISTAN AAVIE'],
