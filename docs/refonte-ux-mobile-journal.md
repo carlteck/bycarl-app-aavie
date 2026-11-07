@@ -161,3 +161,11 @@
 - Contrôles après correction : `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test:i18n`, `pnpm test:sync`, `pnpm test:modules`, `pnpm test:router`, `pnpm test:lifecycle`, `pnpm test:site-auth` et `pnpm test:assistant` réussis.
 - Les contenus éditoriaux renvoyés par l’API (actualités, ressources, annuaire, démarches, messages de support et conversations) restent dans leur langue d’origine : ils ne sont pas des chaînes d’interface et le mobile ne les traduit pas artificiellement.
 - ⚠️ La traduction créole haïtienne n’a pas été relue par un locuteur natif. Cette relecture reste obligatoire avant de considérer la formulation éditoriale définitive.
+
+## Correction — accueil connecté
+
+- Captures reçues et regardées : `Screenshot iPhone 18 Pro Max 06-11-2026 at 22.24.52.png` et `Screenshot iPhone 18 Pro Max 06-11-2026 at 22.24.59.png`.
+- La grande carte bleue dupliquait l’onglet Assistant, repoussait les informations utiles sous la ligne de flottaison et contenait une seconde carte d’information sans action prioritaire. Elle est remplacée par un bloc compact : question, dictée et accès aux conversations restent disponibles.
+- Les échéances passées ne sont plus rangées sous « À venir ». Elles deviennent une alerte prioritaire en tête de contenu, avec une explication et un accès direct au planificateur. L’échéance reste volontairement présente tant qu’elle n’est pas mise à jour ou supprimée par l’usager.
+- Les prochaines échéances ne sont affichées que lorsqu’elles existent. Les grandes cartes vides contradictoires ont disparu ; un compte sans aucun rappel reçoit seulement une action compacte d’ajout.
+- Contrôles : `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test:i18n`, `pnpm test:sync`, `pnpm test:router` et `pnpm test:lifecycle` réussis. Le simulateur iOS visible dans les captures n’était pas exposé à l’outil de contrôle visuel ; une capture après rechargement reste à regarder.

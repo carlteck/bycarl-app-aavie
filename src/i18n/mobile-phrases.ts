@@ -1,6 +1,14 @@
 import type { LocaleCode } from '@/constants/locales';
 
 const rows = [
+  ['Que souhaitez-vous faire aujourd’hui ?', 'What would you like to do today?', '¿Qué desea hacer hoy?', 'O que gostaria de fazer hoje?', 'Kisa ou ta renmen fè jodi a?'],
+  ['Demandez à l’assistant', 'Ask the assistant', 'Pregunte al asistente', 'Pergunte ao assistente', 'Mande asistan an'],
+  ['Une démarche, un courrier ou une question administrative.', 'A procedure, a letter or an administrative question.', 'Un trámite, una carta o una pregunta administrativa.', 'Um procedimento, uma carta ou uma questão administrativa.', 'Yon demach, yon lèt oswa yon kesyon administratif.'],
+  ['La dictée peut utiliser le service de reconnaissance vocale du téléphone.', 'Dictation may use the phone’s speech recognition service.', 'El dictado puede utilizar el servicio de reconocimiento de voz del teléfono.', 'O ditado pode utilizar o serviço de reconhecimento de voz do telefone.', 'Dikte a ka itilize sèvis rekonesans vwa telefòn nan.'],
+  ['Voir mes conversations', 'View my conversations', 'Ver mis conversaciones', 'Ver as minhas conversas', 'Gade konvèsasyon mwen yo'],
+  ['Prochaines échéances', 'Upcoming deadlines', 'Próximos plazos', 'Próximos prazos', 'Pwochen dat limit yo'],
+  ['Accès rapides', 'Quick access', 'Accesos rápidos', 'Acessos rápidos', 'Aksè rapid'],
+  ['Ajouter une première échéance', 'Add a first deadline', 'Añadir un primer plazo', 'Adicionar um primeiro prazo', 'Ajoute yon premye dat limit'],
   ['Votre compte est exonéré de crédits', 'Your account is exempt from credits', 'Su cuenta está exenta de créditos', 'A sua conta está isenta de créditos', 'Kont ou pa peye kredi'],
   ['Questions illimitées', 'Unlimited questions', 'Preguntas ilimitadas', 'Perguntas ilimitadas', 'Kesyon san limit'],
   ['Que puis-je faire pour vous ?', 'What can I do for you?', '¿Qué puedo hacer por usted?', 'O que posso fazer por si?', 'Kisa mwen ka fè pou ou?'],

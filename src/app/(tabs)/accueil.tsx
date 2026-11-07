@@ -20,7 +20,7 @@ import {
 import { ReminderRow } from '@/components/reminder-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, Palette, Spacing } from '@/constants/theme';
+import { BottomTabInset, Palette } from '@/constants/theme';
 import { useAuth } from '@/context/auth-context';
 import { useReminders } from '@/context/reminders-context';
 import { useTheme } from '@/hooks/use-theme';
@@ -109,49 +109,66 @@ export default function AccueilScreen() {
             </Pressable>
           </View>
           <View style={styles.greeting}>
-            <ThemedText
-              type="caption"
-              themeColor="turquoiseTintText"
-              style={styles.eyebrow}
-            >
-              VOTRE ESPACE, À VOTRE RYTHME
-            </ThemedText>
             <ThemedText accessibilityRole="header" style={styles.title}>
               Bonjour{user?.first_name ? `, ${user.first_name}` : ''}.
             </ThemedText>
             <ThemedText themeColor="textSecondary">
-              On avance une chose après l’autre.
+              Que souhaitez-vous faire aujourd’hui ?
             </ThemedText>
           </View>
-          <View style={[styles.hero, { backgroundColor: theme.primary }]}>
-            <View
-              pointerEvents="none"
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-              style={styles.heroDecoration}
+
+          {isLoaded && overdue > 0 ? (
+            <Pressable
+              onPress={() => router.push('/planificateur')}
+              accessibilityRole="button"
+              accessibilityLabel={`${overdue} échéance${overdue > 1 ? 's' : ''} à vérifier dans le planificateur`}
+              style={({ pressed }) => [
+                styles.priority,
+                {
+                  backgroundColor: theme.coralTint,
+                  borderColor: theme.accent,
+                  opacity: pressed ? 0.72 : 1,
+                },
+              ]}
             >
-              <Ionicons
-                name="chatbubbles-outline"
-                size={86}
-                color={Palette.white}
-              />
-            </View>
-            <View style={styles.heroHeading}>
-              <ThemedText style={styles.heroTitle}>
-                Une question ?{'\n'}On la démêle ensemble.
-              </ThemedText>
-              <View style={styles.heroBadge}>
-                <ThemedText type="caption" style={styles.heroBadgeText}>
-                  {isAssistantEnabled ? 'Assistant' : 'Bientôt'}
+              <View style={styles.priorityIcon}>
+                <Ionicons name="alert-circle-outline" size={24} color={theme.accent} />
+              </View>
+              <View style={styles.flex}>
+                <ThemedText type="label" themeColor="accent">
+                  {overdue} échéance{overdue > 1 ? 's' : ''} à vérifier
+                </ThemedText>
+                <ThemedText type="caption" themeColor="textSecondary">
+                  La date est passée. Ouvrez le planificateur pour la mettre à jour ou la supprimer.
+                </ThemedText>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={theme.accent} />
+            </Pressable>
+          ) : null}
+
+          <View
+            style={[
+              styles.assistantCard,
+              { backgroundColor: theme.background, borderColor: theme.cardBorder },
+            ]}
+          >
+            <View style={styles.assistantHeading}>
+              <View style={[styles.assistantIcon, { backgroundColor: theme.turquoiseTint }]}>
+                <Ionicons
+                  name="chatbubbles-outline"
+                  size={24}
+                  color={theme.turquoiseTintText}
+                />
+              </View>
+              <View style={styles.flex}>
+                <ThemedText type="sectionTitle">Demandez à l’assistant</ThemedText>
+                <ThemedText type="caption" themeColor="textSecondary">
+                  Une démarche, un courrier ou une question administrative.
                 </ThemedText>
               </View>
             </View>
-            <ThemedText style={styles.heroCopy}>
-              Expliquez votre situation avec vos mots. L’assistant traduit
-              l’administratif et rédige vos courriers.
-            </ThemedText>
 
-            <View style={styles.heroField}>
+            <View style={[styles.assistantField, { backgroundColor: theme.backgroundElement }]}>
               <TextInput
                 value={question}
                 onChangeText={setQuestion}
@@ -159,9 +176,9 @@ export default function AccueilScreen() {
                 onSubmitEditing={submitQuestion}
                 returnKeyType="send"
                 placeholder="Posez votre question…"
-                placeholderTextColor={Palette.midGrey}
+                placeholderTextColor={theme.textSecondary}
                 accessibilityLabel="Votre question à l’assistant"
-                style={styles.heroInput}
+                style={[styles.assistantInput, { color: theme.text }]}
               />
               <DictationButton
                 onTranscript={(text) =>
@@ -177,7 +194,7 @@ export default function AccueilScreen() {
                 accessibilityLabel="Envoyer la question à l’assistant"
                 disabled={!question.trim()}
                 style={({ pressed }) => [
-                  styles.heroSend,
+                  styles.assistantSend,
                   {
                     backgroundColor: pressed
                       ? theme.primaryPressed
@@ -193,53 +210,65 @@ export default function AccueilScreen() {
               </Pressable>
             </View>
 
-            {/* La dictée n'est pas locale partout : Android passe par le service de Google, iOS ne
-                reste sur l'appareil que si le modèle de la langue y est installé. Une question à
-                l'assistant contient des informations administratives — il faut le dire. */}
-            {isDictationAvailable && (
-              <ThemedText type="caption" style={styles.heroNotice}>
-                La dictée peut envoyer votre voix au service de reconnaissance
-                de votre téléphone.
-              </ThemedText>
-            )}
-
             {dictationError !== '' && (
-              <ThemedText type="caption" style={styles.heroError}>
+              <ThemedText type="caption" themeColor="accent">
                 {dictationError}
               </ThemedText>
             )}
 
-            {(isAssistantEnabled || answered) && (
-              <View style={styles.heroAnswer}>
-                <Ionicons
-                  name="information-circle-outline"
-                  size={18}
-                  color={Palette.white}
-                />
-                <View style={styles.flex}>
-                  <ThemedText style={styles.heroAnswerText}>
-                    {isAssistantEnabled
-                      ? 'Retrouvez vos échanges avec l’assistant à tout moment.'
-                      : 'L’assistant n’est pas encore disponible dans l’application. Votre question n’a pas été envoyée.'}
-                  </ThemedText>
-                  <Pressable
-                    onPress={() => router.push('/assistant')}
-                    accessibilityRole="link"
-                    style={styles.heroAnswerLink}
-                  >
-                    <ThemedText type="label" style={styles.heroAnswerLinkText}>
-                      {isAssistantEnabled
-                        ? 'Mes conversations →'
-                        : 'Ce qu’il fera →'}
-                    </ThemedText>
-                  </Pressable>
-                </View>
-              </View>
-            )}
+            {isDictationAvailable ? (
+              <ThemedText type="caption" themeColor="textSecondary">
+                La dictée peut utiliser le service de reconnaissance vocale du téléphone.
+              </ThemedText>
+            ) : null}
+
+            {answered && !isAssistantEnabled ? (
+              <ThemedText type="caption" themeColor="accent">
+                L’assistant n’est pas encore disponible. Votre question n’a pas été envoyée.
+              </ThemedText>
+            ) : null}
+
+            {isAssistantEnabled ? (
+              <Pressable
+                onPress={() => router.push('/assistant')}
+                accessibilityRole="link"
+                style={styles.conversationsLink}
+              >
+                <ThemedText type="label" themeColor="primary">
+                  Voir mes conversations
+                </ThemedText>
+                <Ionicons name="arrow-forward" size={18} color={theme.primary} />
+              </Pressable>
+            ) : null}
           </View>
+
+          {isLoaded && upcoming.length > 0 ? (
+            <View style={styles.section}>
+              <View style={styles.sectionHeading}>
+                <ThemedText type="sectionTitle" accessibilityRole="header" style={styles.flex}>
+                  Prochaines échéances
+                </ThemedText>
+                <Pressable
+                  onPress={() => router.push('/planificateur')}
+                  accessibilityRole="link"
+                  style={styles.textLink}
+                >
+                  <ThemedText type="label" themeColor="primary">Tout voir</ThemedText>
+                </Pressable>
+              </View>
+              {upcoming.map((reminder) => (
+                <ReminderRow
+                  key={reminder.id}
+                  reminder={reminder}
+                  onPress={() => router.push('/planificateur')}
+                />
+              ))}
+            </View>
+          ) : null}
+
           <View style={styles.section}>
             <ThemedText type="sectionTitle" accessibilityRole="header">
-              À portée de main
+              Accès rapides
             </ThemedText>
             <View
               style={[styles.shortcuts, fontScale >= 1.5 && styles.stacked]}
@@ -274,85 +303,18 @@ export default function AccueilScreen() {
               ))}
             </View>
           </View>
-          <View style={styles.section}>
-            <View style={styles.sectionHeading}>
-              <ThemedText
-                type="sectionTitle"
-                accessibilityRole="header"
-                style={styles.flex}
-              >
-                À venir
-              </ThemedText>
-              <Pressable
-                onPress={() => router.push('/planificateur')}
-                accessibilityRole="link"
-                style={styles.textLink}
-              >
-                <ThemedText type="label" themeColor="primary">
-                  Tout voir
-                </ThemedText>
-              </Pressable>
-            </View>
-            {!isLoaded ? (
-              <ActivityIndicator
-                color={theme.primary}
-                accessibilityLabel="Chargement des échéances"
-              />
-            ) : (
-              <>
-                {overdue > 0 && (
-                  <Pressable
-                    onPress={() => router.push('/planificateur')}
-                    accessibilityRole="button"
-                    style={styles.overdue}
-                  >
-                    <ThemedText type="label" themeColor="accent">
-                      {overdue} échéance{overdue > 1 ? 's' : ''} passée
-                      {overdue > 1 ? 's' : ''} à vérifier →
-                    </ThemedText>
-                  </Pressable>
-                )}
-                {upcoming.length ? (
-                  upcoming.map((reminder) => (
-                    <ReminderRow
-                      key={reminder.id}
-                      reminder={reminder}
-                      onPress={() => router.push('/planificateur')}
-                    />
-                  ))
-                ) : (
-                  <View
-                    style={[
-                      styles.empty,
-                      { backgroundColor: theme.pageBackground },
-                    ]}
-                  >
-                    <Ionicons
-                      name="sunny-outline"
-                      size={26}
-                      color={theme.turquoiseTintText}
-                    />
-                    <View style={styles.flex}>
-                      <ThemedText type="label">
-                        {overdue > 0
-                          ? 'Aucune autre date à venir.'
-                          : 'La suite est à vous.'}
-                      </ThemedText>
-                      <ThemedText
-                        type="caption"
-                        themeColor="textSecondary"
-                        style={styles.emptyCopy}
-                      >
-                        {overdue > 0
-                          ? 'Commencez par vérifier les échéances passées ci-dessus.'
-                          : 'Ajoutez votre première échéance dans le planificateur.'}
-                      </ThemedText>
-                    </View>
-                  </View>
-                )}
-              </>
-            )}
-          </View>
+          {!isLoaded ? (
+            <ActivityIndicator color={theme.primary} accessibilityLabel="Chargement des échéances" />
+          ) : reminders.length === 0 ? (
+            <Pressable
+              onPress={() => router.push('/planificateur')}
+              accessibilityRole="button"
+              style={styles.addReminder}
+            >
+              <Ionicons name="add-circle-outline" size={20} color={theme.primary} />
+              <ThemedText type="label" themeColor="primary">Ajouter une première échéance</ThemedText>
+            </Pressable>
+          ) : null}
         </View>
       </ScrollView>
     </ThemedView>
@@ -383,82 +345,71 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   greeting: { gap: 8 },
-  eyebrow: { letterSpacing: 1.3, fontWeight: '600' },
   title: {
     fontSize: 32,
     lineHeight: 38,
     fontWeight: '600',
     letterSpacing: -1.1,
   },
-  hero: { borderRadius: 26, padding: 24, gap: 14, overflow: 'hidden' },
-  heroDecoration: {
-    position: 'absolute',
-    right: -12,
-    top: 12,
-    opacity: 0.08,
-    transform: [{ rotate: '12deg' }],
-  },
-  heroTitle: {
-    flex: 1,
-    fontSize: 28,
-    lineHeight: 33,
-    letterSpacing: -0.8,
-    fontWeight: '600',
-    color: Palette.white,
-  },
-  heroCopy: { color: Palette.white, fontSize: 14, lineHeight: 22 },
-  heroHeading: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-  },
-  heroBadge: {
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 999,
-    marginTop: 4,
-  },
-  heroBadgeText: { color: Palette.white, fontWeight: '600' },
-  heroField: {
+  priority: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    backgroundColor: Palette.white,
-    borderRadius: 999,
-    paddingLeft: 18,
-    paddingRight: 6,
-    minHeight: 52,
-    marginTop: 4,
+    gap: 12,
+    borderLeftWidth: 3,
+    borderRadius: 16,
+    padding: 16,
   },
-  heroInput: {
+  priorityIcon: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  assistantCard: {
+    gap: 16,
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 18,
+  },
+  assistantHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  assistantIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  assistantField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 16,
+    paddingLeft: 14,
+    paddingRight: 7,
+    minHeight: 52,
+  },
+  assistantInput: {
     flex: 1,
-    color: Palette.anthracite,
     fontSize: 15,
-    // Hauteur portée par le conteneur : sur Android un TextInput sans hauteur explicite se
-    // recentre mal à côté d'icônes.
     paddingVertical: 0,
   },
-  heroError: { color: Palette.white, marginTop: 4 },
-  heroNotice: { color: 'rgba(255,255,255,0.75)', marginTop: 4 },
-  heroAnswer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    borderRadius: 16,
-    padding: 14,
-    marginTop: 4,
-  },
-  heroAnswerText: { color: Palette.white, fontSize: 14, lineHeight: 20 },
-  heroAnswerLink: { minHeight: 44, justifyContent: 'center' },
-  heroAnswerLinkText: { color: Palette.white, textDecorationLine: 'underline' },
-  heroSend: {
+  assistantSend: {
     width: 38,
     height: 38,
     borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  conversationsLink: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 8,
   },
   section: { gap: 16 },
   sectionHeading: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -476,40 +427,11 @@ const styles = StyleSheet.create({
   },
   shortcutLabel: { textAlign: 'center', fontWeight: '600', flexShrink: 1 },
   textLink: { minHeight: 48, justifyContent: 'center' },
-  overdue: { minHeight: 48, justifyContent: 'center' },
-  empty: {
+  addReminder: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    padding: 20,
-    borderRadius: 22,
-  },
-  emptyCopy: { marginTop: 6, lineHeight: 20 },
-  assistant: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    minHeight: 88,
-    padding: Spacing.four,
-    borderRadius: 22,
-    borderWidth: 1,
-  },
-  assistantIcon: {
-    width: 54,
-    height: 54,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  assistantHeading: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    alignSelf: 'flex-start',
     gap: 8,
-    flexWrap: 'wrap',
-  },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 999,
+    minHeight: 48,
   },
 });
