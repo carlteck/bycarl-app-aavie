@@ -8,6 +8,8 @@ import {
 import { useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { useReducedMotion } from 'react-native-reanimated';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AdaptiveNavigationShell } from '@/components/adaptive-navigation-shell';
@@ -32,6 +34,7 @@ SplashScreen.preventAutoHideAsync();
  */
 function RootNavigator() {
   const { isAuthenticated } = useAuth();
+  const reduceMotion = useReducedMotion();
   useEffect(() => {
     if (isAuthenticated && readAssistantDraft()) {
       router.replace('/assistant/nouvelle');
@@ -39,7 +42,7 @@ function RootNavigator() {
   }, [isAuthenticated]);
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack screenOptions={{ headerShown: false, animation: reduceMotion ? 'none' : 'fade_from_bottom' }}>
       <Stack.Protected guard={!isAuthenticated}>
         <Stack.Screen name="index" />
         <Stack.Screen name="connexion" />
@@ -83,6 +86,7 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <AuthProvider>
         <SyncProvider>
           <UserProfileProvider>

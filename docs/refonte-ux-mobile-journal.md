@@ -92,3 +92,32 @@
 ### Vérification visuelle
 
 - L’émulateur de production étant déjà authentifié, le lien profond public `/inscription` est correctement redirigé par `Stack.Protected` vers l’espace connecté (`/tmp/aavie-lot4-register-dark.png`). Aucun compte réel n’a été créé et aucune session réelle n’a été fermée. Le rendu public des trois étapes reste donc à vérifier sur un development build non authentifié.
+
+## Lot 5 — retours immédiats
+
+### Ce qui change
+
+- Les chargements partagés utilisent un squelette sobre et homogène, avec un libellé annoncé par les technologies d’assistance.
+- Les boutons d’action principaux déclenchent un retour haptique de sélection sur iOS et Android. L’import est différé et l’absence du module dans un ancien development build reste sans effet fonctionnel.
+- La création d’une demande de support affiche une confirmation discrète dans le détail, sans dialogue bloquant.
+- Les transitions de navigation sont courtes et désactivées lorsque la préférence système de réduction des animations est active. L’animation de démarrage est également ignorée dans ce cas.
+- La barre d’état suit le thème clair ou sombre et les écrans continuent d’utiliser les zones sûres existantes.
+
+### Fichiers principaux
+
+`src/components/screen-state.tsx`, `src/components/primary-button.tsx`, `src/components/animated-icon.tsx`, `src/lib/haptics.ts`, `src/app/_layout.tsx`, `src/app/support/nouvelle.tsx`, `src/app/support/[id].tsx`.
+
+### Décisions et limites
+
+- `expo-haptics` est un module Expo officiel, résolu par `expo install` pour SDK 57. Il ne porte aucune donnée et ne demande aucune permission. Un prochain development build devra l’embarquer pour produire la vibration ; l’interface reste utilisable sans lui.
+- Les squelettes restent statiques : ils évitent une animation permanente, consomment moins et respectent naturellement `reduceMotion`.
+- La confirmation de création est portée par un paramètre de navigation éphémère. Un rechargement manuel de cette URL peut la réafficher, sans répéter l’écriture.
+
+### Contrôles
+
+- `pnpm exec tsc --noEmit` : réussi.
+- `pnpm lint` : réussi, zéro avertissement.
+- `pnpm test:sync`, `test:modules`, `test:router`, `test:lifecycle`, `test:site-auth`, `test:assistant` : réussis.
+- Capture sombre regardée : `/tmp/aavie-current.png`. Elle confirme le rendu complet après redémarrage, la zone sûre supérieure et la barre d’état cohérente avec le thème. Une première capture trop précoce (`/tmp/aavie-lot5-assistant-dark.png`) montrait seulement la surface native avant la fin du chargement du bundle ; les logs Android ne contiennent aucune exception associée.
+- Aucune demande réelle n’a été créée : la confirmation d’écriture n’a donc pas été déclenchée sur le compte de production.
+- Capture thème clair et police 1,3 regardée : `/tmp/aavie-lot5-light-large.png`. Le titre, le quota, le bouton principal, les cartes et la barre basse restent lisibles sans chevauchement ; la bulle « Tools » visible à droite appartient au development build Expo, pas à l’interface AAVIE.

@@ -455,6 +455,13 @@ envoyés en base64 à `ai/chat.php`. Une action proposée n'est jamais exécuté
 les boutons Confirmer/Annuler appellent `ai/tool-confirm.php`. Une réponse `truncated` propose une
 suite explicitement facturée comme une nouvelle question.
 
+Les retours d'interface partagés restent sobres : `LoadingState` affiche un squelette statique,
+les `PrimaryButton` produisent un retour de sélection via `expo-haptics`, et les transitions du
+routeur ainsi que l'animation de démarrage respectent la préférence système `reduceMotion`.
+`expo-haptics` est importé à la demande : un ancien development build qui ne l'embarque pas ne
+doit jamais empêcher l'action. La barre d'état suit le thème et les écrans conservent leurs zones
+sûres. Après création d'une demande de support, le détail affiche une confirmation non bloquante.
+
 Migrations `202609200002` à `202609200006`, tests pgTAP `supabase/tests/database/mobile_modules.test.sql`, jeu fictif local `supabase/seed.sql` (jamais envoyé au projet distant).
 
 | Module      | Route                                                  | Tables Supabase                                                                         | Écriture mobile                                                     | Hors ligne                                   |

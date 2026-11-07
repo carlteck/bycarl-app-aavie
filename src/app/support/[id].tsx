@@ -14,6 +14,7 @@ import {
   ErrorState,
   InlineError,
   LoadingState,
+  Notice,
 } from '@/components/screen-state';
 import { StackScreen, useListInsets } from '@/components/stack-screen';
 import { SupportStatusBadge } from '@/components/support-status-badge';
@@ -63,12 +64,12 @@ function MessageBubble({ message }: { message: SupportMessage }) {
 }
 
 export default function SupportTicketScreen() {
-  const params = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string; created?: string }>();
   const ticketId = asId(params.id);
   return (
     <StackScreen title="Ma demande" backLabel="Support">
       {ticketId ? (
-        <Thread ticketId={ticketId} />
+        <Thread ticketId={ticketId} created={params.created === '1'} />
       ) : (
         <EmptyState
           icon="alert-circle-outline"
@@ -80,7 +81,7 @@ export default function SupportTicketScreen() {
   );
 }
 
-function Thread({ ticketId }: { ticketId: string }) {
+function Thread({ ticketId, created }: { ticketId: string; created: boolean }) {
   const { user } = useAuth();
   const theme = useTheme();
   const insets = useListInsets();
@@ -141,6 +142,11 @@ function Thread({ ticketId }: { ticketId: string }) {
         />
       }
     >
+      {created ? (
+        <Notice icon="checkmark-circle-outline">
+          Votre demande a bien été envoyée à l’équipe AAVIE.
+        </Notice>
+      ) : null}
       <View style={styles.summary}>
         <ThemedText type="sectionTitle" accessibilityRole="header">
           {ticket.subject}

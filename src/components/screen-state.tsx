@@ -1,6 +1,6 @@
 import type { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { IconChip } from './icon-chip';
 import { OutlineButton } from './outline-button';
@@ -23,7 +23,11 @@ export function LoadingState({ label = 'Chargement…' }: { label?: string }) {
       accessibilityLabel={label}
       accessibilityLiveRegion="polite"
     >
-      <ActivityIndicator size="large" color={theme.primary} />
+      <View style={styles.skeleton} accessibilityElementsHidden>
+        <View style={[styles.skeletonTitle, { backgroundColor: theme.backgroundElement }]} />
+        <View style={[styles.skeletonLine, { backgroundColor: theme.backgroundElement }]} />
+        <View style={[styles.skeletonShort, { backgroundColor: theme.backgroundElement }]} />
+      </View>
       <ThemedText themeColor="textSecondary">{label}</ThemedText>
     </View>
   );
@@ -183,6 +187,10 @@ const styles = StyleSheet.create({
     padding: Spacing.five,
   },
   text: { textAlign: 'center' },
+  skeleton: { width: '100%', maxWidth: 360, gap: Spacing.two },
+  skeletonTitle: { height: 24, width: '55%', borderRadius: 8 },
+  skeletonLine: { height: 16, width: '100%', borderRadius: 8 },
+  skeletonShort: { height: 16, width: '72%', borderRadius: 8 },
   inline: {
     flexDirection: 'row',
     alignItems: 'center',

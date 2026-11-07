@@ -5,6 +5,7 @@ import { ThemedText } from './themed-text';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { selectionHaptic } from '@/lib/haptics';
 
 type PrimaryButtonProps = {
   onPress: () => void;
@@ -24,7 +25,10 @@ export function PrimaryButton({
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        void selectionHaptic();
+        onPress();
+      }}
       disabled={disabled}
       accessibilityState={{ disabled }}
       accessibilityRole="button"
