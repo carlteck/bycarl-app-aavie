@@ -26,15 +26,17 @@ import { openExternalLink } from '@/lib/open-link';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useLocale } from '@/context/locale-context';
 
 export default function InscriptionScreen() {
   const { register } = useAuth();
+  const { locale: currentLocale, setLocale: setAppLocale } = useLocale();
   const theme = useTheme();
   const safeAreaInsets = useSafeAreaInsets();
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const [accountType, setAccountType] = useState<AccountType>('individual');
-  const [locale, setLocale] = useState(DEFAULT_LOCALE.code);
+  const [locale, setLocale] = useState(currentLocale ?? DEFAULT_LOCALE.code);
   const [company, setCompany] = useState({
     legalName: '',
     legalForm: '',
@@ -313,7 +315,10 @@ export default function InscriptionScreen() {
                   return (
                     <Pressable
                       key={entry.code}
-                      onPress={() => setLocale(entry.code)}
+                      onPress={() => {
+                        setLocale(entry.code);
+                        void setAppLocale(entry.code);
+                      }}
                       accessibilityRole="radio"
                       accessibilityState={{ selected }}
                       accessibilityLabel={entry.label}
@@ -336,11 +341,8 @@ export default function InscriptionScreen() {
                   );
                 })}
               </View>
-              {/* L'interface mobile n'est pas encore traduite : le choix est enregistré sur le
-                  compte, mais les écrans restent en français. */}
               <ThemedText type="caption" themeColor="textSecondary">
-                L’application reste en français pour l’instant ; votre choix
-                s’applique à votre compte mobile.
+                La langue choisie s’applique immédiatement à l’application et à votre compte.
               </ThemedText>
             </View>
 

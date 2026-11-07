@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, Switch, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { ListRow } from '@/components/list-row';
 import { SectionScreen } from '@/components/section-screen';
@@ -13,6 +13,8 @@ import { LEGAL_LINKS } from '@/constants/legal';
 import { openExternalLink } from '@/lib/open-link';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { LOCALES } from '@/constants/locales';
+import { useLocale } from '@/context/locale-context';
 
 export default function ProfilScreen() {
   const {
@@ -23,6 +25,7 @@ export default function ProfilScreen() {
     signOut,
   } = useAuth();
   const theme = useTheme();
+  const { locale, setLocale } = useLocale();
   const [changingBiometrics, setChangingBiometrics] = useState(false);
   const { status, retry } = useSync();
 
@@ -149,6 +152,33 @@ export default function ProfilScreen() {
           </ThemedView>
 
           <ThemedText type="sectionTitle" accessibilityRole="header">
+            Langue
+          </ThemedText>
+          <View style={styles.locales} accessibilityRole="radiogroup">
+            {LOCALES.map((entry) => {
+              const selected = entry.code === locale;
+              return (
+                <Pressable
+                  key={entry.code}
+                  onPress={() => void setLocale(entry.code)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={entry.label}
+                  style={[
+                    styles.locale,
+                    {
+                      borderColor: selected ? theme.primary : theme.cardBorder,
+                      backgroundColor: selected ? theme.turquoiseTint : theme.background,
+                    },
+                  ]}
+                >
+                  <ThemedText type="label">{entry.flag} {entry.label}</ThemedText>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <ThemedText type="sectionTitle" accessibilityRole="header">
             Vie privée et mentions légales
           </ThemedText>
           <ThemedView
@@ -219,4 +249,6 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
   },
+  locales: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
+  locale: { minHeight: 48, justifyContent: 'center', paddingHorizontal: Spacing.three, borderWidth: 1, borderRadius: 16 },
 });

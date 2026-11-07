@@ -5,6 +5,7 @@ import { Alert, AppState, Linking, Platform, Pressable } from 'react-native';
 
 import { requestDictationPermission } from '@/lib/dictation-permission';
 import { Palette } from '@/constants/theme';
+import { getSpeechLocale } from '@/i18n/runtime';
 
 /**
  * ⚠️ Chargement protégé, comme pour `expo-speech`.
@@ -157,7 +158,7 @@ function DictationButtonInner({ onTranscript, onError, color }: Props) {
         life.listening = true;
         setListening(true);
         module.ExpoSpeechRecognitionModule.start({
-          lang: 'fr-FR',
+          lang: getSpeechLocale(),
           interimResults: false,
           continuous: false,
         });

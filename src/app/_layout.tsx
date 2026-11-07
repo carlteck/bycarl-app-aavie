@@ -16,6 +16,7 @@ import { AdaptiveNavigationShell } from '@/components/adaptive-navigation-shell'
 import { BiometricGate } from '@/components/biometric-gate';
 import { UpdateBanner } from '@/components/update-banner';
 import { AuthProvider, useAuth } from '@/context/auth-context';
+import { LocaleProvider } from '@/context/locale-context';
 import { SyncProvider } from '@/context/sync-context';
 import { RemindersProvider } from '@/context/reminders-context';
 import { UserProfileProvider } from '@/context/user-profile-context';
@@ -55,6 +56,9 @@ function RootNavigator() {
       <Stack.Protected guard={isAuthenticated}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="demarche" />
+        <Stack.Screen name="planificateur" />
+        <Stack.Screen name="ressources" />
+        <Stack.Screen name="annuaire" />
         <Stack.Screen name="notifications" />
         <Stack.Screen name="credits" />
         <Stack.Screen name="assistant/nouvelle" />
@@ -88,19 +92,21 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <AuthProvider>
-        <SyncProvider>
-          <UserProfileProvider>
-            <RemindersProvider>
-              <AnimatedSplashOverlay />
-              <BiometricGate>
-                <AdaptiveNavigationShell>
-                  <RootNavigator />
-                  <UpdateBanner />
-                </AdaptiveNavigationShell>
-              </BiometricGate>
-            </RemindersProvider>
-          </UserProfileProvider>
-        </SyncProvider>
+        <LocaleProvider>
+          <SyncProvider>
+            <UserProfileProvider>
+              <RemindersProvider>
+                <AnimatedSplashOverlay />
+                <BiometricGate>
+                  <AdaptiveNavigationShell>
+                    <RootNavigator />
+                    <UpdateBanner />
+                  </AdaptiveNavigationShell>
+                </BiometricGate>
+              </RemindersProvider>
+            </UserProfileProvider>
+          </SyncProvider>
+        </LocaleProvider>
       </AuthProvider>
     </ThemeProvider>
   );

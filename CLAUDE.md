@@ -30,7 +30,7 @@ nouveaux identifiants de signature côté EAS.
 - **Composition A**, implémentée dans [src/app/index.tsx](src/app/index.tsx) : petit logo officiel et lien « À propos », illustration native de deux cartes décalées sur un disque turquoise doux, titre « Moins de papiers. Plus de sérénité. », description courte, mention Guyane. Un seul bouton plein « Créer mon compte » et un lien « Déjà un compte ? Se connecter ». Aucun catalogue de huit cartes sur cette page.
 - Le titre éditorial de cet accueil utilise une taille spécifique (33–38), distincte des titres fonctionnels des autres écrans. Conserver la police système, le thème sombre, les zones sûres, les cibles tactiles de 48 points minimum et le défilement sur petit écran/grands caractères. L’illustration est décorative, masquée aux lecteurs d’écran et retirée aux très grandes tailles de texte.
 - **Extension approuvée aux écrans connectés** : direction A conservée. L’accueil connecté présente désormais l’assistant dans l’encart bleu principal, avec saisie et dictée d’une question. Cette question reste locale : le service IA n’est pas branché. Les accès rapides et échéances réelles restent disponibles.
-- Le catalogue complet est dans `/services` (`src/app/(tabs)/services.tsx`), sous `Stack.Protected`, avec les trois groupes « Se faire aider », « M’organiser », « M’informer ». Sur téléphone, la barre basse est **Accueil / Assistant / Services / Compte** (décision utilisateur du 6 novembre 2026), et l'application s'ouvre sur l'Accueil. Planificateur, Ressources et Annuaire sont des onglets masqués de cette barre et s’ouvrent depuis Services. Sur tablette, la barre basse est remplacée par un sidebar persistant contenant tous les services.
+- Le catalogue complet est dans `/services` (`src/app/(tabs)/services.tsx`), sous `Stack.Protected`, avec les trois groupes « Se faire aider », « M’organiser », « M’informer ». Sur téléphone, la barre basse est **Accueil / Assistant / Services / Compte** (décision utilisateur du 6 novembre 2026), et l'application s'ouvre sur l'Accueil. Planificateur, Ressources et Annuaire vivent dans la pile protégée, hors des onglets natifs, et s’ouvrent depuis Services avec un retour explicite. ⚠️ Ne pas les déclarer comme `NativeTabs.Trigger hidden` : Expo Native Tabs ignore alors la navigation vers leurs cartes. Sur tablette, la barre basse est remplacée par un sidebar persistant contenant tous les services.
 - Le mode tablette est déterminé par le plus petit côté de l’écran (au moins 600 points), et non par la largeur seule, afin de ne pas traiter un téléphone en paysage comme une tablette.
 - Les écrans Ressources, Annuaire, Compte et Planificateur reprennent la composition aérée, les titres éditoriaux, les surfaces turquoise douces et les arrondis de la direction A. Le Planificateur affiche une synthèse des échéances à venir et en retard, puis des filtres À venir / En retard / Toutes ; son formulaire sert à l’ajout comme à la modification, avec confirmation avant suppression. Les échéances sont présentées en lignes avec un pavé date, via `reminder-row.tsx`, partagé avec les notifications. Les ressources indisponibles restent annoncées « En préparation » sans contenu fictif.
 - Les écrans connectés n'affichent qu'un titre principal. `PageHeader` ne porte plus de sur-titre en capitales ni d'icône décorative répétée ; connexion et inscription ne répètent pas le titre de leur barre dans le formulaire.
@@ -70,7 +70,11 @@ nouveaux identifiants de signature côté EAS.
 
 ## Contraintes techniques
 
-- **Multilingue** : français, anglais, portugais créole, espagnol.
+- **Multilingue** : français (référence), anglais, espagnol, portugais et créole haïtien (`ht`,
+  drapeau 🇭🇹). `LocaleProvider` fusionne les phrases mobiles avec le sous-ensemble utilisé des
+  dictionnaires du site ; toute absence retombe sur le français. `tests/i18n.test.cjs` interdit une
+  différence de clés entre langues. Les contenus éditoriaux distants restent dans leur langue
+  d’origine. ⚠️ Le créole haïtien doit encore être relu par un locuteur natif.
 - **Sécurité** : chiffrement des données personnelles, authentification forte (biométrie).
 - **Multiplateforme** : mobile + web (cohérent avec la stack Expo actuelle, voir [AGENTS.md](AGENTS.md)).
 - **Personnalisation** : interface adaptable par utilisateur (fonctionnalités mises en avant selon ses besoins).
@@ -382,7 +386,7 @@ copie qui sert aux envois automatiques. La supprimer vaut mieux que la ranger.
   - **Assistant démarches** ([src/app/demarche/](src/app/demarche/)) : assistant pas-à-pas avec préremplissage, mais **sans IA** — 351 lignes de démarches en dur dans [src/constants/procedures.ts](src/constants/procedures.ts). Le vrai assistant IA (`ai/chat.php`, facturé en crédits) n'est pas branché.
   - **Profil civil** ([user-profile-context.tsx](src/context/user-profile-context.tsx)) : persisté dans SQLite et synchronisé avec `mobile_profiles` dans Supabase.
   - L’aide rédactionnelle a fusionné avec l'assistant et a été retirée des services.
-  - L'assistant, le coffre-fort cloud, les catalogues, les démarches suivies et le support sont fournis par l'API PHP ; le multilingue reste à livrer.
+  - L'assistant, le coffre-fort cloud, les catalogues, les démarches suivies et le support sont fournis par l'API PHP. L'interface mobile est localisée via `LocaleProvider` ; les contenus publiés par l'API ne sont pas traduits côté client.
   - Composants de démo du starter Expo (hint-row, collapsible, web-badge, external-link, l'export `AnimatedIcon` inutilisé) supprimés — plus aucune trace de l'app Expo par défaut dans `src/`.
 
 ## Authentification unifiée avec le site — branchée le 11 octobre 2026

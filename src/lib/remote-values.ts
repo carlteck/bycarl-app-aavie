@@ -1,3 +1,5 @@
+import { getIntlLocale } from '@/i18n/runtime';
+
 /**
  * Validation stricte des lignes distantes : rien de ce qui arrive de Supabase n'est supposé avoir
  * le bon type. Une ligne inexploitable est écartée par l'appelant, jamais affichée à moitié.
@@ -66,21 +68,24 @@ export function asCount(value: unknown): number | null {
     : null;
 }
 
-/** `dd/mm/yyyy` lisible, sans passer par `Date` (pas de décalage de fuseau, cf. planificateur). */
+/** Date calendaire localisée ; midi UTC évite tout changement de jour selon le fuseau. */
 export function formatDay(day: string): string {
   const [y, m, d] = day.split('-');
-  return `${d}/${m}/${y}`;
+  const date = new Date(Date.UTC(Number(y), Number(m) - 1, Number(d), 12));
+  return new Intl.DateTimeFormat(getIntlLocale(), {
+    day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC',
+  }).format(date);
 }
 
 /** Instant ISO affiché à l'heure de l'appareil (celle de l'usager, pas celle du serveur). */
 export function formatInstant(instant: string): string {
   const date = new Date(instant);
   if (!Number.isFinite(date.getTime())) return '';
-  return date.toLocaleString('fr-FR', {
+  return new Intl.DateTimeFormat(getIntlLocale(), {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  });
+  }).format(date);
 }

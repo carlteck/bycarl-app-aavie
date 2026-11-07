@@ -3,11 +3,13 @@ import { useColorScheme } from 'react-native';
 
 import { Colors } from '@/constants/theme';
 import { useTabletLayout } from '@/hooks/use-tablet-layout';
+import { useLocale } from '@/context/locale-context';
 
 export default function AppTabs() {
   const scheme = useColorScheme();
   const colors = Colors[scheme === 'unspecified' ? 'light' : scheme];
   const isTablet = useTabletLayout();
+  const { t } = useLocale();
 
   return (
     <NativeTabs
@@ -21,7 +23,7 @@ export default function AppTabs() {
       labelVisibilityMode="labeled"
     >
       <NativeTabs.Trigger name="accueil">
-        <NativeTabs.Trigger.Label>Accueil</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t('accueil')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf="house"
           md="home"
@@ -30,7 +32,7 @@ export default function AppTabs() {
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="assistant">
-        <NativeTabs.Trigger.Label>Assistant</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t('assistant')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf="bubble.left.and.bubble.right"
           md="chat"
@@ -39,7 +41,7 @@ export default function AppTabs() {
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="services">
-        <NativeTabs.Trigger.Label>Services</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t('services')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf="square.grid.2x2"
           md="apps"
@@ -47,11 +49,8 @@ export default function AppTabs() {
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="planificateur" hidden />
-      <NativeTabs.Trigger name="ressources" hidden />
-      <NativeTabs.Trigger name="annuaire" hidden />
       <NativeTabs.Trigger name="profil">
-        <NativeTabs.Trigger.Label>Compte</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>{t('compte')}</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           sf="person.crop.circle"
           md="account_circle"

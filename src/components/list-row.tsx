@@ -7,6 +7,7 @@ import { ThemedText } from './themed-text';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useLocale } from '@/context/locale-context';
 
 type ListRowProps = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -27,6 +28,7 @@ export function ListRow({
   danger,
 }: ListRowProps) {
   const theme = useTheme();
+  const { translateText } = useLocale();
 
   const content = (
     <View style={styles.row}>
@@ -58,7 +60,7 @@ export function ListRow({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={translateText(label)}
       style={({ pressed }) => pressed && styles.pressed}
     >
       {content}

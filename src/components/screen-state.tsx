@@ -9,18 +9,20 @@ import { ThemedText } from './themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { remoteErrorMessage, type RemoteErrorKind } from '@/lib/remote-error';
+import { useLocale } from '@/context/locale-context';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
 /** Chargement initial. `accessibilityLiveRegion` annonce l'état aux lecteurs d'écran. */
 export function LoadingState({ label = 'Chargement…' }: { label?: string }) {
   const theme = useTheme();
+  const { translateText } = useLocale();
   return (
     <View
       style={styles.center}
       accessible
       accessibilityRole="progressbar"
-      accessibilityLabel={label}
+      accessibilityLabel={translateText(label)}
       accessibilityLiveRegion="polite"
     >
       <View style={styles.skeleton} accessibilityElementsHidden>

@@ -101,6 +101,7 @@ export default function RessourcesScreen() {
         icon="book-outline"
         title="Des repères clairs."
         intro="Pour mieux comprendre, puis avancer."
+        onBack={() => router.back()}
       />
       <FlatList
         style={{ backgroundColor: theme.background }}

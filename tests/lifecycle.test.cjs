@@ -57,6 +57,7 @@ function harness(file, dependencies) {
   const modules = {
     ...dependencies,
     react,
+    '@/i18n/runtime': { getSpeechLocale: () => 'fr-FR' },
     'react/jsx-runtime': {
       jsx: (type, props) => ({ type, props }),
       jsxs: (type, props) => ({ type, props }),

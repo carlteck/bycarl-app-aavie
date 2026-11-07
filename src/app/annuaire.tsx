@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { router } from 'expo-router';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { AnnuaireEntryCard } from '@/components/annuaire-entry-card';
@@ -18,6 +19,7 @@ import { useAnnuaire } from '@/hooks/use-catalogs';
 import { usePullToRefresh } from '@/hooks/use-pull-to-refresh';
 import { useTheme } from '@/hooks/use-theme';
 import { normalize } from '@/lib/manual';
+import { useLocale } from '@/context/locale-context';
 
 const ALL = '__all__';
 const EMPTY_ENTRIES: AnnuaireEntry[] = [];
@@ -34,6 +36,8 @@ function categoriesOf(entries: readonly AnnuaireEntry[]): string[] {
 
 export default function AnnuaireScreen() {
   const theme = useTheme();
+  const { intlLocale, translateText } = useLocale();
+  const number = useMemo(() => new Intl.NumberFormat(intlLocale), [intlLocale]);
   const insets = useTabListInsets();
   const directory = useAnnuaire();
   const { refreshing, onRefresh } = usePullToRefresh(directory.reload);
@@ -74,6 +78,7 @@ export default function AnnuaireScreen() {
         icon="business-outline"
         title="Les bons contacts."
         intro="Trouvez le bon interlocuteur pour avancer."
+        onBack={() => router.back()}
       />
       <FlatList
         style={{ backgroundColor: theme.background }}
@@ -118,7 +123,8 @@ export default function AnnuaireScreen() {
                 themeColor="textSecondary"
                 accessibilityLiveRegion="polite"
               >
-                {results.length} organisme{results.length > 1 ? 's' : ''}
+                {number.format(results.length)}{' '}
+                {translateText(results.length > 1 ? 'organismes' : 'organisme')}
               </ThemedText>
             ) : null}
           </View>

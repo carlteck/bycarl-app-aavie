@@ -55,6 +55,7 @@ import {
   setAssistantDraft,
   shouldSendAssistantDraft,
 } from '@/lib/assistant-draft';
+import { useLocale } from '@/context/locale-context';
 
 const SUGGESTIONS = [
   'Comment renouveler ma carte d’identité ?',
@@ -183,6 +184,7 @@ function ConnectedAssistantThread({
   conversationId: string | null;
 }) {
   const theme = useTheme();
+  const { translateText } = useLocale();
   const { signOut } = useAuth();
   const insets = useSafeAreaInsets();
   const thread = useAssistantThread(conversationId);
@@ -433,9 +435,9 @@ function ConnectedAssistantThread({
                 {SUGGESTIONS.map((suggestion) => (
                   <Pressable
                     key={suggestion}
-                    onPress={() => setDraft(suggestion)}
+                    onPress={() => setDraft(translateText(suggestion))}
                     accessibilityRole="button"
-                    accessibilityLabel={`Suggestion : ${suggestion}`}
+                    accessibilityLabel={translateText(suggestion)}
                     style={[
                       styles.suggestion,
                       {
@@ -511,7 +513,7 @@ function ConnectedAssistantThread({
               maxLength={QUESTION_MAX}
               multiline
               editable={!sending && !exhausted}
-              placeholder="Posez votre question…"
+              placeholder={translateText('Posez votre question…')}
               placeholderTextColor={theme.textSecondary}
               accessibilityLabel="Votre question à l’assistant"
               style={[
@@ -567,7 +569,7 @@ function ConnectedAssistantThread({
           ))}
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Joindre une photo ou un PDF"
+            accessibilityLabel={translateText('Joindre une photo ou un PDF')}
             onPress={() => void pickAttachment()}
             style={styles.attachButton}
           >

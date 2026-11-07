@@ -27,6 +27,7 @@ import {
   type ManualArticleSummary,
   type ManualSection,
 } from '@/lib/manual';
+import { useLocale } from '@/context/locale-context';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -94,6 +95,8 @@ function ArticleRow({
 
 export default function ManuelUtilisateurScreen() {
   const manual = useManual();
+  const { intlLocale, translateText } = useLocale();
+  const number = useMemo(() => new Intl.NumberFormat(intlLocale), [intlLocale]);
   const { refreshing, onRefresh } = usePullToRefresh(manual.reload);
   const insets = useListInsets();
   const [query, setQuery] = useState('');
@@ -175,7 +178,8 @@ export default function ManuelUtilisateurScreen() {
                 themeColor="textSecondary"
                 accessibilityLiveRegion="polite"
               >
-                {rows.length} résultat{rows.length > 1 ? 's' : ''}
+                {number.format(rows.length)}{' '}
+                {translateText(rows.length > 1 ? 'résultats' : 'résultat')}
               </ThemedText>
             ) : null}
           </View>

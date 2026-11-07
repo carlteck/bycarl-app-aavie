@@ -72,7 +72,8 @@
     "test:router": "node --test tests/router-linking.test.cjs",
     "test:lifecycle": "node --test tests/lifecycle.test.cjs",
     "test:site-auth": "node --test tests/site-auth.test.cjs",
-    "test:assistant": "node --test tests/assistant-request.test.cjs tests/assistant-initial-message.test.cjs tests/modules.test.cjs tests/api.test.cjs"
+    "test:assistant": "node --test tests/assistant-request.test.cjs tests/assistant-initial-message.test.cjs tests/modules.test.cjs tests/api.test.cjs",
+    "test:i18n": "node --test tests/i18n.test.cjs"
   },
   "private": true
 }

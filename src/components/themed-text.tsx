@@ -1,7 +1,9 @@
+import { Children } from 'react';
 import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
 
 import { Fonts, ThemeColor, TypeScale } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useLocale } from '@/context/locale-context';
 
 /**
  * Échelle typographique de la charte mobile (§04) : `screenTitle` (titre d'écran),
@@ -27,9 +29,11 @@ export function ThemedText({
   style,
   type = 'body',
   themeColor,
+  children,
   ...rest
 }: ThemedTextProps) {
   const theme = useTheme();
+  const { translateText } = useLocale();
   const resolvedColor =
     themeColor ?? (type === 'linkPrimary' ? 'primary' : 'text');
 
@@ -49,7 +53,11 @@ export function ThemedText({
         style,
       ]}
       {...rest}
-    />
+    >
+      {Children.map(children, (child) =>
+        typeof child === 'string' ? translateText(child) : child,
+      )}
+    </Text>
   );
 }
 

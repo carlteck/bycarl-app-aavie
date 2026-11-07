@@ -137,3 +137,27 @@
 - Capture sombre regardée : `/tmp/aavie-lot6-credits-dark.png`. Elle confirme sur les données réelles le solde illimité, l’estimation illimitée, le forfait mensuel et l’historique sans écriture.
 - L’estimation est affichée séparément du solde, car elle dépend du coût maximal courant d’une question et ne constitue pas une promesse de consommation exacte.
 - Capture thème clair et police 1,3 regardée : `/tmp/aavie-lot6-credits-light-large.png`. Le solde, l’estimation, son explication et l’historique s’adaptent sans troncature ni chevauchement. La première prise du même fichier avait précédé la restauration de session et montrait l’accueil public ; elle a été remplacée après chargement, sans connexion manuelle.
+
+## Lot 7 — interface multilingue
+
+### Ce qui change
+
+- Le français reste la langue de référence. Anglais, espagnol, portugais et créole haïtien utilisent des dictionnaires à parité contrôlée ; une phrase absente retombe toujours sur le français.
+- L’ancien code `gcr` et le drapeau guyanais sont remplacés par `ht`, « Kreyòl ayisyen » et le drapeau haïtien. Une ancienne préférence `gcr` est migrée localement vers `ht`.
+- La langue peut être choisie à l’inscription et changée depuis Compte. Le choix est stocké sur l’appareil et s’applique immédiatement à la navigation, aux libellés partagés et aux écrans raccordés.
+- Les phrases communes avec le site sont générées depuis ses dictionnaires versionnés, puis filtrées aux seules chaînes réellement utilisées par le mobile afin de ne pas alourdir inutilement le bundle. Les phrases propres au mobile complètent ce socle.
+- Dates, heures et montants utilisent `Intl` avec la locale active. Dictée et lecture à voix haute demandent aussi la langue correspondante au module natif.
+
+### Fichiers principaux et contrôles
+
+`src/context/locale-context.tsx`, `src/i18n/`, `src/constants/locales.ts`, `ThemedText`, les composants de formulaire et de navigation, `remote-values.ts`, `budget.ts`, `scripts/generate-mobile-i18n.cjs`, `tests/i18n.test.cjs`.
+
+- `pnpm test:i18n` vérifie la parité exacte des clés françaises dans les quatre autres langues, les phrases partagées, les phrases mobiles, le code `ht`, le drapeau 🇭🇹 et le repli français.
+- Le harnais `test:lifecycle` simule la locale vocale ; les 10 scénarios biométrie/dictée passent après l’ajout du runtime i18n.
+- Captures sombres regardées : `/tmp/aavie-lot7-profile-locales-dark.png` (cinq langues et drapeaux), `/tmp/aavie-lot7-profile-ht-dark.png` (navigation et mentions légales en créole), `/tmp/aavie-lot7-assistant-ht-dark.png` (conversation sans écriture), `/tmp/aavie-lot7-services-ht-dark.png` (catalogue en lecture seule).
+- Contrôle complémentaire des services : Planificateur, Centre de ressources, Annuaire et Manuel ont été ouverts et regardés en créole (`/tmp/aavie-lot7-planificateur-ht-dark.png`, `/tmp/aavie-lot7-ressources-ht-dark.png`, `/tmp/aavie-lot7-annuaire-ht-dark.png`, `/tmp/aavie-lot7-manuel-utilisateur-ht-dark.png`). Les contenus éditoriaux restent en français, tandis que titres, recherche, filtres, actions et états appartiennent à l’interface traduite.
+- La vérification a révélé que les cartes Planificateur, Ressources et Annuaire ne naviguaient pas : un onglet natif marqué `hidden` n’est pas une route empilable. Ces trois écrans ont été déplacés hors du groupe `(tabs)` vers la pile protégée et disposent d’un retour « Services ». Capture de reproduction : `/tmp/aavie-services-plan-tap.png` ; capture après correction : `/tmp/aavie-services-plan-tap-fixed.png`.
+- Les cartes Assistant, Accompagnement, Planificateur, Budget, Coffre-fort, Veille, Centre de ressources, Annuaire et Manuel ont été rapprochées de leurs routes déclarées. Le Manuel était déjà une route de pile ; les trois écrans déplacés suivent désormais le même modèle.
+- Contrôles après correction : `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test:i18n`, `pnpm test:sync`, `pnpm test:modules`, `pnpm test:router`, `pnpm test:lifecycle`, `pnpm test:site-auth` et `pnpm test:assistant` réussis.
+- Les contenus éditoriaux renvoyés par l’API (actualités, ressources, annuaire, démarches, messages de support et conversations) restent dans leur langue d’origine : ils ne sont pas des chaînes d’interface et le mobile ne les traduit pas artificiellement.
+- ⚠️ La traduction créole haïtienne n’a pas été relue par un locuteur natif. Cette relecture reste obligatoire avant de considérer la formulation éditoriale définitive.

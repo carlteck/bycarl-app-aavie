@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 
 import { PrimaryButton } from '@/components/primary-button';
 import { PageHeader } from '@/components/page-header';
@@ -22,6 +23,7 @@ import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { todayISO } from '@/lib/reminder-date';
 import type { Reminder } from '@/constants/reminders';
+import { useLocale } from '@/context/locale-context';
 
 type FormState = 'hidden' | 'new' | string;
 type Filter = 'upcoming' | 'overdue' | 'all';
@@ -69,6 +71,8 @@ export default function PlanificateurScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const safeAreaInsets = useSafeAreaInsets();
   const theme = useTheme();
+  const { intlLocale, translateText } = useLocale();
+  const number = useMemo(() => new Intl.NumberFormat(intlLocale), [intlLocale]);
 
   const today = todayISO();
   const { upcoming, overdue } = useMemo(() => {
@@ -125,6 +129,7 @@ export default function PlanificateurScreen() {
         icon="calendar-outline"
         title="Planificateur"
         intro="Vos rendez-vous et vos dates importantes au même endroit."
+        onBack={() => router.back()}
       />
       <ScrollView
         ref={scrollRef}
@@ -171,11 +176,11 @@ export default function PlanificateurScreen() {
                 <ThemedText style={styles.overviewTitle}>
                   {upcoming.length === 0
                     ? 'Votre agenda est libre.'
-                    : `${upcoming.length} échéance${upcoming.length > 1 ? 's' : ''} à venir.`}
+                    : `${number.format(upcoming.length)} ${translateText(upcoming.length > 1 ? 'échéances à venir.' : 'échéance à venir.')}`}
                 </ThemedText>
                 <ThemedText themeColor="textSecondary">
                   {overdue.length > 0
-                    ? `${overdue.length} échéance${overdue.length > 1 ? 's sont' : ' est'} à vérifier.`
+                    ? `${number.format(overdue.length)} ${translateText(overdue.length > 1 ? 'échéances sont à vérifier.' : 'échéance est à vérifier.')}`
                     : 'Tout est à jour pour le moment.'}
                 </ThemedText>
                 <View style={styles.metrics}>
