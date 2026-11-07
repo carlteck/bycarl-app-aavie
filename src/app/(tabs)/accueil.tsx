@@ -10,7 +10,6 @@ import {
   StyleSheet,
   TextInput,
   View,
-  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -20,7 +19,7 @@ import {
 import { ReminderRow } from '@/components/reminder-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, CardShadow, Palette } from '@/constants/theme';
+import { BottomTabInset, Palette } from '@/constants/theme';
 import { useAuth } from '@/context/auth-context';
 import { useReminders } from '@/context/reminders-context';
 import { useTheme } from '@/hooks/use-theme';
@@ -40,7 +39,6 @@ export default function AccueilScreen() {
   const { reminders, isLoaded } = useReminders();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { fontScale } = useWindowDimensions();
   const today = todayISO();
   const upcoming = reminders
     .filter((r) => r.dateISO >= today)
@@ -51,6 +49,7 @@ export default function AccueilScreen() {
   const [question, setQuestion] = useState('');
   const [answered, setAnswered] = useState(false);
   const [dictationError, setDictationError] = useState('');
+  const [inputFocused, setInputFocused] = useState(false);
   const openingAssistant = useRef(false);
   useFocusEffect(
     useCallback(() => {
@@ -118,41 +117,45 @@ export default function AccueilScreen() {
           </View>
 
           {isLoaded && overdue > 0 ? (
-            <Pressable
-              onPress={() => router.push('/planificateur')}
-              accessibilityRole="button"
-              accessibilityLabel={`${overdue} échéance${overdue > 1 ? 's' : ''} à vérifier dans le planificateur`}
-              style={({ pressed }) => [
-                styles.priority,
-                {
-                  backgroundColor: theme.coralTint,
-                  borderColor: theme.accent,
-                  opacity: pressed ? 0.72 : 1,
-                },
-              ]}
-            >
-              <View style={styles.priorityIcon}>
-                <Ionicons name="alert-circle-outline" size={24} color={theme.accent} />
-              </View>
-              <View style={styles.flex}>
-                <ThemedText type="label" themeColor="accent">
-                  {overdue} échéance{overdue > 1 ? 's' : ''} à vérifier
-                </ThemedText>
-                <ThemedText type="caption" themeColor="textSecondary">
-                  La date est passée. Ouvrez le planificateur pour la mettre à jour ou la supprimer.
-                </ThemedText>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={theme.accent} />
-            </Pressable>
+            <View style={styles.prioritySection}>
+              <ThemedText type="sectionTitle" accessibilityRole="header">
+                Votre priorité
+              </ThemedText>
+              <Pressable
+                onPress={() => router.push('/planificateur')}
+                accessibilityRole="button"
+                accessibilityLabel={`${overdue} échéance${overdue > 1 ? 's' : ''} à vérifier dans le planificateur`}
+                style={({ pressed }) => [
+                  styles.priority,
+                  {
+                    backgroundColor: theme.coralTint,
+                    opacity: pressed ? 0.72 : 1,
+                  },
+                ]}
+              >
+                <View style={styles.priorityIcon}>
+                  <Ionicons name="alert-circle-outline" size={24} color={theme.accent} />
+                </View>
+                <View style={styles.flex}>
+                  <ThemedText type="label" themeColor="accent">
+                    {overdue} échéance{overdue > 1 ? 's' : ''} à vérifier
+                  </ThemedText>
+                  <ThemedText type="caption" themeColor="textSecondary">
+                    La date est passée. Consultez-la pour la mettre à jour ou la supprimer.
+                  </ThemedText>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={theme.accent} />
+              </Pressable>
+            </View>
           ) : null}
 
           <View
             style={[
               styles.assistantCard,
-              CardShadow,
-              { backgroundColor: theme.background, borderColor: theme.primary },
+              { backgroundColor: theme.primaryTint },
             ]}
           >
+            <View pointerEvents="none" style={[styles.assistantDecoration, { backgroundColor: theme.primary }]} />
             <View style={styles.assistantHeading}>
               <View style={[styles.assistantIcon, { backgroundColor: theme.primary }]}>
                 <Ionicons
@@ -162,7 +165,10 @@ export default function AccueilScreen() {
                 />
               </View>
               <View style={styles.flex}>
-                <ThemedText type="sectionTitle">Demandez à l’assistant</ThemedText>
+                <ThemedText type="caption" themeColor="primary" style={styles.assistantEyebrow}>
+                  ASSISTANT AAVIE
+                </ThemedText>
+                <ThemedText type="sectionTitle">Comment puis-je vous aider ?</ThemedText>
                 <ThemedText type="caption" themeColor="textSecondary">
                   Une démarche, un courrier ou une question administrative.
                 </ThemedText>
@@ -173,14 +179,16 @@ export default function AccueilScreen() {
               style={[
                 styles.assistantField,
                 {
-                  backgroundColor: theme.backgroundElement,
-                  borderColor: theme.primary,
+                  backgroundColor: theme.background,
+                  borderColor: inputFocused ? theme.primary : theme.cardBorder,
                 },
               ]}
             >
               <TextInput
                 value={question}
                 onChangeText={setQuestion}
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setInputFocused(false)}
                 maxLength={QUESTION_MAX}
                 onSubmitEditing={submitQuestion}
                 returnKeyType="send"
@@ -227,7 +235,7 @@ export default function AccueilScreen() {
 
             {isDictationAvailable ? (
               <ThemedText type="caption" themeColor="textSecondary">
-                La dictée peut utiliser le service de reconnaissance vocale du téléphone.
+                Dictée vocale disponible depuis le micro.
               </ThemedText>
             ) : null}
 
@@ -277,20 +285,22 @@ export default function AccueilScreen() {
 
           <View style={styles.section}>
             <ThemedText type="sectionTitle" accessibilityRole="header">
-              Accès rapides
+              Pour avancer
             </ThemedText>
-            <View
-              style={[styles.shortcuts, fontScale >= 1.5 && styles.stacked]}
-            >
-              {shortcuts.map((item) => (
+            <View style={[styles.shortcuts, { borderColor: theme.cardBorder }]}>
+              {shortcuts.map((item, index) => (
                 <Pressable
                   key={item.href}
                   onPress={() => router.push(item.href)}
                   accessibilityRole="button"
                   style={({ pressed }) => [
                     styles.shortcut,
-                    { opacity: pressed ? 0.6 : 1 },
-                    fontScale >= 1.5 && styles.shortcutLarge,
+                    {
+                      borderColor: theme.cardBorder,
+                      borderBottomWidth:
+                        index === shortcuts.length - 1 ? 0 : StyleSheet.hairlineWidth,
+                      opacity: pressed ? 0.6 : 1,
+                    },
                   ]}
                 >
                   <View
@@ -305,9 +315,10 @@ export default function AccueilScreen() {
                       color={theme.turquoiseTintText}
                     />
                   </View>
-                  <ThemedText type="caption" style={styles.shortcutLabel}>
+                  <ThemedText type="label" style={styles.shortcutLabel}>
                     {item.title}
                   </ThemedText>
+                  <Ionicons name="chevron-forward" size={18} color={theme.textSecondary} />
                 </Pressable>
               ))}
             </View>
@@ -331,7 +342,7 @@ export default function AccueilScreen() {
 }
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  content: { width: '100%', maxWidth: 560, alignSelf: 'center', gap: 26 },
+  content: { width: '100%', maxWidth: 560, alignSelf: 'center', gap: 24 },
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -360,11 +371,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: -1.1,
   },
+  prioritySection: { gap: 12 },
   priority: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    borderLeftWidth: 3,
     borderRadius: 16,
     padding: 16,
   },
@@ -376,10 +387,18 @@ const styles = StyleSheet.create({
   },
   assistantCard: {
     gap: 16,
-    borderWidth: 1,
-    borderTopWidth: 4,
-    borderRadius: 20,
-    padding: 18,
+    borderRadius: 24,
+    padding: 20,
+    overflow: 'hidden',
+  },
+  assistantDecoration: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    right: -54,
+    top: -58,
+    opacity: 0.08,
   },
   assistantHeading: {
     flexDirection: 'row',
@@ -387,12 +406,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   assistantIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  assistantEyebrow: { letterSpacing: 1, fontWeight: '700' },
   assistantField: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -425,18 +445,26 @@ const styles = StyleSheet.create({
   section: { gap: 16 },
   sectionHeading: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   flex: { flex: 1 },
-  shortcuts: { flexDirection: 'row', gap: 12 },
-  stacked: { flexDirection: 'column' },
-  shortcut: { flex: 1, gap: 10, alignItems: 'center', minHeight: 86 },
-  shortcutLarge: { flexDirection: 'row', minHeight: 56 },
+  shortcuts: {
+    borderWidth: 1,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  shortcut: {
+    flexDirection: 'row',
+    gap: 14,
+    alignItems: 'center',
+    minHeight: 68,
+    paddingHorizontal: 14,
+  },
   shortcutIcon: {
-    width: 58,
-    height: 54,
-    borderRadius: 18,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  shortcutLabel: { textAlign: 'center', fontWeight: '600', flexShrink: 1 },
+  shortcutLabel: { flex: 1 },
   textLink: { minHeight: 48, justifyContent: 'center' },
   addReminder: {
     flexDirection: 'row',
