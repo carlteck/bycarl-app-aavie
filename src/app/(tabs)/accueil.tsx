@@ -333,14 +333,19 @@ export default function AccueilScreen() {
                       color={theme.turquoiseTintText}
                     />
                     <View style={styles.flex}>
-                      <ThemedText type="label">La suite est à vous.</ThemedText>
+                      <ThemedText type="label">
+                        {overdue > 0
+                          ? 'Aucune autre date à venir.'
+                          : 'La suite est à vous.'}
+                      </ThemedText>
                       <ThemedText
                         type="caption"
                         themeColor="textSecondary"
                         style={styles.emptyCopy}
                       >
-                        Aucune date à venir. Ajoutez votre première échéance
-                        dans le planificateur.
+                        {overdue > 0
+                          ? 'Commencez par vérifier les échéances passées ci-dessus.'
+                          : 'Ajoutez votre première échéance dans le planificateur.'}
                       </ThemedText>
                     </View>
                   </View>

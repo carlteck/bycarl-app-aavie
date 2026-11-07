@@ -73,3 +73,9 @@
 - Connexion et inscription ne répètent plus leur titre de barre dans une carte interne.
 - Aucun token de couleur ni comportement métier n’a changé ; l’accueil public validé reste intact.
 - Fichiers principaux : `page-header.tsx`, `connexion.tsx`, `inscription.tsx`.
+
+## Lot 3 — états justes et utiles
+
+- L’accueil ne dit plus simultanément qu’une échéance passée exige une action et que « la suite est à vous ». S’il existe du retard sans date future, il invite d’abord à vérifier les échéances passées.
+- Les écrans planificateur et notifications conservent leur bouton d’ajout visible avec leurs états vides ; les erreurs distantes conservent l’action Réessayer partagée.
+- Le statut de synchronisation du compte reste dérivé de `SyncContext` (`synced`, `syncing`, attente) et n’est pas simulé localement.
