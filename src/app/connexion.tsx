@@ -231,9 +231,6 @@ export default function ConnexionScreen() {
             ]}
           >
             <View style={styles.intro}>
-              <ThemedText type="screenTitle">
-                Connexion à votre espace
-              </ThemedText>
               <ThemedText themeColor="textSecondary">
                 Retrouvez vos démarches, vos documents et vos rappels.
               </ThemedText>

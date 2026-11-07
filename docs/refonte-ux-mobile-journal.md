@@ -66,3 +66,10 @@
 - Capture sombre regardée : `/tmp/aavie-lot1-assistant-dark.png`. Elle confirme l’Assistant en premier onglet, la liste réelle, le CTA « Nouvelle conversation » et l’absence de doublon de titre dans le contenu.
 - La capture thème clair + police 1,3 (`/tmp/aavie-lot1-assistant-light-large.png`) est à nouveau tombée pendant le redémarrage Android provoqué par `uimode` et reste inexploitable ; aucun envoi ni écriture réelle n’a été effectué.
 - Les écritures nouvelles (confirmation/annulation, pièce jointe) sont couvertes uniquement avec API simulée conformément à la règle de données réelles.
+
+## Lot 2 — grammaire visuelle allégée
+
+- Le composant d’en-tête partagé ne répète plus « VOTRE QUOTIDIEN AVEC AAVIE » ni une icône décorative sur chaque onglet : un titre, une introduction courte, puis le contenu.
+- Connexion et inscription ne répètent plus leur titre de barre dans une carte interne.
+- Aucun token de couleur ni comportement métier n’a changé ; l’accueil public validé reste intact.
+- Fichiers principaux : `page-header.tsx`, `connexion.tsx`, `inscription.tsx`.

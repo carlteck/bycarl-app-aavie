@@ -205,7 +205,6 @@ export default function InscriptionScreen() {
             ]}
           >
             <View style={styles.intro}>
-              <ThemedText type="screenTitle">Créer votre compte</ThemedText>
               <ThemedText themeColor="textSecondary">
                 Créez votre compte pour accéder à l’application mobile, avec les
                 mêmes identifiants.
