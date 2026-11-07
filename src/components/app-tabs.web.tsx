@@ -30,11 +30,6 @@ const TABS: TabDef[] = [
     match: (p) => p.startsWith('/assistant'),
   },
   {
-    href: '/planificateur',
-    label: 'Agenda',
-    match: (p) => p.startsWith('/planificateur'),
-  },
-  {
     href: '/services',
     label: 'Services',
     match: (p) => p.startsWith('/services'),

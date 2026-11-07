@@ -38,15 +38,6 @@ export default function AppTabs() {
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="planificateur">
-        <NativeTabs.Trigger.Label>Agenda</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          sf="calendar"
-          md="calendar_month"
-          selectedColor={colors.primary}
-        />
-      </NativeTabs.Trigger>
-
       <NativeTabs.Trigger name="services">
         <NativeTabs.Trigger.Label>Services</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
@@ -56,6 +47,7 @@ export default function AppTabs() {
         />
       </NativeTabs.Trigger>
 
+      <NativeTabs.Trigger name="planificateur" hidden />
       <NativeTabs.Trigger name="ressources" hidden />
       <NativeTabs.Trigger name="annuaire" hidden />
       <NativeTabs.Trigger name="profil">
