@@ -20,6 +20,15 @@ export default function AppTabs() {
       // toujours explicite, pas uniquement iconographique).
       labelVisibilityMode="labeled"
     >
+      <NativeTabs.Trigger name="assistant">
+        <NativeTabs.Trigger.Label>Assistant</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          sf="bubble.left.and.bubble.right"
+          md="chat"
+          selectedColor={colors.primary}
+        />
+      </NativeTabs.Trigger>
+
       <NativeTabs.Trigger name="accueil">
         <NativeTabs.Trigger.Label>Accueil</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon

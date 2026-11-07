@@ -11,6 +11,7 @@ export function assistantReply(content: string): {
   text: string;
   actionLabel?: string;
   actionStatus?: string;
+  action?: Record<string, unknown>;
 } {
   if (!content.trim().startsWith('{')) return { text: content };
   try {
@@ -23,6 +24,7 @@ export function assistantReply(content: string): {
           ? (ACTION_LABELS[value.tool] ?? 'Proposition de l’assistant')
           : 'Proposition de l’assistant',
       actionStatus: typeof value.status === 'string' ? value.status : 'pending',
+      action: value,
     };
   } catch {
     return { text: content };

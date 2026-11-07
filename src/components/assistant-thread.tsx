@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Crypto from 'expo-crypto';
+import { File } from 'expo-file-system';
 import { router } from 'expo-router';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -17,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CreditsBadge } from './credits-badge';
 import { AssistantPromptCard } from './assistant-prompt-card';
 import { PrimaryButton } from './primary-button';
+import { OutlineButton } from './outline-button';
 import { useAuth } from '@/context/auth-context';
 import { isAssistantEnabled } from '@/constants/assistant';
 import { DictationButton, isDictationAvailable } from './dictation-button';
@@ -26,16 +28,19 @@ import { SpeakButton } from './speak-button';
 import { ThemedText } from './themed-text';
 
 import { MaxContentWidth, Palette, Spacing } from '@/constants/theme';
-import { useAssistantThread, useCredits } from '@/hooks/use-assistant';
+import { useAssistantQuota, useAssistantThread, useCredits } from '@/hooks/use-assistant';
 import { useAssistantInitialMessage } from '@/hooks/use-assistant-initial-message';
 import { useTheme } from '@/hooks/use-theme';
 import {
   ASSISTANT_TIMEOUT_MS,
   AssistantError,
+  MAX_ATTACHMENT_BYTES,
   assistantErrorMessage,
   QUESTION_MAX,
   sendAssistantMessage,
+  resolveAssistantAction,
   type AssistantMessage,
+  type AssistantAttachment,
 } from '@/lib/assistant';
 import { formatInstant } from '@/lib/remote-values';
 import {
@@ -50,19 +55,29 @@ import {
   setAssistantDraft,
   shouldSendAssistantDraft,
 } from '@/lib/assistant-draft';
-import { openExternalLink } from '@/lib/open-link';
 
 const SUGGESTIONS = [
   'Comment renouveler ma carte d’identité ?',
   'Quels papiers pour une demande de logement ?',
   'Aide-moi à écrire un courrier à la CAF.',
+  'Faire le bilan de mon budget.',
 ];
 
 const Bubble = memo(function Bubble({
   role,
   content,
   createdAt,
-}: Pick<AssistantMessage, 'role' | 'content'> & { createdAt?: string }) {
+  messageId,
+  truncated,
+  onAction,
+  onContinue,
+}: Pick<AssistantMessage, 'role' | 'content'> & {
+  createdAt?: string;
+  messageId?: string;
+  truncated?: boolean;
+  onAction?: (id: string, action: 'confirm' | 'cancel') => void;
+  onContinue?: () => void;
+}) {
   const theme = useTheme();
   const mine = role === 'user';
   const who = mine ? 'Vous' : 'Assistant AAVIE';
@@ -102,19 +117,22 @@ const Bubble = memo(function Bubble({
                     : 'Cette proposition attend votre validation sur le site AAVIE. Aucune action n’a été effectuée.'}
               </ThemedText>
               {reply.actionStatus === 'pending' ? (
-                <Pressable
-                  accessibilityRole="link"
-                  onPress={() =>
-                    void openExternalLink(
-                      'https://aavieapp.com/espace/assistant-administratif',
-                    )
-                  }
-                  style={styles.suggestion}
-                >
-                  <ThemedText type="label" themeColor="primary">
-                    Ouvrir l’assistant sur le site
-                  </ThemedText>
-                </Pressable>
+                <View style={styles.actionRow}>
+                  <PrimaryButton
+                    onPress={() =>
+                      messageId && onAction?.(messageId, 'confirm')
+                    }
+                  >
+                    Confirmer
+                  </PrimaryButton>
+                  <OutlineButton
+                    onPress={() =>
+                      messageId && onAction?.(messageId, 'cancel')
+                    }
+                  >
+                    Annuler
+                  </OutlineButton>
+                </View>
               ) : null}
             </View>
           ) : null}
@@ -123,6 +141,16 @@ const Bubble = memo(function Bubble({
               text={markdownToPlainText(reply.text)}
               accessibilityLabel="Écouter la réponse de l’assistant"
             />
+          ) : null}
+          {truncated ? (
+            <View style={styles.intro}>
+              <ThemedText type="caption" themeColor="textSecondary">
+                Réponse raccourcie. Continuer utilise une nouvelle question.
+              </ThemedText>
+              <OutlineButton onPress={() => onContinue?.()}>
+                Continuer la réponse
+              </OutlineButton>
+            </View>
           ) : null}
         </>
       )}
@@ -159,6 +187,7 @@ function ConnectedAssistantThread({
   const insets = useSafeAreaInsets();
   const thread = useAssistantThread(conversationId);
   const credits = useCredits();
+  const quota = useAssistantQuota();
   const [draft, setDraft] = useState(() =>
     conversationId ? '' : readAssistantDraft(),
   );
@@ -170,6 +199,7 @@ function ConnectedAssistantThread({
   const [accountRequired, setAccountRequired] = useState(false);
   const [reconnecting, setReconnecting] = useState(false);
   const [dictationError, setDictationError] = useState('');
+  const [attachments, setAttachments] = useState<AssistantAttachment[]>([]);
   const [offset, setOffset] = useState(0);
   const list = useRef<FlatList<AssistantMessage>>(null);
   const controller = useRef<AbortController | null>(null);
@@ -195,7 +225,8 @@ function ConnectedAssistantThread({
 
   const send = useCallback(
     async (submittedText?: string) => {
-      const text = (submittedText ?? draft).trim();
+      const entered = (submittedText ?? draft).trim();
+      const text = entered || (attachments.length ? 'Analyse cette pièce jointe.' : '');
       if (!text || sending || exhausted || inFlight.current) return;
       inFlight.current = true;
       const request = prepareAssistantRequest(
@@ -220,8 +251,10 @@ function ConnectedAssistantThread({
         const result = await sendAssistantMessage({
           ...request,
           signal: own.signal,
+          attachments,
         });
         attempt.current = null;
+        setAttachments([]);
         if (!mounted.current) return;
         if (!conversationId) {
           // Le fil existe maintenant : on l'ouvre depuis la base, qui fait foi.
@@ -246,8 +279,30 @@ function ConnectedAssistantThread({
         inFlight.current = false;
       }
     },
-    [draft, sending, exhausted, conversationId, reloadThread, reloadCredits],
+    [draft, sending, exhausted, conversationId, reloadThread, reloadCredits, attachments],
   );
+
+  const pickAttachment = async () => {
+    try {
+      const picker = await import('expo-document-picker');
+      const result = await picker.getDocumentAsync({
+        type: ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'],
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled) return;
+      const asset = result.assets[0];
+      const mediaType = asset.mimeType ?? '';
+      if (!asset.size || asset.size > MAX_ATTACHMENT_BYTES) {
+        setError('La pièce jointe doit faire moins de 4 Mo.');
+        return;
+      }
+      const data = await new File(asset.uri).base64();
+      setAttachments([{ name: asset.name, mediaType, size: asset.size, data }]);
+      setError(null);
+    } catch {
+      setError('Le choix de fichier nécessite une version plus récente de l’application.');
+    }
+  };
 
   useAssistantInitialMessage(
     sendInitialMessage ? draft : '',
@@ -274,6 +329,17 @@ function ConnectedAssistantThread({
 
   const messages = conversationId && thread.data ? thread.data.messages : EMPTY;
   const loadingThread = Boolean(conversationId) && thread.status === 'loading';
+  const act = useCallback(
+    async (messageId: string, action: 'confirm' | 'cancel') => {
+      try {
+        await resolveAssistantAction(messageId, action);
+        await reloadThread();
+      } catch {
+        setError('Cette action n’a pas pu être traitée. Réessayez.');
+      }
+    },
+    [reloadThread],
+  );
 
   return (
     <KeyboardAvoidingView
@@ -296,6 +362,10 @@ function ConnectedAssistantThread({
               role={item.role}
               content={item.content}
               createdAt={item.createdAt}
+              messageId={item.id}
+              truncated={item.truncated}
+              onAction={(id, action) => void act(id, action)}
+              onContinue={() => void send('continue')}
             />
           )}
           contentContainerStyle={[
@@ -329,10 +399,21 @@ function ConnectedAssistantThread({
                   </PrimaryButton>
                 </View>
               ) : (
-                <CreditsBadge
-                  loading={credits.status === 'loading'}
-                  credits={credits.data}
-                />
+                <View style={styles.footer}>
+                  <CreditsBadge
+                    loading={credits.status === 'loading'}
+                    credits={credits.data}
+                  />
+                  {quota.data ? (
+                    <ThemedText type="caption" themeColor="textSecondary">
+                      {quota.data.remainingQuestions === null
+                        ? 'Questions illimitées'
+                        : `Environ ${quota.data.remainingQuestions} question${quota.data.remainingQuestions > 1 ? 's' : ''} restante${quota.data.remainingQuestions > 1 ? 's' : ''}`}
+                      {' · '}jusqu’à {quota.data.cost} crédit
+                      {quota.data.cost > 1 ? 's' : ''} par envoi
+                    </ThemedText>
+                  ) : null}
+                </View>
               )}
               {thread.status === 'error' && thread.data ? (
                 <InlineError kind={thread.error} onRetry={thread.retry} />
@@ -450,11 +531,11 @@ function ConnectedAssistantThread({
             />
             <Pressable
               onPress={() => void send()}
-              disabled={sending || exhausted || draft.trim().length === 0}
+              disabled={sending || exhausted || (draft.trim().length === 0 && attachments.length === 0)}
               accessibilityRole="button"
               accessibilityLabel="Envoyer la question"
               accessibilityState={{
-                disabled: sending || exhausted || draft.trim().length === 0,
+                disabled: sending || exhausted || (draft.trim().length === 0 && attachments.length === 0),
               }}
               style={({ pressed }) => [
                 styles.send,
@@ -463,13 +544,36 @@ function ConnectedAssistantThread({
                     ? theme.primaryPressed
                     : theme.primary,
                   opacity:
-                    sending || exhausted || draft.trim().length === 0 ? 0.5 : 1,
+                    sending || exhausted || (draft.trim().length === 0 && attachments.length === 0) ? 0.5 : 1,
                 },
               ]}
             >
               <Ionicons name="arrow-up" size={20} color={Palette.white} />
             </Pressable>
           </View>
+          {attachments.map((attachment) => (
+            <View key={attachment.name} style={styles.attachmentRow}>
+              <ThemedText type="caption" numberOfLines={1} style={styles.attachmentName}>
+                📎 {attachment.name}
+              </ThemedText>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Retirer ${attachment.name}`}
+                onPress={() => setAttachments([])}
+              >
+                <Ionicons name="close-circle" size={24} color={theme.textSecondary} />
+              </Pressable>
+            </View>
+          ))}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Joindre une photo ou un PDF"
+            onPress={() => void pickAttachment()}
+            style={styles.attachButton}
+          >
+            <Ionicons name="attach" size={20} color={theme.primary} />
+            <ThemedText type="caption" themeColor="primary">Joindre une photo ou un PDF</ThemedText>
+          </Pressable>
           {isDictationAvailable ? (
             <ThemedText type="caption" themeColor="textSecondary">
               La dictée peut envoyer votre voix au service de reconnaissance de
@@ -522,6 +626,7 @@ const styles = StyleSheet.create({
   theirs: { alignSelf: 'flex-start' },
   who: { fontWeight: '600' },
   footer: { gap: Spacing.three },
+  actionRow: { gap: Spacing.two },
   typing: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   composer: {
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -552,4 +657,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  attachmentRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  attachmentName: { flex: 1 },
+  attachButton: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
 });

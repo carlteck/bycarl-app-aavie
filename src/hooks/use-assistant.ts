@@ -4,6 +4,7 @@ import { useRemoteList } from '@/hooks/use-remote-list';
 import { useRemoteResource } from '@/hooks/use-remote-resource';
 import {
   fetchConversationsPage,
+  fetchAssistantQuota,
   fetchCredits,
   fetchThread,
   type AssistantConversation,
@@ -25,4 +26,8 @@ export function useAssistantThread(conversationId: string | null) {
 
 export function useCredits() {
   return useRemoteResource(fetchCredits);
+}
+
+export function useAssistantQuota() {
+  return useRemoteResource(fetchAssistantQuota);
 }

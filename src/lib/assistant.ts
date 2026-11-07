@@ -11,6 +11,14 @@ import {
 // Le serveur borne le traitement à 105 s ; le mobile lui laisse le temps de répondre.
 export const ASSISTANT_TIMEOUT_MS = 120_000;
 export const QUESTION_MAX = 4000;
+export const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024;
+
+export type AssistantAttachment = {
+  name: string;
+  mediaType: string;
+  size: number;
+  data: string;
+};
 
 export type AssistantConversation = {
   id: string;
@@ -23,6 +31,7 @@ export type AssistantMessage = {
   role: 'user' | 'assistant';
   content: string;
   createdAt: string;
+  truncated: boolean;
 };
 
 export type AssistantThread = {
@@ -105,7 +114,36 @@ export function mapAssistantMessage(row: unknown): AssistantMessage | null {
   const content = asText(value.content);
   const createdAt = siteInstant(value.created_at);
   if (!id || !role || !content || !createdAt) return null;
-  return { id, role, content, createdAt };
+  return { id, role, content, createdAt, truncated: value.truncated === true };
+}
+
+export type AssistantQuota = {
+  balance: number | null;
+  cost: number;
+  remainingQuestions: number | null;
+  cloudConnected: boolean;
+  documentCost: number;
+};
+
+export function mapAssistantQuota(row: unknown): AssistantQuota | null {
+  const value = asRecord(row);
+  if (!value) return null;
+  const { balance, cost, document_cost: documentCost, remaining_questions: remaining } = value;
+  if ((balance !== null && typeof balance !== 'number') || typeof cost !== 'number' || typeof documentCost !== 'number' || (remaining !== null && typeof remaining !== 'number') || typeof value.cloud_connected !== 'boolean') return null;
+  return { balance, cost, documentCost, remainingQuestions: remaining, cloudConnected: value.cloud_connected };
+}
+
+export async function fetchAssistantQuota(signal: AbortSignal): Promise<AssistantQuota> {
+  const quota = mapAssistantQuota(await apiFetch<unknown>('/ai/quota.php', { signal }));
+  if (!quota) throw new Error('Réponse inattendue du serveur.');
+  return quota;
+}
+
+export async function resolveAssistantAction(messageId: string, action: 'confirm' | 'cancel'): Promise<void> {
+  await apiFetch('/ai/tool-confirm.php', {
+    method: 'POST',
+    body: JSON.stringify({ message_id: Number(messageId), action }),
+  });
 }
 
 export function mapCredits(row: unknown): CreditBalance | null {
@@ -221,6 +259,7 @@ export async function sendAssistantMessage(input: {
   message: string;
   clientMessageId: string;
   signal: AbortSignal;
+  attachments?: AssistantAttachment[];
 }): Promise<{ conversationId: string }> {
   try {
     const data = await apiFetch<unknown>('/ai/chat.php', {
@@ -230,6 +269,9 @@ export async function sendAssistantMessage(input: {
         question: input.message,
         conversation_id: input.conversationId,
         client_message_id: input.clientMessageId,
+        ...(input.attachments?.length
+          ? { attachments: input.attachments.map(({ name, data }) => ({ name, data })) }
+          : {}),
       }),
     });
     const conversationId = asId(asRecord(data)?.conversation_id);

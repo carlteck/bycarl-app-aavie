@@ -20,6 +20,11 @@ type TabDef = {
 
 const TABS: TabDef[] = [
   {
+    href: '/assistant',
+    label: 'Assistant',
+    match: (p) => p.startsWith('/assistant'),
+  },
+  {
     href: '/accueil',
     label: 'Accueil',
     match: (p) => p === '/accueil' || p.startsWith('/demarche'),

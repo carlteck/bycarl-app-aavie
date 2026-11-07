@@ -39,3 +39,30 @@
 - Entrée de service « Aide rédactionnelle ».
 - Action mobile « fermer le ticket », absente du contrat serveur autorisé.
 - Faux textes « bientôt disponible », « crédits non disponibles » et « coffre-fort non activé ».
+
+## Lot 1 — assistant central
+
+### Ce qui change pour l’usager
+
+- L’Assistant devient le premier onglet sur téléphone et sur la barre web, sans dupliquer la liste des conversations.
+- Le fil reste en plein écran avec sa saisie fixée au-dessus du clavier, les suggestions de départ, la dictée et la lecture à voix haute.
+- Le coût maximal par envoi et le nombre estimé de questions restantes viennent de `ai/quota.php`.
+- Une photo ou un PDF de 4 Mo maximum peut être joint depuis le sélecteur système. Le fichier n’est lu qu’après le choix explicite de l’usager.
+- Les cartes d’action sont confirmées ou annulées dans l’application via `ai/tool-confirm.php`; aucune écriture n’a lieu avant confirmation.
+- Une réponse tronquée affiche « Continuer la réponse » et précise que cette suite compte comme une nouvelle question.
+
+### Fichiers principaux
+
+`src/app/(tabs)/assistant.tsx`, `src/components/app-tabs.tsx`, `app-tabs.web.tsx`, `assistant-thread.tsx`, `src/lib/assistant.ts`, `src/lib/assistant-reply.ts`, `src/hooks/use-assistant.ts`.
+
+### Décisions et limites
+
+- Le sélecteur de documents est importé au moment de l’appui afin qu’un ancien development build sans le module natif affiche une erreur utile au lieu de planter au démarrage.
+- Une seule pièce jointe est proposée dans ce lot mobile, volontairement, pour rester lisible et fiable sur connexion lente ; le serveur conserve sa limite supérieure de cinq.
+- Le coût affiché est la provision maximale promise par le serveur, pas une fausse estimation exacte du nombre de tokens.
+
+### Contrôles
+
+- Capture sombre regardée : `/tmp/aavie-lot1-assistant-dark.png`. Elle confirme l’Assistant en premier onglet, la liste réelle, le CTA « Nouvelle conversation » et l’absence de doublon de titre dans le contenu.
+- La capture thème clair + police 1,3 (`/tmp/aavie-lot1-assistant-light-large.png`) est à nouveau tombée pendant le redémarrage Android provoqué par `uimode` et reste inexploitable ; aucun envoi ni écriture réelle n’a été effectué.
+- Les écritures nouvelles (confirmation/annulation, pièce jointe) sont couvertes uniquement avec API simulée conformément à la règle de données réelles.

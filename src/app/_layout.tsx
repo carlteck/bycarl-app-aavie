@@ -54,7 +54,6 @@ function RootNavigator() {
         <Stack.Screen name="demarche" />
         <Stack.Screen name="notifications" />
         <Stack.Screen name="credits" />
-        <Stack.Screen name="assistant" />
         <Stack.Screen name="assistant/nouvelle" />
         <Stack.Screen name="assistant/[id]" />
         <Stack.Screen name="assistant/renommer/[id]" />

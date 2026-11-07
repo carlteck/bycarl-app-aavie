@@ -663,3 +663,31 @@ test('assistant : une proposition reste lisible sans afficher son enveloppe tech
   assert.equal(reply.actionStatus, 'pending');
   assert.equal(reply.actionLabel, 'Ajouter une échéance au planificateur');
 });
+
+test('assistant : quota, troncature et confirmation utilisent le contrat du site', async () => {
+  const assistant = lib('assistant.ts');
+  const quota = assistant.mapAssistantQuota({
+    balance: 12,
+    cost: 2,
+    document_cost: 3,
+    remaining_questions: 6,
+    cloud_connected: true,
+  });
+  assert.equal(quota.remainingQuestions, 6);
+  const message = assistant.mapAssistantMessage({
+    id: 9,
+    role: 'assistant',
+    content: 'Suite…',
+    created_at: '2026-11-05 12:30:00',
+    truncated: true,
+  });
+  assert.equal(message.truncated, true);
+  const requests = [];
+  apiRespond = async (...args) => {
+    requests.push(args);
+    return { status: 'confirmed' };
+  };
+  await assistant.resolveAssistantAction('9', 'confirm');
+  assert.equal(requests[0][0], '/ai/tool-confirm.php');
+  assert.deepEqual(JSON.parse(requests[0][1].body), { message_id: 9, action: 'confirm' });
+});

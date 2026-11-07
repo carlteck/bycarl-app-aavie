@@ -444,6 +444,14 @@ veille, les ressources, l'annuaire, les démarches d'équipe, le support et le c
 Bearer du compte unifié est ajouté par `apiFetch`. Aucune clé `service_role` ni clé d'IA n'entre
 dans le bundle.
 
+L'Assistant est le premier onglet connecté. La liste des conversations vit dans le groupe
+`(tabs)` ; les routes `/assistant/nouvelle` et `/assistant/[id]` ouvrent le même fil plein écran.
+Avant un envoi, `ai/quota.php` fournit le coût maximal et le nombre estimé de questions restantes.
+Les PDF et images sont choisis par le sélecteur système au moment de l'action, limités à 4 Mo et
+envoyés en base64 à `ai/chat.php`. Une action proposée n'est jamais exécutée à la lecture : seuls
+les boutons Confirmer/Annuler appellent `ai/tool-confirm.php`. Une réponse `truncated` propose une
+suite explicitement facturée comme une nouvelle question.
+
 Migrations `202609200002` à `202609200006`, tests pgTAP `supabase/tests/database/mobile_modules.test.sql`, jeu fictif local `supabase/seed.sql` (jamais envoyé au projet distant).
 
 | Module      | Route                                                  | Tables Supabase                                                                         | Écriture mobile                                                     | Hors ligne                                   |
