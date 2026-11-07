@@ -79,3 +79,16 @@
 - L’accueil ne dit plus simultanément qu’une échéance passée exige une action et que « la suite est à vous ». S’il existe du retard sans date future, il invite d’abord à vérifier les échéances passées.
 - Les écrans planificateur et notifications conservent leur bouton d’ajout visible avec leurs états vides ; les erreurs distantes conservent l’action Réessayer partagée.
 - Le statut de synchronisation du compte reste dérivé de `SyncContext` (`synced`, `syncing`, attente) et n’est pas simulé localement.
+
+## Lot 4 — connexion et inscription courtes
+
+### Ce qui change
+
+- L’inscription est découpée en trois étapes : accès, profil, consentement. Les valeurs restent dans le même état React lors des retours entre étapes.
+- Chaque étape valide seulement les données nécessaires avant de continuer. Le dernier bouton conserve l’appel `register` existant, les identifiants des versions actives des textes légaux et le choix particulier/entreprise.
+- Les champs de mot de passe vides affichent une consigne textuelle, plus une rangée de points donnant l’impression qu’une valeur existe déjà.
+- Biométrie et défi administrateur par code e-mail restent inchangés.
+
+### Vérification visuelle
+
+- L’émulateur de production étant déjà authentifié, le lien profond public `/inscription` est correctement redirigé par `Stack.Protected` vers l’espace connecté (`/tmp/aavie-lot4-register-dark.png`). Aucun compte réel n’a été créé et aucune session réelle n’a été fermée. Le rendu public des trois étapes reste donc à vérifier sur un development build non authentifié.

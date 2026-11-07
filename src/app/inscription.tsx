@@ -31,6 +31,7 @@ export default function InscriptionScreen() {
   const { register } = useAuth();
   const theme = useTheme();
   const safeAreaInsets = useSafeAreaInsets();
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const [accountType, setAccountType] = useState<AccountType>('individual');
   const [locale, setLocale] = useState(DEFAULT_LOCALE.code);
@@ -146,6 +147,33 @@ export default function InscriptionScreen() {
     }
   }
 
+  function goToProfile() {
+    if (!email.trim() || !password) {
+      setError('Indiquez votre adresse e-mail et choisissez un mot de passe.');
+      return;
+    }
+    setError(null);
+    setStep(2);
+  }
+
+  function goToConsent() {
+    if (!firstName.trim() || !lastName.trim()) {
+      setError('Indiquez votre prénom et votre nom.');
+      return;
+    }
+    if (
+      accountType === 'company' &&
+      [company.legalName, company.legalForm, company.siret, company.addressLine1, company.postalCode, company.city].some(
+        (value) => !value.trim(),
+      )
+    ) {
+      setError('Les informations de l’entreprise sont incomplètes.');
+      return;
+    }
+    setError(null);
+    setStep(3);
+  }
+
   if (confirmationRequired) {
     return (
       <ThemedView type="pageBackground" style={styles.screen}>
@@ -174,9 +202,9 @@ export default function InscriptionScreen() {
   return (
     <ThemedView type="pageBackground" style={styles.screen}>
       <ScreenHeaderBar
-        title="Créer mon compte"
-        onBack={() => router.back()}
-        backLabel="Accueil"
+        title={`Créer mon compte · ${step}/3`}
+        onBack={() => (step === 1 ? router.back() : setStep(step === 3 ? 2 : 1))}
+        backLabel={step === 1 ? 'Accueil' : 'Étape précédente'}
       />
 
       <KeyboardAvoidingView
@@ -205,12 +233,30 @@ export default function InscriptionScreen() {
             ]}
           >
             <View style={styles.intro}>
+              <ThemedText type="sectionTitle">
+                {step === 1 ? 'Vos accès' : step === 2 ? 'Votre profil' : 'Votre accord'}
+              </ThemedText>
               <ThemedText themeColor="textSecondary">
-                Créez votre compte pour accéder à l’application mobile, avec les
-                mêmes identifiants.
+                {step === 1
+                  ? 'Choisissez les identifiants qui serviront aussi sur le site AAVIE.'
+                  : step === 2
+                    ? 'Ces informations personnalisent votre accompagnement.'
+                    : 'Vérifiez les textes applicables avant de créer le compte.'}
               </ThemedText>
             </View>
 
+            {error ? (
+              <ThemedText
+                type="label"
+                themeColor="accent"
+                accessibilityRole="alert"
+                accessibilityLiveRegion="assertive"
+              >
+                {error}
+              </ThemedText>
+            ) : null}
+
+            <View style={step === 2 ? styles.step : styles.hidden}>
             <View style={styles.section}>
               <ThemedText type="label">
                 Vous vous inscrivez en tant que
@@ -389,7 +435,9 @@ export default function InscriptionScreen() {
               textContentType="familyName"
               returnKeyType="next"
             />
+            </View>
 
+            <View style={step === 1 ? styles.step : styles.hidden}>
             <TextField
               label="Adresse e-mail"
               value={email}
@@ -407,15 +455,20 @@ export default function InscriptionScreen() {
               label="Mot de passe"
               value={password}
               onChangeText={setPassword}
-              placeholder="••••••••"
+              placeholder="Votre mot de passe"
               secure
               autoCapitalize="none"
               autoComplete="new-password"
               textContentType="newPassword"
               returnKeyType="done"
-              onSubmitEditing={handleSubmit}
+              onSubmitEditing={goToProfile}
             />
+            <PrimaryButton onPress={goToProfile} icon="arrow-forward-outline">
+              Continuer
+            </PrimaryButton>
+            </View>
 
+            <View style={step === 3 ? styles.step : styles.hidden}>
             <Pressable
               onPress={() => setLegalAccepted((current) => !current)}
               accessibilityRole="checkbox"
@@ -465,17 +518,6 @@ export default function InscriptionScreen() {
               </ThemedText>
             </Pressable>
 
-            {error && (
-              <ThemedText
-                type="label"
-                themeColor="accent"
-                accessibilityRole="alert"
-                accessibilityLiveRegion="assertive"
-              >
-                {error}
-              </ThemedText>
-            )}
-
             <PrimaryButton onPress={handleSubmit} icon="person-add-outline">
               {isSubmitting ? 'Création…' : 'Créer mon compte'}
             </PrimaryButton>
@@ -495,6 +537,13 @@ export default function InscriptionScreen() {
                 </ThemedText>
               </View>
             </View>
+            </View>
+
+            {step === 2 ? (
+              <PrimaryButton onPress={goToConsent} icon="arrow-forward-outline">
+                Continuer
+              </PrimaryButton>
+            ) : null}
 
             <View style={styles.alternative}>
               <ThemedText
@@ -547,6 +596,8 @@ const styles = StyleSheet.create({
   section: {
     gap: Spacing.two,
   },
+  step: { gap: Spacing.three },
+  hidden: { display: 'none' },
   choiceRow: {
     flexDirection: 'row',
     gap: Spacing.two,

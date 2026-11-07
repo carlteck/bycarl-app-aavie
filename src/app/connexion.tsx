@@ -290,7 +290,7 @@ export default function ConnexionScreen() {
                   label="Mot de passe"
                   value={password}
                   onChangeText={setPassword}
-                  placeholder="••••••••"
+                  placeholder="Votre mot de passe"
                   secure
                   autoCapitalize="none"
                   autoComplete="current-password"
