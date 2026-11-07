@@ -20,15 +20,6 @@ export default function AppTabs() {
       // toujours explicite, pas uniquement iconographique).
       labelVisibilityMode="labeled"
     >
-      <NativeTabs.Trigger name="assistant">
-        <NativeTabs.Trigger.Label>Assistant</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          sf="bubble.left.and.bubble.right"
-          md="chat"
-          selectedColor={colors.primary}
-        />
-      </NativeTabs.Trigger>
-
       <NativeTabs.Trigger name="accueil">
         <NativeTabs.Trigger.Label>Accueil</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
@@ -38,11 +29,11 @@ export default function AppTabs() {
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="services">
-        <NativeTabs.Trigger.Label>Services</NativeTabs.Trigger.Label>
+      <NativeTabs.Trigger name="assistant">
+        <NativeTabs.Trigger.Label>Assistant</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
-          sf="square.grid.2x2"
-          md="apps"
+          sf="bubble.left.and.bubble.right"
+          md="chat"
           selectedColor={colors.primary}
         />
       </NativeTabs.Trigger>
@@ -56,9 +47,17 @@ export default function AppTabs() {
         />
       </NativeTabs.Trigger>
 
+      <NativeTabs.Trigger name="services">
+        <NativeTabs.Trigger.Label>Services</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          sf="square.grid.2x2"
+          md="apps"
+          selectedColor={colors.primary}
+        />
+      </NativeTabs.Trigger>
+
       <NativeTabs.Trigger name="ressources" hidden />
       <NativeTabs.Trigger name="annuaire" hidden />
-
       <NativeTabs.Trigger name="profil">
         <NativeTabs.Trigger.Label>Compte</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon

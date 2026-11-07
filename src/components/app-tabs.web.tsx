@@ -20,24 +20,24 @@ type TabDef = {
 
 const TABS: TabDef[] = [
   {
-    href: '/assistant',
-    label: 'Assistant',
-    match: (p) => p.startsWith('/assistant'),
-  },
-  {
     href: '/accueil',
     label: 'Accueil',
     match: (p) => p === '/accueil' || p.startsWith('/demarche'),
   },
   {
-    href: '/services',
-    label: 'Services',
-    match: (p) => p.startsWith('/services'),
+    href: '/assistant',
+    label: 'Assistant',
+    match: (p) => p.startsWith('/assistant'),
   },
   {
     href: '/planificateur',
     label: 'Agenda',
     match: (p) => p.startsWith('/planificateur'),
+  },
+  {
+    href: '/services',
+    label: 'Services',
+    match: (p) => p.startsWith('/services'),
   },
   { href: '/profil', label: 'Compte', match: (p) => p.startsWith('/profil') },
 ];

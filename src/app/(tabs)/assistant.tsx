@@ -22,7 +22,9 @@ import {
   InlineError,
   LoadingState,
 } from '@/components/screen-state';
-import { StackScreen, useListInsets } from '@/components/stack-screen';
+import { PageHeader } from '@/components/page-header';
+import { useTabListInsets } from '@/components/stack-screen';
+import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { CardShadow, Spacing } from '@/constants/theme';
 import { useAssistantConversations, useCredits } from '@/hooks/use-assistant';
@@ -93,9 +95,10 @@ function ConversationRow({
 export default function AssistantScreen() {
   if (!isAssistantEnabled) {
     return (
-      <StackScreen title="Assistant administratif">
+      <ThemedView type="pageBackground" style={styles.screen}>
+        <PageHeader title="Assistant administratif" />
         <AssistantPromptCard />
-      </StackScreen>
+      </ThemedView>
     );
   }
   return <AssistantConversationsScreen />;
@@ -104,7 +107,7 @@ export default function AssistantScreen() {
 function AssistantConversationsScreen() {
   const list = useAssistantConversations();
   const credits = useCredits();
-  const insets = useListInsets();
+  const insets = useTabListInsets();
 
   // Au retour d'une conversation (créée, supprimée), la liste et le solde sont relus.
   const latest = useRef({ list: list.refresh, credits: credits.reload });
@@ -148,7 +151,8 @@ function AssistantConversationsScreen() {
   };
 
   return (
-    <StackScreen title="Assistant administratif">
+    <ThemedView type="pageBackground" style={styles.screen}>
+      <PageHeader title="Assistant administratif" />
       <FlatList
         data={list.items}
         keyExtractor={(item) => item.id}
@@ -211,11 +215,12 @@ function AssistantConversationsScreen() {
           ) : null
         }
       />
-    </StackScreen>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
   header: { gap: Spacing.three },
   row: {
     flexDirection: 'row',
