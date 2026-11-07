@@ -19,6 +19,7 @@ require.extensions['.ts'] = (module, filename) => {
 
 const { dictionaries, fr } = require(path.join(src, 'i18n', 'messages.ts'));
 const { sitePhrases } = require(path.join(src, 'i18n', 'site-phrases.generated.ts'));
+const { siteManual } = require(path.join(src, 'i18n', 'site-manual.generated.ts'));
 const { mobilePhrases } = require(path.join(src, 'i18n', 'mobile-phrases.ts'));
 const { LOCALES, normalizeLocale } = require(path.join(src, 'constants', 'locales.ts'));
 
@@ -40,6 +41,21 @@ test('i18n : les phrases propres au mobile ont la même parité', () => {
   const reference = Object.keys(mobilePhrases.fr).sort();
   for (const locale of LOCALES) {
     assert.deepEqual(Object.keys(mobilePhrases[locale.code]).sort(), reference, locale.code);
+  }
+});
+
+test('i18n : le manuel du site fournit neuf fiches dans chaque langue', () => {
+  for (const locale of ['fr', 'en', 'es', 'pt', 'ht']) {
+    assert.equal(siteManual[locale].length, 6);
+    assert.equal(
+      siteManual[locale].flatMap((section) => section.articles).length,
+      9,
+    );
+    assert.ok(
+      siteManual[locale].flatMap((section) => section.articles).every(
+        (article) => article.title && article.summary && article.body,
+      ),
+    );
   }
 });
 
